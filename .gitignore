@@ -1,0 +1,50 @@
+# Python / Desktop App
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller build folders
+build/
+dist/
+*.spec
+
+# C++ build logic / C extensions (if any)
+*.so
+*.o
+*.a
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# App data
+*.json
+!app.json
+!androidApp/app.json
+!androidApp/package.json
+!androidApp/package-lock.json
+!androidApp/eas.json
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.bak
