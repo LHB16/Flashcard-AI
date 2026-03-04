@@ -30,6 +30,9 @@ venv.bak/
 !androidApp/package-lock.json
 !androidApp/eas.json
 
+# Screenshots & Media
+screenShotsApp/
+
 # Logs
 logs/
 *.log

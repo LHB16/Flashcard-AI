@@ -9,7 +9,7 @@ import { Colors, Spacing, Radius } from '../theme';
 
 const SCREEN_W = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = SCREEN_W * 0.30;
-const VELOCITY_THR = 0.5;
+const VELOCITY_THR = 1.2;
 
 export default function FlashcardScreen({ route, navigation }) {
     const { deck } = route.params;
@@ -22,14 +22,12 @@ export default function FlashcardScreen({ route, navigation }) {
     const [done, setDone] = useState(false);
     const [canUndo, setCanUndo] = useState(false);
 
-    // Refs (no stale closure in PanResponder)
     const indexRef = useRef(0);
     const knownRef = useRef(0);
     const unknownRef = useRef(0);
     const historyRef = useRef([]);
     const flipRef = useRef(false);
 
-    // Animated values — all useNativeDriver:false to allow mixed use
     const swipeX = useRef(new Animated.Value(0)).current;
     const swipeY = useRef(new Animated.Value(0)).current;
     const flipAnim = useRef(new Animated.Value(0)).current;
@@ -40,12 +38,9 @@ export default function FlashcardScreen({ route, navigation }) {
     const leftOverlay = swipeX.interpolate({ inputRange: [-90, -20], outputRange: [1, 0], extrapolate: 'clamp' });
     const frontRotateY = flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
     const backRotateY = flipAnim.interpolate({ inputRange: [0, 1], outputRange: ['180deg', '360deg'] });
-
-    // Underline indicator: visible when swipe passes threshold
     const leftUnderline = swipeX.interpolate({ inputRange: [-SWIPE_THRESHOLD - 5, -SWIPE_THRESHOLD + 5], outputRange: [1, 0], extrapolate: 'clamp' });
     const rightUnderline = swipeX.interpolate({ inputRange: [SWIPE_THRESHOLD - 5, SWIPE_THRESHOLD + 5], outputRange: [0, 1], extrapolate: 'clamp' });
 
-    // ── Flip ───────────────────────────────────────────────────────────────
     function doFlip() {
         const next = !flipRef.current;
         flipRef.current = next;
@@ -53,7 +48,6 @@ export default function FlashcardScreen({ route, navigation }) {
         Animated.spring(flipAnim, { toValue: next ? 1 : 0, friction: 8, tension: 10, useNativeDriver: false }).start();
     }
 
-    // ── Advance card ───────────────────────────────────────────────────────
     function advanceCard(wasKnown) {
         const prevIndex = indexRef.current;
         const toX = wasKnown ? SCREEN_W * 1.5 : -SCREEN_W * 1.5;
@@ -78,7 +72,6 @@ export default function FlashcardScreen({ route, navigation }) {
         });
     }
 
-    // ── Undo ───────────────────────────────────────────────────────────────
     function undo() {
         if (!historyRef.current.length) return;
         const last = historyRef.current.pop();
@@ -94,27 +87,30 @@ export default function FlashcardScreen({ route, navigation }) {
         setTimeout(() => cardOpacity.setValue(1), 40);
     }
 
-    // ── PanResponder — captures ALL touches; detects tap vs swipe ─────────
+    // ── PanResponder ──────────────────────────────────────────────────────
+    // onStartShouldSetPanResponder: false → lets ScrollView handle vertical scroll
+    // onMoveShouldSetPanResponder: only captures clearly horizontal swipes
     const panResponder = useRef(PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponder: () => false,
+        onStartShouldSetPanResponderCapture: () => false,
+        onMoveShouldSetPanResponder: (_, g) => {
+            // Capture horizontal-dominant movement past dead zone
+            const adx = Math.abs(g.dx), ady = Math.abs(g.dy);
+            return adx > 12 && adx > ady * 1.5;
+        },
+        onMoveShouldSetPanResponderCapture: (_, g) => {
+            const adx = Math.abs(g.dx), ady = Math.abs(g.dy);
+            return adx > 12 && adx > ady * 1.5;
+        },
         onPanResponderGrant: () => {
             swipeX.stopAnimation();
             swipeY.stopAnimation();
         },
         onPanResponderMove: (_, g) => {
             swipeX.setValue(g.dx);
-            swipeY.setValue(g.dy * 0.12);
+            swipeY.setValue(g.dy * 0.10);
         },
         onPanResponderRelease: (_, g) => {
-            const dx = Math.abs(g.dx), dy = Math.abs(g.dy);
-            // ── TAP: tiny movement → flip ──────────────────────────────────────
-            if (dx < 8 && dy < 8) {
-                swipeX.setValue(0); swipeY.setValue(0);
-                doFlip();
-                return;
-            }
-            // ── SWIPE ──────────────────────────────────────────────────────────
             const isRight = g.dx > SWIPE_THRESHOLD || g.vx > VELOCITY_THR;
             const isLeft = g.dx < -SWIPE_THRESHOLD || g.vx < -VELOCITY_THR;
             if (isRight) advanceCard(true);
@@ -134,7 +130,6 @@ export default function FlashcardScreen({ route, navigation }) {
         },
     })).current;
 
-    // ── Restart ────────────────────────────────────────────────────────────
     function restart() {
         indexRef.current = 0; knownRef.current = 0; unknownRef.current = 0;
         historyRef.current = []; flipRef.current = false;
@@ -187,7 +182,7 @@ export default function FlashcardScreen({ route, navigation }) {
                 <View style={[styles.progressFg, { width: `${((index + 1) / cards.length) * 100}%` }]} />
             </View>
 
-            {/* Score — ❌ LEFT, ✅ RIGHT */}
+            {/* Score */}
             <View style={styles.statsRow}>
                 <View style={styles.scorePill}>
                     <Text style={styles.scoreEmoji}>❌</Text>
@@ -220,8 +215,11 @@ export default function FlashcardScreen({ route, navigation }) {
                     {/* Front */}
                     <Animated.View style={[styles.flashcard, styles.cardFront, { transform: [{ rotateY: frontRotateY }] }]}>
                         <Text style={styles.cardSide}>CÂU HỎI</Text>
-                        <ScrollView showsVerticalScrollIndicator={false}
-                            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+                        <ScrollView
+                            showsVerticalScrollIndicator={true}
+                            nestedScrollEnabled={true}
+                            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+                        >
                             <Text style={styles.questionText}>{card.question}</Text>
                             {card.options?.length > 0 && (
                                 <View style={{ marginTop: 12 }}>
@@ -229,31 +227,36 @@ export default function FlashcardScreen({ route, navigation }) {
                                 </View>
                             )}
                         </ScrollView>
-                        <Text style={styles.tapHint}>Nhấn thẻ để xem đáp án 👆</Text>
+                        {/* Tap button at the bottom — separate from swipe area */}
+                        <TouchableOpacity onPress={doFlip} style={styles.flipBtn}>
+                            <Text style={styles.flipBtnText}>Nhấn để xem đáp án 👆</Text>
+                        </TouchableOpacity>
                     </Animated.View>
 
                     {/* Back */}
                     <Animated.View style={[styles.flashcard, styles.cardBack, { transform: [{ rotateY: backRotateY }] }]}>
                         <Text style={[styles.cardSide, { color: Colors.success }]}>ĐÁP ÁN</Text>
-                        <ScrollView showsVerticalScrollIndicator={false}
-                            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+                        <ScrollView
+                            showsVerticalScrollIndicator={true}
+                            nestedScrollEnabled={true}
+                            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+                        >
                             <Text style={styles.answerText}>{getAnswerText(card)}</Text>
                             {card.notes ? <Text style={styles.noteText}>{card.notes}</Text> : null}
                         </ScrollView>
-                        <Text style={styles.tapHint}>Nhấn thẻ để lật lại 👆</Text>
+                        <TouchableOpacity onPress={doFlip} style={styles.flipBtn}>
+                            <Text style={styles.flipBtnText}>Nhấn để lật lại 👆</Text>
+                        </TouchableOpacity>
                     </Animated.View>
                 </Animated.View>
             </View>
 
-            {/* Bottom bar — icons only, no text labels */}
+            {/* Bottom bar */}
             <View style={styles.hintBar}>
-                {/* ❌ with underline when ready */}
                 <View style={[styles.hintBtn, { backgroundColor: '#FEE2E2' }]}>
                     <Text style={{ fontSize: 24 }}>❌</Text>
                     <Animated.View style={[styles.underline, { backgroundColor: Colors.danger, opacity: leftUnderline }]} />
                 </View>
-
-                {/* ↩️ Undo */}
                 <TouchableOpacity
                     style={[styles.undoBtn, { opacity: canUndo ? 1 : 0.3 }]}
                     onPress={undo}
@@ -261,8 +264,6 @@ export default function FlashcardScreen({ route, navigation }) {
                 >
                     <Text style={{ fontSize: 24 }}>↩️</Text>
                 </TouchableOpacity>
-
-                {/* ✅ with underline when ready */}
                 <View style={[styles.hintBtn, { backgroundColor: '#D1FAE5' }]}>
                     <Text style={{ fontSize: 24 }}>✅</Text>
                     <Animated.View style={[styles.underline, { backgroundColor: Colors.success, opacity: rightUnderline }]} />
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
     scoreEmoji: { fontSize: 18 },
     scoreNum: { fontSize: 20, fontWeight: '800' },
     cardArea: { flex: 1, padding: 16, justifyContent: 'center', alignItems: 'center' },
-    cardWrap: { width: '100%', height: '100%', maxHeight: 440 },
+    cardWrap: { width: '100%', height: '100%', maxHeight: 460 },
     flashcard: {
         position: 'absolute', width: '100%', height: '100%',
         borderRadius: Radius.lg, padding: Spacing.lg,
@@ -328,7 +329,11 @@ const styles = StyleSheet.create({
     optionText: { fontSize: 13, color: Colors.textDim, marginVertical: 3 },
     answerText: { fontSize: 16, fontWeight: '700', color: Colors.success, lineHeight: 26 },
     noteText: { fontSize: 12, color: Colors.warning, marginTop: 10, fontStyle: 'italic' },
-    tapHint: { textAlign: 'center', fontSize: 12, color: Colors.textLight, marginTop: 8, fontStyle: 'italic' },
+    flipBtn: {
+        borderTopWidth: 1, borderTopColor: Colors.border,
+        paddingTop: 10, marginTop: 8, alignItems: 'center',
+    },
+    flipBtnText: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
     hintBar: {
         flexDirection: 'row', alignItems: 'center',
         paddingHorizontal: Spacing.md, paddingVertical: 10,
