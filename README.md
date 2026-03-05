@@ -1,86 +1,86 @@
 # Flashcard AI Ecosystem
 
-Hệ sinh thái học tập toàn diện được tự động hóa bằng Google Gemini AI, gồm hai thành phần:
+A comprehensive learning ecosystem automated by Google Gemini AI, consisting of two components:
 
-1. **Desktop App (Python/Windows)** — Trích xuất flashcard từ ảnh chụp tài liệu tự động, hoàn toàn không cần gõ tay.
-2. **Mobile App (Android)** — Ứng dụng ôn tập với thẻ nhớ và thi thử trực tiếp trên điện thoại.
-
----
-
-## 🖥️ Desktop App — Tính năng
-
-Giao diện được xây dựng bằng `customtkinter`, chế độ sáng.
-
-### Màn hình chính (Home)
-- Hiển thị danh sách tất cả bộ thẻ (Deck) đã tạo, kèm số thẻ và ngày tạo.
-- **Tìm kiếm** theo tên, danh sách cập nhật tức thời.
-- Mỗi Deck có các nút: **Study ▶** (ôn tập lật thẻ), **Quiz 📝** (thi thử), **View** (xem danh sách thẻ), **✕** (xóa).
-- **Active Scans** — Hiển thị các tiến trình quét đang chạy nền ngay trên màn hình chính, kèm thanh tiến trình và log realtime.
-
-### Tạo bộ thẻ mới (New Scan)
-1. Đặt tên cho Deck.
-2. Chọn **thư mục chứa ảnh** (`Browse`) — Hệ thống tự đếm và tự điền tên Deck theo tên thư mục.
-3. Bấm **"▶ Select API Keys & Start"** — Một cửa sổ popup hiện ra cho phép chọn API Key nào sẽ dùng cho lần quét này.
-4. Quét chạy **nền (background)** — Bạn có thể tiếp tục sử dụng giao diện, hoặc tạo thêm scan khác cùng lúc. Hỗ trợ **Pause ⏸ / Resume ▶ / Stop ⏹**.
-5. Khi hoàn tất, Windows Toast Notification xuất hiện thông báo kết quả.
-
-### Quản lý API Keys
-- Thêm nhiều Gemini API Key, hiển thị dạng bị che (`...XXXXXXXX`).
-- Hỗ trợ **test** từng key hoặc Test All cùng lúc.
-- Khi quét, mỗi scan được gán riêng một nhóm key — Key đang dùng bởi scan khác sẽ bị đánh dấu `[In Use]` và không thể chọn lại.
-
-### Xem & chỉnh sửa bộ thẻ (View)
-- Xem toàn bộ câu hỏi, các đáp án, đáp án đúng. Hiển thị phân trang (50 thẻ/trang — Load more).
-- Xóa từng thẻ không cần thiết.
-- **Export Quizlet** — Xuất ra file `.txt` với 4 định dạng: Simple, Full, Compact, Safe. Import trực tiếp lên quizlet.com.
-
-### Ôn tập trên PC (Study)
-- Lật thẻ xem câu hỏi / đáp án.
-
-### Thi thử trên PC (Quiz)
-- Hiển thị câu hỏi và các đáp án dạng checkbox.
-- Hỗ trợ cả **trắc nghiệm 1 đáp án** và **nhiều đáp án**.
-- Zoom in/out cỡ chữ câu hỏi và đáp án độc lập nhau.
-- Lưu tiến độ, hiển thị kết quả, cho phép Reset với xác nhận.
-
-### AI & Xử lý dữ liệu
-- Ảnh được gom thành PDF batch (50 ảnh/batch) rồi gửi lên Gemini để trích xuất hàng loạt.
-- Nếu đáp án không có trong tài liệu, AI **tự suy luận** và đánh dấu `[AI inferred]` trên thẻ.
-- Tất cả dữ liệu lưu vào `decks.json` (local, không cần server).
+1. **Desktop App (Python/Windows)** — Automatically extracts flashcards from document images, absolutely no manual typing required.
+2. **Mobile App (Android)** — A review application with flashcards and mock exams directly on your phone.
 
 ---
 
-## 📱 Android App — Tính năng
+## 🖥️ Desktop App — Features
 
-Xây dựng bằng **React Native + Expo SDK 55**, chạy trên **Android**.
+The user interface is built using `customtkinter` with a light mode theme.
 
-### Màn hình chính
-- Danh sách tất cả bộ thẻ, hiển thị số thẻ, số câu đa lựa chọn và ngày tạo.
-- Nút **"📂 Nhập decks.json"** — Mở trình chọn file, đọc và nạp toàn bộ dữ liệu vào app.
-- Nút **"Xoá tất cả"** — Xóa toàn bộ dữ liệu sau khi xác nhận.
+### Home Screen
+- Displays a list of all created card sets (Decks), along with the card count and creation date.
+- **Search** by name, with instant list updates.
+- Each Deck has buttons: **Study ▶** (flashcard review), **Quiz 📝** (mock exam), **View** (view card list), **✕** (delete).
+- **Active Scans** — Displays background scanning processes directly on the home screen, complete with a progress bar and realtime logs.
 
-### Chi tiết bộ thẻ (Deck Detail)
-- Hiển thị thống kê: Tổng thẻ, số câu đơn lựa chọn, số câu đa lựa chọn, ngày tạo.
-- 2 nút vào chế độ học: **🃏 Thẻ Nhớ** và **📝 Làm Bài Thi**.
+### Create New Deck (New Scan)
+1. Name the Deck.
+2. Select the **image folder** (`Browse`) — The system automatically counts images and auto-fills the Deck name based on the folder name.
+3. Click **"▶ Select API Keys & Start"** — A popup window appears allowing you to select which API Keys to use for this scan.
+4. Scanning runs in the **background** — You can continue using the interface or create additional scans simultaneously. Supports **Pause ⏸ / Resume ▶ / Stop ⏹**.
+5. Upon completion, a Windows Toast Notification appears to announce the results.
 
-### Chế độ Thẻ nhớ (Flashcard)
-- **Vuốt phải** (✅) = Biết rồi, **Vuốt trái** (❌) = Chưa biết.
-- **Chạm vào thẻ** để lật xem đáp án (hiệu ứng 3D flip).
-- Gạch dưới chân ✅/❌ sáng lên khi vuốt đủ ngưỡng bay (30% chiều màn hình).
-- Nút **↩️ Hoàn tác** để quay lại thẻ vừa vuốt.
-- Bộ đếm ❌/✅ hiển thị trên cùng, kết quả % hiển thị khi làm hết bộ.
+### API Key Management
+- Add multiple Gemini API Keys, displayed in a masked format (`...XXXXXXXX`).
+- Supports **testing** individual keys or "Test All" simultaneously.
+- When scanning, each scan is assigned a specific group of keys — Keys currently in use by another scan will be marked `[In Use]` and cannot be selected again.
 
-### Chế độ Làm bài thi (Quiz)
-- Trắc nghiệm chọn 1 hoặc nhiều đáp án.
-- Phản hồi đúng/sai ngay sau khi trả lời (highlight màu xanh/đỏ).
-- **Tự động lưu tiến độ** — Thoát app rồi mở lại, app hỏi có muốn tiếp tục từ câu đang dở không.
-- Nút **Reset** nhỏ gọn, có xác nhận trước khi xóa tiến độ.
+### View & Edit Deck (View)
+- View all questions, options, and correct answers. Displays with pagination (50 cards/page — Load more).
+- Delete unnecessary individual cards.
+- **Export to Quizlet** — Export to a `.txt` file with 4 formats: Simple, Full, Compact, Safe. Import directly into quizlet.com.
+
+### Study on PC (Study)
+- Flip cards to view the question / answer.
+
+### Mock Exam on PC (Quiz)
+- Displays questions and checkbox options.
+- Supports both **single-answer** and **multiple-answer** multiple-choice questions.
+- Zoom in/out font sizes for questions and answers independently.
+- Saves progress, displays results, and allows resetting with confirmation.
+
+### AI & Data Processing
+- Images are grouped into PDF batches (50 images/batch) and sent to Gemini for bulk extraction.
+- If the answer is not found in the document, the AI **infers it automatically** and marks the card with `[AI inferred]`.
+- All data is saved locally to `decks.json` (no server required).
+
+---
+
+## 📱 Android App — Features
+
+Built with **React Native + Expo SDK 55**, running on **Android**.
+
+### Home Screen
+- List of all decks, displaying total cards, multiple-choice questions, and creation date.
+- **"📂 Import decks.json"** button — Opens a file picker, reads, and loads all data into the app.
+- **"Delete All"** button — Clears all data after confirmation.
+
+### Deck Details (Deck Detail)
+- Displays statistics: Total cards, single-answer questions, multiple-answer questions, creation date.
+- 2 study mode buttons: **🃏 Flashcard** and **📝 Take Quiz**.
+
+### Flashcard Mode
+- **Swipe Right** (✅) = Know it, **Swipe Left** (❌) = Don't know yet.
+- **Tap the card** to flip and view the answer (3D flip effect).
+- Underlines for ✅/❌ light up when swiped past the threshold (30% of screen width).
+- **↩️ Undo** button to revert the last swiped card.
+- ❌/✅ counters display at the top, and the % result is shown when the deck is finished.
+
+### Quiz Mode (Quiz)
+- Multiple choice with single or multiple answers.
+- Immediate correct/incorrect feedback after answering (green/red highlights).
+- **Auto-save progress** — If you close the app and reopen it, the app asks if you want to resume from where you left off.
+- Compact **Reset** button, requiring confirmation before erasing progress.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Thành phần | Công nghệ |
+| Component | Technology |
 |---|---|
 | Desktop GUI | Python 3.10+, `customtkinter` |
 | AI | `google-generativeai` (Gemini Flash/Pro) |
@@ -93,39 +93,39 @@ Xây dựng bằng **React Native + Expo SDK 55**, chạy trên **Android**.
 
 ---
 
-## 📁 Cấu trúc thư mục
+## 📁 Directory Structure
 
 ```
 PNGToQuizlet/
-├── app.py                     # Entry point ứng dụng Desktop
-├── models/flashcard.py        # Data class: Flashcard, Deck, QuizSession
+├── app.py                     # Desktop app entry point
+├── models/flashcard.py        # Data classes: Flashcard, Deck, QuizSession
 ├── services/
-│   ├── gemini_service.py      # Gọi Gemini API, batch PDF, parse JSON
-│   ├── storage_service.py     # Đọc/ghi decks.json và settings
-│   └── export_service.py      # Xuất định dạng Quizlet .txt
+│   ├── gemini_service.py      # Call Gemini API, batch PDF, parse JSON
+│   ├── storage_service.py     # Read/write decks.json and settings
+│   └── export_service.py      # Export Quizlet .txt formats
 ├── androidApp/
 │   ├── App.js                 # Root navigation
 │   ├── src/screens/
-│   │   ├── HomeScreen.js      # Danh sách deck, nhập file
-│   │   ├── DeckDetailScreen.js# Thống kê, chọn chế độ học
-│   │   ├── FlashcardScreen.js # Thẻ nhớ + swipe gesture
-│   │   └── QuizScreen.js      # Thi thử + lưu tiến độ
+│   │   ├── HomeScreen.js      # Deck list, file import
+│   │   ├── DeckDetailScreen.js# Stats, study mode selection
+│   │   ├── FlashcardScreen.js # Flashcards + swipe gestures
+│   │   └── QuizScreen.js      # Mock exam + progress saving
 │   ├── src/utils/storage.js   # AsyncStorage helpers
-│   ├── src/theme.js           # Design tokens (màu, spacing)
-│   └── app.json               # Cấu hình Expo + EAS
-└── requirements.txt           # Thư viện Python
+│   ├── src/theme.js           # Design tokens (colors, spacing)
+│   └── app.json               # Expo + EAS configuration
+└── requirements.txt           # Python dependencies
 ```
 
 ---
 
-## 🚀 Hướng dẫn cài đặt
+## 🚀 Installation Guide
 
 ### Desktop App
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
-Sau khi chạy: Vào **"⚙ API Keys"** → Thêm Gemini API key → **"+ New Scan"** → Chọn thư mục ảnh → Start.
+After running: Go to **"⚙ API Keys"** → Add Gemini API key → **"+ New Scan"** → Select image folder → Start.
 
 ### Android App (Dev)
 ```bash
@@ -133,12 +133,12 @@ cd androidApp
 npm install
 npx expo start
 ```
-Quét QR bằng **Expo Go** trên điện thoại Android.
+Scan the QR code with **Expo Go** on an Android phone.
 
-### Build APK (không cần Android Studio)
+### Build APK (No Android Studio Required)
 ```bash
 cd androidApp
 npx eas-cli login
 npx eas-cli build --platform android --profile preview
 ```
-Sau ~15 phút nhận link tải file `.apk` trực tiếp.
+Receive the direct `.apk` download link after ~15 minutes.
