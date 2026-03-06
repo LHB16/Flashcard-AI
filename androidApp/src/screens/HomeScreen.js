@@ -5,7 +5,11 @@ import {
     StatusBar, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
+import * as IntentLauncher from 'expo-intent-launcher';
+
+const pkg = require('../../package.json');
+const CURRENT_VERSION = pkg.version;
 
 import { useFocusEffect } from '@react-navigation/native';
 import { loadDecks, saveDecks, clearDecks } from '../utils/storage';
@@ -18,6 +22,53 @@ export default function HomeScreen({ navigation }) {
     useFocusEffect(useCallback(() => {
         loadDecks().then(setDecks);
     }, []));
+
+    useEffect(() => {
+        checkUpdates();
+    }, []);
+
+    async function checkUpdates() {
+        try {
+            const res = await fetch('https://api.github.com/repos/LHB16/Flashcard-AI/releases/latest');
+            if (!res.ok) return;
+            const data = await res.json();
+            const latestVersion = data.tag_name.replace('v', '');
+            if (latestVersion !== CURRENT_VERSION && data.assets && data.assets.length > 0) {
+                const apkAsset = data.assets.find(a => a.name.endsWith('.apk'));
+                if (apkAsset) {
+                    Alert.alert(
+                        'Cập nhật mới',
+                        `Đã có phiên bản ${latestVersion}. Bạn có muốn cập nhật không?`,
+                        [
+                            { text: 'Để sau', style: 'cancel' },
+                            { text: 'Cập nhật ngay', onPress: () => downloadUpdate(apkAsset.browser_download_url) }
+                        ]
+                    );
+                }
+            }
+        } catch (e) {
+            console.log('Update check error:', e);
+        }
+    }
+
+    async function downloadUpdate(url) {
+        try {
+            setLoading(true);
+            const fileUri = FileSystem.documentDirectory + 'update.apk';
+            const { uri } = await FileSystem.downloadAsync(url, fileUri);
+
+            const contentUri = await FileSystem.getContentUriAsync(uri);
+            await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+                data: contentUri,
+                flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+                type: 'application/vnd.android.package-archive'
+            });
+        } catch (e) {
+            Alert.alert('Lỗi', 'Không thể tải bản cập nhật.\n' + e.message);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     async function importDecks() {
         try {

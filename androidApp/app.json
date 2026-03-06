@@ -17,7 +17,10 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "backgroundColor": "#4F46E5"
       },
-      "package": "com.flashcardai.app"
+      "package": "com.flashcardai.app",
+      "permissions": [
+        "REQUEST_INSTALL_PACKAGES"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
