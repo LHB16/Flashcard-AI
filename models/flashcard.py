@@ -26,6 +26,7 @@ class Flashcard:
     image_path: Optional[str] = None
     card_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     notes: str = ""
+    status: int = 0                       # 0=Gray(Unseen), 1=Orange(Learning/Wrong), 2=Green(Mastered/Correct)
 
     def to_dict(self) -> dict:
         return {
@@ -36,6 +37,7 @@ class Flashcard:
             "question_type": self.question_type.value,
             "image_path": self.image_path,
             "notes": self.notes,
+            "status": self.status,
         }
 
     @classmethod
@@ -48,6 +50,7 @@ class Flashcard:
             question_type=QuestionType(data.get("question_type", "unknown")),
             image_path=data.get("image_path"),
             notes=data.get("notes", ""),
+            status=data.get("status", 0),
         )
 
     def get_correct_answer_text(self) -> str:

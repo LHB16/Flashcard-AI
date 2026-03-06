@@ -7,6 +7,8 @@ __pycache__/
 build/
 dist/
 *.spec
+desktopApp/
+releaseApp/
 
 # C++ build logic / C extensions (if any)
 *.so

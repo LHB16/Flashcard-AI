@@ -16,6 +16,15 @@ export async function clearDecks() {
   await AsyncStorage.removeItem(DECKS_KEY);
 }
 
+export async function updateDeck(updatedDeck) {
+  const decks = await loadDecks();
+  const idx = decks.findIndex(d => d.deck_id === updatedDeck.deck_id);
+  if (idx !== -1) {
+    decks[idx] = updatedDeck;
+    await saveDecks(decks);
+  }
+}
+
 // Quiz session storage
 const SESSIONS_KEY = 'quiz_sessions';
 

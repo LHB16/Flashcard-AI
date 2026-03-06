@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors, Spacing, Radius } from '../theme';
-import { saveSession, loadSessions, deleteSession } from '../utils/storage';
+import { saveSession, loadSessions, deleteSession, updateDeck } from '../utils/storage';
 
 function shuffle(arr) {
     const a = [...arr];
@@ -105,8 +105,16 @@ export default function QuizScreen({ route, navigation }) {
         const correctSet = new Set(card.correct_answers ?? []);
         const chosenSet = new Set(selected);
         const isCorrect = [...correctSet].every(x => chosenSet.has(x)) && [...chosenSet].every(x => correctSet.has(x));
-        if (isCorrect) setCorrect(c => c + 1);
-        else setWrong(w => w + 1);
+
+        if (isCorrect) {
+            setCorrect(c => c + 1);
+            card.status = 2; // Green
+        } else {
+            setWrong(w => w + 1);
+            card.status = 1; // Orange
+        }
+        updateDeck(deck).catch(() => { });
+
         const newAnswers = { ...answers, [card.card_id]: selected };
         setAnswers(newAnswers);
         saveSession(deck.deck_id, { order, currentIdx, correct: correct + (isCorrect ? 1 : 0), wrong: wrong + (isCorrect ? 0 : 1), answers: newAnswers });

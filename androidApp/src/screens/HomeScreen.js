@@ -50,8 +50,14 @@ export default function HomeScreen({ navigation }) {
     }
 
     function renderDeck({ item }) {
-        const mc = item.cards?.filter(c => c.question_type === 'multiple_choice').length ?? 0;
+        const cards = item.cards ?? [];
+        const mc = cards.filter(c => c.question_type === 'multiple_choice').length;
         const date = item.created_at ? new Date(item.created_at).toLocaleDateString('vi-VN') : '';
+
+        const green = cards.filter(c => c.status === 2).length;
+        const orange = cards.filter(c => c.status === 1).length;
+        const gray = cards.filter(c => c.status === 0 || !c.status).length;
+
         return (
             <TouchableOpacity
                 style={styles.card}
@@ -65,9 +71,23 @@ export default function HomeScreen({ navigation }) {
                     <View style={{ flex: 1 }}>
                         <Text style={styles.deckName} numberOfLines={2}>{item.name}</Text>
                         <Text style={styles.deckMeta}>
-                            {item.cards?.length ?? 0} thẻ  •  {mc} đa lựa chọn
+                            {cards.length} thẻ  •  {mc} đa lựa chọn
                             {date ? `  •  ${date}` : ''}
                         </Text>
+                        {cards.length > 0 && (
+                            <View style={styles.progressContainer}>
+                                <View style={styles.progressBar}>
+                                    {green > 0 && <View style={[styles.progressFill, { flex: green, backgroundColor: Colors.success }]} />}
+                                    {orange > 0 && <View style={[styles.progressFill, { flex: orange, backgroundColor: Colors.warning }]} />}
+                                    {gray > 0 && <View style={[styles.progressFill, { flex: gray, backgroundColor: Colors.border }]} />}
+                                </View>
+                                <View style={styles.progressLabels}>
+                                    <Text style={styles.progressLabel}>✅ {green}</Text>
+                                    <Text style={styles.progressLabel}>❌ {orange}</Text>
+                                    <Text style={styles.progressLabel}>⚪ {gray}</Text>
+                                </View>
+                            </View>
+                        )}
                     </View>
                 </View>
                 <Text style={styles.arrow}>›</Text>
@@ -178,6 +198,13 @@ const styles = StyleSheet.create({
     },
     iconText: { fontSize: 22 },
     deckName: { fontSize: 15, fontWeight: '600', color: Colors.text, marginBottom: 3 },
+    deckMeta: { fontSize: 13, color: Colors.textDim },
+    arrow: { fontSize: 28, color: Colors.textDim, marginLeft: 12 },
+    progressContainer: { marginTop: 8, paddingRight: 24 },
+    progressBar: { flexDirection: 'row', height: 6, borderRadius: 3, backgroundColor: Colors.border, overflow: 'hidden', marginBottom: 4 },
+    progressFill: { height: '100%' },
+    progressLabels: { flexDirection: 'row', gap: 12 },
+    progressLabel: { fontSize: 11, color: Colors.textDim, fontWeight: '600' },
     deckMeta: { fontSize: 12, color: Colors.textDim },
     arrow: { fontSize: 24, color: Colors.textLight, marginLeft: 8 },
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },

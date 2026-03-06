@@ -402,10 +402,10 @@ class QuestionDedupDialog(ctk.CTkToplevel):
 
         # Header
         ctk.CTkLabel(self,
-                     text=f"🔍 Tìm thấy {len(exact)} giống 100%  ·  {len(similar)} tương tự",
+                     text=f"🔍 Found {len(exact)} exact duplicates (100%)  ·  {len(similar)} similar",
                      font=ctk.CTkFont(size=17, weight="bold"), text_color=TEXT).pack(pady=(15, 3))
         ctk.CTkLabel(self,
-                     text="Đại trà các thẻ học có nội dung tương tự. Đánh dấu ☑ để xóa (mặc định chọn thẻ xuất hiện sau).",
+                     text="Review potential duplicates based on content. Mark ☑ to delete (auto-selected the later one).",
                      font=ctk.CTkFont(size=12), text_color=TEXT_DIM).pack(pady=(0, 8))
 
         scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -419,12 +419,12 @@ class QuestionDedupDialog(ctk.CTkToplevel):
             opts = getattr(c, 'options', []) or []
             correct = getattr(c, 'correct_answers', []) or []
             if not correct:
-                return "Đáp án: (không có)"
+                return "Answer: (none)"
             correct_set = {x.strip().upper() for x in correct}
             matched = [opt for opt in opts if opt.strip() and opt.strip()[0].upper() in correct_set]
             if matched:
-                return "Đáp án: " + " | ".join(matched)
-            return "Đáp án: " + ", ".join(correct)
+                return "Answer: " + " | ".join(matched)
+            return "Answer: " + ", ".join(correct)
 
         def _build_section(title, color, items, default_checked_b):
             if not items:
@@ -437,22 +437,22 @@ class QuestionDedupDialog(ctk.CTkToplevel):
                 self._build_pair(scroll, idx_a, idx_b, ratio, _ans_text, default_checked_b, f"{color}_{i}")
 
         # Section 1: Exact (100%) — auto-check second card for deletion
-        _build_section(f"✅ Giống 100%  ({len(exact)} cặp) — nên xóa bớt", DANGER, exact, True)
+        _build_section(f"✅ Exact Match (100%) — {len(exact)} pairs", DANGER, exact, True)
         # Section 2: Similar (<100%) — nothing pre-checked, user reviews manually
-        _build_section(f"🔍 Tương tự  ({len(similar)} cặp) — kiểm tra trước khi xóa", "#7C3AED", similar, False)
+        _build_section(f"🔍 Similar Match — {len(similar)} pairs (Review before deletion)", "#7C3AED", similar, False)
 
         # Bottom buttons
         btns = ctk.CTkFrame(self, fg_color="transparent")
         btns.pack(pady=12)
-        ctk.CTkButton(btns, text="Hủy", width=90, height=36,
+        ctk.CTkButton(btns, text="Cancel", width=90, height=36,
                       fg_color=SURFACE, hover_color=SURFACE2, text_color=TEXT,
                       command=self.destroy).pack(side="left", padx=8)
         # Toggle button only affects exact pairs
-        self._toggle_btn = ctk.CTkButton(btns, text="☒ Chọn tất cả (100%)", width=170, height=36,
+        self._toggle_btn = ctk.CTkButton(btns, text="☒ Select All (100%)", width=170, height=36,
                       fg_color="#B91C1C", hover_color="#991B1B", text_color="white",
                       command=self._toggle_exact)
         self._toggle_btn.pack(side="left", padx=8)
-        ctk.CTkButton(btns, text="🗑 Xóa thẻ đã chọn", width=160, height=36,
+        ctk.CTkButton(btns, text="🗑 Delete Selected Cards", width=180, height=36,
                       fg_color=DANGER, hover_color="#DC2626", text_color="white",
                       font=ctk.CTkFont(weight="bold"),
                       command=self._apply).pack(side="left", padx=8)
@@ -464,7 +464,7 @@ class QuestionDedupDialog(ctk.CTkToplevel):
         pair_frame = ctk.CTkFrame(parent, fg_color=SURFACE, corner_radius=8)
         pair_frame.pack(fill="x", pady=4)
 
-        ctk.CTkLabel(pair_frame, text=f"🔗 {pct}% giống",
+        ctk.CTkLabel(pair_frame, text=f"🔗 {pct}% similar",
                      font=ctk.CTkFont(size=12, weight="bold"),
                      text_color="#6D28D9").pack(anchor="w", padx=12, pady=(7, 2))
 
@@ -497,7 +497,7 @@ class QuestionDedupDialog(ctk.CTkToplevel):
             # Checkbox + header row
             hdr = ctk.CTkFrame(cell, fg_color="transparent")
             hdr.pack(fill="x")
-            ctk.CTkCheckBox(hdr, text=f"#{idx+1} — Xóa?",
+            ctk.CTkCheckBox(hdr, text=f"#{idx+1} — Delete?",
                             variable=self._delete_vars[key],
                             width=24, checkbox_width=18, checkbox_height=18,
                             fg_color=DANGER, hover_color="#DC2626",
@@ -524,7 +524,7 @@ class QuestionDedupDialog(ctk.CTkToplevel):
         for k in self._exact_b_keys:
             self._delete_vars[k].set(new_state)
         self._toggle_btn.configure(
-            text=("☒ Bỏ chọn tất cả (100%)" if new_state else "☑ Chọn tất cả (100%)")
+            text=("☒ Unselect All (100%)" if new_state else "☑ Select All (100%)")
         )
 
     def _apply(self):
@@ -834,6 +834,11 @@ class HomeFrame(ctk.CTkFrame):
     def refresh(self):
         self._rebuild_scans()
         self._rebuild_decks()
+        # Force Tkinter to process layout updates immediately
+        try:
+            self.scroll.update_idletasks()
+        except Exception:
+            pass
 
     def _schedule_scan_update(self):
         """Thread-safe: schedule a UI update on the main thread (throttled)."""
@@ -984,7 +989,7 @@ class HomeFrame(ctk.CTkFrame):
         self.refresh()
 
     def _deck_card(self, deck: Deck):
-        card = ctk.CTkFrame(self.scroll, fg_color=SURFACE, corner_radius=12, height=90)
+        card = ctk.CTkFrame(self.scroll, fg_color=SURFACE, corner_radius=12, height=110)
         card.pack(fill="x", pady=5)
         card.pack_propagate(False)
 
@@ -1002,6 +1007,42 @@ class HomeFrame(ctk.CTkFrame):
         ctk.CTkLabel(info, text=sub_text,
                      font=ctk.CTkFont(size=12), text_color=TEXT_DIM,
                      anchor="w").pack(fill="x")
+
+        # Home screen progress indicator
+        if deck.card_count > 0:
+            green = sum(1 for c in deck.cards if c.status == 2)
+            orange = sum(1 for c in deck.cards if c.status == 1)
+            gray = sum(1 for c in deck.cards if c.status == 0)
+            
+            prog_row = ctk.CTkFrame(info, fg_color="transparent")
+            prog_row.pack(fill="x", pady=(6, 0))
+            ctk.CTkLabel(prog_row, text="Flashcard Progress:", font=ctk.CTkFont(size=11, weight="bold"), text_color=TEXT_DIM).pack(side="left", padx=(0, 6))
+            
+            bar_w = 120
+            bar = ctk.CTkFrame(prog_row, width=bar_w, height=10, corner_radius=5, fg_color="#E2E8F0")
+            bar.pack(side="left", pady=2)
+            bar.pack_propagate(False)
+            
+            w_g = int((green / deck.card_count) * bar_w)
+            w_o = int((orange / deck.card_count) * bar_w)
+            
+            if w_g > 0:
+                ctk.CTkFrame(bar, width=w_g, fg_color=SUCCESS, corner_radius=5).pack(side="left", fill="y")
+            if w_o > 0:
+                cr = 0 if w_g > 0 else 5
+                ctk.CTkFrame(bar, width=w_o, fg_color=WARNING, corner_radius=cr).pack(side="left", fill="y")
+            
+            stats_frame = ctk.CTkFrame(prog_row, fg_color="transparent")
+            stats_frame.pack(side="left", padx=(10, 0))
+            
+            ctk.CTkLabel(stats_frame, text="✅", font=ctk.CTkFont(size=10)).pack(side="left", padx=(0, 2))
+            ctk.CTkLabel(stats_frame, text=str(green), font=ctk.CTkFont(size=10), text_color=TEXT_DIM).pack(side="left", padx=(0, 8))
+            
+            ctk.CTkLabel(stats_frame, text="❌", font=ctk.CTkFont(size=10)).pack(side="left", padx=(0, 2))
+            ctk.CTkLabel(stats_frame, text=str(orange), font=ctk.CTkFont(size=10), text_color=TEXT_DIM).pack(side="left", padx=(0, 8))
+            
+            ctk.CTkLabel(stats_frame, text="⚪", font=ctk.CTkFont(size=10)).pack(side="left", padx=(0, 2))
+            ctk.CTkLabel(stats_frame, text=str(gray), font=ctk.CTkFont(size=10), text_color=TEXT_DIM).pack(side="left")
 
         # Right: buttons
         btns = ctk.CTkFrame(card, fg_color="transparent")
@@ -1058,15 +1099,20 @@ class DeckFrame(ctk.CTkFrame):
         ctk.CTkButton(btn_row, text="Export Quizlet", width=120, height=32,
                       fg_color=ACCENT, hover_color=ACCENT_HOVER, text_color="white",
                       command=self._export).pack(side="left", padx=3)
-        self._dedup_btn = ctk.CTkButton(btn_row, text="🔍 Lọc câu trùng", width=120, height=32,
+        self._dedup_btn = ctk.CTkButton(btn_row, text="🔍 Deduplicate", width=120, height=32,
                       fg_color="#7C3AED", hover_color="#6D28D9", text_color="white",
                       command=self._dedup_questions)
         self._dedup_btn.pack(side="left", padx=3)
 
-        # Stats bar
+        # Stats bar + Progress
         self.stats_bar = ctk.CTkFrame(self, fg_color=SURFACE2, height=36, corner_radius=0)
         self.stats_bar.pack(fill="x")
         self.stats_bar.pack_propagate(False)
+
+        # Progress visualizer
+        self.progress_frame = ctk.CTkFrame(self.stats_bar, fg_color="transparent")
+        self.progress_frame.pack(side="right", padx=15, fill="y", pady=4)
+        
         self.stats_lbl = ctk.CTkLabel(self.stats_bar, text="",
                                       font=ctk.CTkFont(size=12), text_color=TEXT_DIM)
         self.stats_lbl.pack(side="left", padx=15)
@@ -1081,11 +1127,70 @@ class DeckFrame(ctk.CTkFrame):
         self.deck = deck
         self._loaded_count = 0
         self.title_lbl.configure(text=f"📚  {deck.name}")
-        mc = sum(1 for c in deck.cards if c.question_type == QuestionType.MULTIPLE_CHOICE)
-        self.stats_lbl.configure(
-            text=f"{deck.card_count} cards  ·  {mc} multi-answer  ·  {deck.card_count - mc} single"
-        )
+        self._update_stats_and_progress()
         self._refresh_cards()
+
+    def _update_stats_and_progress(self):
+        # Update text stats
+        mc = sum(1 for c in self.deck.cards if c.question_type == QuestionType.MULTIPLE_CHOICE)
+        self.stats_lbl.configure(
+            text=f"{self.deck.card_count} cards  ·  {mc} multi-answer  ·  {self.deck.card_count - mc} single"
+        )
+        
+        # Clear old progress UI
+        for w in self.progress_frame.winfo_children():
+            w.destroy()
+            
+        if self.deck.card_count == 0:
+            return
+
+        # Calculate progress stats
+        green = sum(1 for c in self.deck.cards if c.status == 2)
+        orange = sum(1 for c in self.deck.cards if c.status == 1)
+        gray = sum(1 for c in self.deck.cards if c.status == 0)
+        
+        # Reset button
+        if green > 0 or orange > 0:
+            ctk.CTkButton(self.progress_frame, text="🔄 Reset", width=60, height=24,
+                          fg_color="transparent", hover_color=SURFACE, text_color=TEXT_DIM,
+                          font=ctk.CTkFont(size=11), command=self._reset_progress).pack(side="left", padx=(0, 10))
+
+        # Progress bar blocks
+        bar_w = 150
+        bar = ctk.CTkFrame(self.progress_frame, width=bar_w, height=12, corner_radius=6, fg_color="#E2E8F0")
+        bar.pack(side="left", pady=8)
+        bar.pack_propagate(False)
+        
+        w_g = int((green / self.deck.card_count) * bar_w)
+        w_o = int((orange / self.deck.card_count) * bar_w)
+        
+        if w_g > 0:
+            ctk.CTkFrame(bar, width=w_g, fg_color=SUCCESS, corner_radius=6).pack(side="left", fill="y")
+        if w_o > 0:
+            # no rounded left corner if green exists
+            cr = 0 if w_g > 0 else 6
+            ctk.CTkFrame(bar, width=w_o, fg_color=WARNING, corner_radius=cr).pack(side="left", fill="y")
+            
+        # Progress labels separated to prevent emoji overlapping
+        stats_frame = ctk.CTkFrame(self.progress_frame, fg_color="transparent")
+        stats_frame.pack(side="left", padx=(10, 0))
+        
+        ctk.CTkLabel(stats_frame, text="✅", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 3))
+        ctk.CTkLabel(stats_frame, text=str(green), font=ctk.CTkFont(size=11, weight="bold"), text_color=TEXT_DIM).pack(side="left", padx=(0, 10))
+        
+        ctk.CTkLabel(stats_frame, text="❌", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 3))
+        ctk.CTkLabel(stats_frame, text=str(orange), font=ctk.CTkFont(size=11, weight="bold"), text_color=TEXT_DIM).pack(side="left", padx=(0, 10))
+        
+        ctk.CTkLabel(stats_frame, text="⚪", font=ctk.CTkFont(size=11)).pack(side="left", padx=(0, 3))
+        ctk.CTkLabel(stats_frame, text=str(gray), font=ctk.CTkFont(size=11, weight="bold"), text_color=TEXT_DIM).pack(side="left")
+
+    def _reset_progress(self):
+        if messagebox.askyesno("Confirm", "Are you sure you want to reset progress for this deck? (All cards will be marked as Unseen)"):
+            for c in self.deck.cards:
+                c.status = 0
+            save_decks(self.app.decks)
+            self._update_stats_and_progress()
+            self._refresh_cards()
 
     def _refresh_cards(self):
         for w in self.scroll.winfo_children():
@@ -1129,6 +1234,16 @@ class DeckFrame(ctk.CTkFrame):
         badge = ctk.CTkFrame(row, fg_color=ACCENT, width=40, corner_radius=8)
         badge.pack(side="left", padx=8, pady=8, fill="y")
         badge.pack_propagate(False)
+        
+        # Status indicator color logic
+        status_color = "#9CA3AF"  # Gray (0)
+        if card.status == 1:
+            status_color = WARNING # Orange (1)
+        elif card.status == 2:
+            status_color = SUCCESS # Green (2)
+            
+        badge.configure(fg_color=status_color)
+            
         ctk.CTkLabel(badge, text=str(idx + 1),
                      font=ctk.CTkFont(size=13, weight="bold"), text_color="white").pack(expand=True)
 
@@ -1181,7 +1296,7 @@ class DeckFrame(ctk.CTkFrame):
             return
         # Prevent spam: disable button and show loading state immediately
         if hasattr(self, '_dedup_btn') and self._dedup_btn.winfo_exists():
-            self._dedup_btn.configure(text="⏳ Đang lọc...", state="disabled", fg_color="#9CA3AF")
+            self._dedup_btn.configure(text="⏳ Deduplicating...", state="disabled", fg_color="#9CA3AF")
 
         def _run():
             try:
@@ -1196,11 +1311,11 @@ class DeckFrame(ctk.CTkFrame):
     def _show_dedup_result(self, dupes):
         # Restore button
         if hasattr(self, '_dedup_btn') and self._dedup_btn.winfo_exists():
-            self._dedup_btn.configure(text="🔍 Lọc câu trùng", state="normal", fg_color="#7C3AED")
+            self._dedup_btn.configure(text="🔍 Deduplicate", state="normal", fg_color="#7C3AED")
         if not dupes:
-            messagebox.showinfo("Kết quả",
-                                f"Không tìm thấy thẻ học nào trùng nhau "
-                                f"(trong tổng số {len(self.deck.cards)} thẻ)! 🎉")
+            messagebox.showinfo("Result",
+                                f"No duplicate cards found "
+                                f"(out of {len(self.deck.cards)} cards)! 🎉")
             return
         QuestionDedupDialog(self, self.deck, dupes, self._apply_question_dedup)
 
@@ -1208,7 +1323,7 @@ class DeckFrame(ctk.CTkFrame):
         save_decks(self.app.decks)
         self.load_deck(self.deck)  # refresh stats + card list
         if removed_count > 0:
-            messagebox.showinfo("✅ Hoàn tất", f"Đã xóa {removed_count} thẻ học trùng lặp.")
+            messagebox.showinfo("✅ Completed", f"Removed {removed_count} duplicate cards.")
 
 
 # ─────────────────────────────────────────────
@@ -1268,7 +1383,7 @@ class ExportDialog(ctk.CTkToplevel):
         fmt = self.fmt_var.get()
         if fmt == "safe":
             self._hint_lbl.configure(
-                text="⚠ Safe mode → Quizlet Import: Giữa thuật ngữ & định nghĩa = Tùy chỉnh → {[(DapAn)]}    Giữa các thẻ = Tùy chỉnh → {[(CauHoi)]}"
+                text="⚠ Safe mode → Quizlet Import: Between Term & Definition = Custom → {[(DapAn)]}    Between Cards = Custom → {[(CauHoi)]}"
             )
         else:
             self._hint_lbl.configure(text="")
@@ -1307,6 +1422,7 @@ class StudyFrame(ctk.CTkFrame):
         self.showing_answer = False
         self.known = 0
         self.unknown = 0
+        self.history = []
         self._build_ui()
 
     def _build_ui(self):
@@ -1333,13 +1449,43 @@ class StudyFrame(ctk.CTkFrame):
         self.score_lbl.pack(side="right", padx=15)
 
         # Card area
-        card_area = ctk.CTkFrame(self, fg_color="transparent")
-        card_area.pack(fill="both", expand=True, padx=40, pady=25)
+        self.card_frame = ctk.CTkFrame(self, fg_color=SURFACE, corner_radius=18)
+        self.card_frame.pack(fill="both", expand=True, padx=40, pady=25)
 
-        # The flip card (question side)
-        self.card_frame = ctk.CTkFrame(card_area, fg_color=SURFACE, corner_radius=18)
-        self.card_frame.pack(fill="both", expand=True)
+        # Know / Don't know buttons (created once, reused every session)
+        btn_row = ctk.CTkFrame(self, fg_color="transparent")
+        btn_row.pack(pady=(0, 20))
+        
+        self.undo_btn = ctk.CTkButton(
+            btn_row, text="↺  Undo", width=120, height=50,
+            fg_color=WARNING, hover_color="#B45309",
+            text_color="white",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            state="disabled", command=self._undo
+        )
+        self.undo_btn.pack(side="left", padx=10)
 
+        self.dont_know_btn = ctk.CTkButton(
+            btn_row, text="✗  Don't Know", width=180, height=50,
+            fg_color=DANGER, hover_color="#DC2626",
+            text_color="white",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            state="disabled", command=self._dont_know
+        )
+        self.dont_know_btn.pack(side="left", padx=10)
+        self.know_btn = ctk.CTkButton(
+            btn_row, text="✓  Know It", width=180, height=50,
+            fg_color=SUCCESS, hover_color="#059669",
+            text_color="white",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            state="disabled", command=self._know
+        )
+        self.know_btn.pack(side="left", padx=10)
+
+    def _build_card_ui(self):
+        for w in self.card_frame.winfo_children():
+            w.destroy()
+            
         self.type_badge = ctk.CTkLabel(self.card_frame, text="",
                                        font=ctk.CTkFont(size=12), text_color=TEXT_DIM)
         self.type_badge.pack(anchor="ne", padx=15, pady=(15, 0))
@@ -1372,34 +1518,33 @@ class StudyFrame(ctk.CTkFrame):
         )
         self.flip_btn.pack(pady=(5, 20), padx=40, fill="x")
 
-        # Know / Don't know buttons
-        btn_row = ctk.CTkFrame(self, fg_color="transparent")
-        btn_row.pack(pady=(0, 20))
-        self.dont_know_btn = ctk.CTkButton(
-            btn_row, text="✗  Don't Know", width=180, height=50,
-            fg_color=DANGER, hover_color="#DC2626",
-            text_color="white",
-            font=ctk.CTkFont(size=15, weight="bold"),
-            state="disabled", command=self._dont_know
-        )
-        self.dont_know_btn.pack(side="left", padx=10)
-        self.know_btn = ctk.CTkButton(
-            btn_row, text="✓  Know It", width=180, height=50,
-            fg_color=SUCCESS, hover_color="#059669",
-            text_color="white",
-            font=ctk.CTkFont(size=15, weight="bold"),
-            state="disabled", command=self._know
-        )
-        self.know_btn.pack(side="left", padx=10)
-
-    def load_deck(self, deck: Deck):
+        # Know / Don't know buttons (moved inside _build_ui so they stay constant)
+    def load_deck(self, deck: Deck, resume: bool = False):
         self.deck = deck
-        self.cards = list(deck.cards)
-        self.index = 0
-        self.showing_answer = False
-        self.known = 0
-        self.unknown = 0
+        # Resume interrupted session if requested
+        if resume and hasattr(self, '_saved_session') and self._saved_session.get('deck_id') == deck.deck_id:
+            saved = self._saved_session
+            self.cards = saved['cards']
+            self.index = saved['index']
+            self.known = saved['known']
+            self.unknown = saved['unknown']
+            self.history = saved['history']
+            self.showing_answer = False
+            self._saved_session = {}
+        else:
+            self.cards = list(deck.cards)
+            self.showing_answer = False
+            self.history = []
+            if hasattr(self, '_saved_session'):
+                self._saved_session = {}
+                
+            # If start fresh, check if deck is already 100% completed
+            self.known = sum(1 for c in self.cards if c.status == 2)
+            self.unknown = sum(1 for c in self.cards if c.status == 1)
+            self.index = self.known + self.unknown
         self.title_lbl.configure(text=f"📖  {deck.name}")
+        self._build_card_ui()
+        self._bind_keys()
         self._show_card()
 
     def _show_card(self):
@@ -1408,6 +1553,7 @@ class StudyFrame(ctk.CTkFrame):
             return
 
         self.showing_answer = False
+        self.undo_btn.configure(state="normal" if self.history else "disabled")
         card = self.cards[self.index]
 
         # Progress
@@ -1466,15 +1612,64 @@ class StudyFrame(ctk.CTkFrame):
 
     def _know(self):
         self.known += 1
+        card = self.cards[self.index]
+        self.history.append({'index': self.index, 'was_known': True, 'old_status': card.status})
+        card.status = 2  # Green (Mastered)
+        save_decks(self.app.decks)
+        
         self.index += 1
         self._show_card()
 
     def _dont_know(self):
         self.unknown += 1
+        card = self.cards[self.index]
+        self.history.append({'index': self.index, 'was_known': False, 'old_status': card.status})
+        card.status = 1  # Orange (Learning)
+        save_decks(self.app.decks)
+        
         self.index += 1
         self._show_card()
 
+    def _undo(self):
+        if not self.history:
+            return
+        last = self.history.pop()
+        
+        if last['was_known']:
+            self.known -= 1
+        else:
+            self.unknown -= 1
+            
+        card = self.cards[last['index']]
+        card.status = last['old_status']
+        save_decks(self.app.decks)
+        
+        self.index = last['index']
+        self._show_card()
+
+    def _reset_progress_and_study(self):
+        for card in self.cards:
+            card.status = 0
+        save_decks(self.app.decks)
+        # Clear any saved session when restarting
+        self._saved_session = {}
+        # Auto-refresh home screen since we just wiped progress
+        try:
+            self.app.home_frame.refresh()
+            self.app.home_frame.update_idletasks()
+        except Exception:
+            pass
+        self.load_deck(self.deck)
+
     def _show_results(self):
+        self._unbind_keys()
+        # Auto-refresh Home Screen progress bars
+        try:
+            self.app.home_frame.refresh()
+        except Exception:
+            pass
+        # Clear any saved mid-session state since session is now complete
+        self._saved_session = {}
         for w in self.card_frame.winfo_children():
             w.destroy()
         total = self.known + self.unknown
@@ -1488,16 +1683,58 @@ class StudyFrame(ctk.CTkFrame):
         ctk.CTkLabel(self.card_frame, text=f"✓ Know: {self.known}   ✗ Don't Know: {self.unknown}",
                      font=ctk.CTkFont(size=15), text_color=TEXT_DIM).pack(pady=5)
 
-        ctk.CTkButton(self.card_frame, text="🔄  Study Again", width=200, height=44,
+        ctk.CTkButton(self.card_frame, text="🔄  Study Again (Reset Progress)", width=240, height=44,
                       fg_color=ACCENT, hover_color=ACCENT_HOVER,
                       font=ctk.CTkFont(size=14, weight="bold"),
-                      command=lambda: self.load_deck(self.deck)).pack(pady=20)
+                      command=self._reset_progress_and_study).pack(pady=20)
 
+        self.undo_btn.configure(state="disabled")
         self.know_btn.configure(state="disabled")
         self.dont_know_btn.configure(state="disabled")
 
     def _go_back(self):
+        self._unbind_keys()
+        # Save current mid-session state so user can resume later
+        if self.deck and self.index < len(self.cards):
+            self._saved_session = {
+                'deck_id': self.deck.deck_id,
+                'cards': self.cards,
+                'index': self.index,
+                'known': self.known,
+                'unknown': self.unknown,
+                'history': self.history,
+            }
+        else:
+            self._saved_session = {}
         self.app.show_frame("home")
+
+    def _bind_keys(self):
+        top = self.winfo_toplevel()
+        top.bind("<Left>", self._on_left)
+        top.bind("<Right>", self._on_right)
+        top.bind("<Up>", self._on_up_down)
+        top.bind("<Down>", self._on_up_down)
+        top.bind("<space>", self._on_up_down)
+
+    def _unbind_keys(self):
+        top = self.winfo_toplevel()
+        top.unbind("<Left>")
+        top.unbind("<Right>")
+        top.unbind("<Up>")
+        top.unbind("<Down>")
+        top.unbind("<space>")
+
+    def _on_left(self, event):
+        if self.dont_know_btn.cget("state") == "normal":
+            self._dont_know()
+
+    def _on_right(self, event):
+        if self.know_btn.cget("state") == "normal":
+            self._know()
+
+    def _on_up_down(self, event):
+        if self.flip_btn.cget("state") == "normal":
+            self._flip()
 
 
 # ─────────────────────────────────────────────
@@ -1531,7 +1768,7 @@ class QuizFrame(ctk.CTkFrame):
         self.prog_lbl = ctk.CTkLabel(hdr_right, text="",
                                      font=ctk.CTkFont(size=13), text_color=TEXT_DIM)
         self.prog_lbl.pack(side="left", padx=12)
-        ctk.CTkButton(hdr_right, text="Thoát & Lưu", width=110, height=32,
+        ctk.CTkButton(hdr_right, text="Exit & Save", width=110, height=32,
                       fg_color=SURFACE2, hover_color=SURFACE, text_color=TEXT,
                       command=self._exit_save).pack(side="left", padx=4)
 
@@ -1554,7 +1791,7 @@ class QuizFrame(ctk.CTkFrame):
         # Question zoom controls
         q_zoom = ctk.CTkFrame(top_row, fg_color="transparent")
         q_zoom.pack(side="right")
-        ctk.CTkLabel(q_zoom, text="Câu hỏi:",
+        ctk.CTkLabel(q_zoom, text="Question:",
                      font=ctk.CTkFont(size=11), text_color=TEXT_DIM).pack(side="left", padx=(0, 4))
         ctk.CTkButton(q_zoom, text="A-", width=32, height=26,
                       fg_color=SURFACE2, hover_color=SURFACE, text_color=TEXT,
@@ -1574,7 +1811,7 @@ class QuizFrame(ctk.CTkFrame):
         # Answer zoom controls
         ans_zoom_row = ctk.CTkFrame(self.body, fg_color="transparent")
         ans_zoom_row.pack(fill="x", pady=(0, 4))
-        ctk.CTkLabel(ans_zoom_row, text="Đáp án:",
+        ctk.CTkLabel(ans_zoom_row, text="Answers:",
                      font=ctk.CTkFont(size=11), text_color=TEXT_DIM).pack(side="left", padx=(0, 4))
         ctk.CTkButton(ans_zoom_row, text="A-", width=32, height=26,
                       fg_color=SURFACE2, hover_color=SURFACE, text_color=TEXT,
@@ -1605,20 +1842,20 @@ class QuizFrame(ctk.CTkFrame):
         self.footer.pack(fill="x", side="bottom")
         self.footer.pack_propagate(False)
 
-        self.confirm_btn = ctk.CTkButton(self.footer, text="✔  Xác nhận", width=160, height=42,
+        self.confirm_btn = ctk.CTkButton(self.footer, text="✔  Confirm", width=160, height=42,
                                           fg_color=ACCENT, hover_color=ACCENT_HOVER, text_color="white",
                                           font=ctk.CTkFont(size=14, weight="bold"),
                                           command=self._confirm)
         self.confirm_btn.pack(side="left", padx=(20, 8), pady=11)
 
-        self.next_btn = ctk.CTkButton(self.footer, text="Câu tiếp →", width=150, height=42,
+        self.next_btn = ctk.CTkButton(self.footer, text="Next →", width=150, height=42,
                                        fg_color=SUCCESS, hover_color="#059669", text_color="white",
                                        font=ctk.CTkFont(size=14, weight="bold"),
                                        state="disabled",
                                        command=self._next_question)
         self.next_btn.pack(side="left", padx=4, pady=11)
 
-        self.restart_btn = ctk.CTkButton(self.footer, text="🔄 Làm lại", width=130, height=42,
+        self.restart_btn = ctk.CTkButton(self.footer, text="🔄 Restart", width=130, height=42,
                                           fg_color=WARNING, hover_color="#D97706", text_color="white",
                                           font=ctk.CTkFont(size=13, weight="bold"),
                                           command=self._restart,
@@ -1669,16 +1906,16 @@ class QuizFrame(ctk.CTkFrame):
 
         n = len(self.session.question_order)
         cur = self.session.current_index + 1
-        self.prog_lbl.configure(text=f"Câu {cur} / {n}")
+        self.prog_lbl.configure(text=f"Question {cur} / {n}")
         self.prog_bar.set(self.session.progress_frac)
 
         card = self._current_card()
         is_multi = (card.question_type == QuestionType.MULTIPLE_CHOICE)
 
         if is_multi:
-            self.type_badge.configure(text="🔵 Chọn nhiều đáp án", text_color=WARNING)
+            self.type_badge.configure(text="🔵 Multiple Choice", text_color=WARNING)
         else:
-            self.type_badge.configure(text="🟢 Chọn một đáp án", text_color=SUCCESS)
+            self.type_badge.configure(text="🟢 Single Choice", text_color=SUCCESS)
 
         self.question_lbl.configure(text=card.question)
 
@@ -1732,7 +1969,7 @@ class QuizFrame(ctk.CTkFrame):
         selected = self._get_selected_letters()
 
         if not selected:
-            self.feedback_lbl.configure(text="⚠ Bạn chưa chọn đáp án!", text_color=WARNING)
+            self.feedback_lbl.configure(text="⚠ You haven't selected an answer!", text_color=WARNING)
             return
 
         self._revealed = True
@@ -1753,16 +1990,21 @@ class QuizFrame(ctk.CTkFrame):
             elif letter in chosen:
                 btn.configure(text_color=DANGER)
 
-        # Score
+        # Score and Status
         if chosen == correct:
             self.session.correct_count += 1
-            self.feedback_lbl.configure(text="✅ Đúng!", text_color=SUCCESS)
+            card.status = 2  # Green (Mastered/Correct)
+            self.feedback_lbl.configure(text="✅ Correct!", text_color=SUCCESS)
             self.correct_lbl.configure(text="")
         else:
             self.session.wrong_count += 1
-            self.feedback_lbl.configure(text="❌ Sai!", text_color=DANGER)
+            card.status = 1  # Orange (Learning/Wrong)
+            self.feedback_lbl.configure(text="❌ Wrong!", text_color=DANGER)
             correct_text = card.get_correct_answer_text()
-            self.correct_lbl.configure(text=f"Đáp án đúng: {correct_text}")
+            self.correct_lbl.configure(text=f"Correct answer: {correct_text}")
+            
+        # Save deck progress
+        save_decks(self.app.decks)
 
     def _next_question(self):
         self.session.current_index += 1
@@ -1785,7 +2027,7 @@ class QuizFrame(ctk.CTkFrame):
         total = self.session.correct_count + self.session.wrong_count
         pct = int(self.session.correct_count / total * 100) if total else 0
         n = len(self.session.question_order)
-        self.prog_lbl.configure(text=f"Hoàn thành {n}/{n}")
+        self.prog_lbl.configure(text=f"Completed {n}/{n}")
 
         # Results panel
         panel = ctk.CTkFrame(self.options_frame, fg_color=SURFACE, corner_radius=12)
@@ -1798,12 +2040,12 @@ class QuizFrame(ctk.CTkFrame):
         else:
             emoji, color = "😓", DANGER
 
-        ctk.CTkLabel(panel, text=f"{emoji}  Kết Quả Bài Thi",
+        ctk.CTkLabel(panel, text=f"{emoji}  Quiz Results",
                      font=ctk.CTkFont(size=22, weight="bold"), text_color=TEXT).pack(pady=(20, 5))
         ctk.CTkLabel(panel, text=f"{pct}%",
                      font=ctk.CTkFont(size=48, weight="bold"), text_color=color).pack(pady=5)
         ctk.CTkLabel(panel,
-                     text=f"✅ Đúng: {self.session.correct_count}   ❌ Sai: {self.session.wrong_count}   📋 Tổng: {n}",
+                     text=f"✅ Correct: {self.session.correct_count}   ❌ Wrong: {self.session.wrong_count}   📋 Total: {n}",
                      font=ctk.CTkFont(size=14), text_color=TEXT_DIM).pack(pady=(0, 20))
 
         # Delete saved session since it's complete
@@ -1884,6 +2126,7 @@ class FlashcardApp(ctk.CTk):
         frame.pack(fill="both", expand=True)
         if name == "home":
             self.home_frame.refresh()
+            self.home_frame.update_idletasks()
 
     def show_deck(self, deck: Deck):
         self.deck_frame.load_deck(deck)
@@ -1893,7 +2136,12 @@ class FlashcardApp(ctk.CTk):
         if not deck.cards:
             messagebox.showinfo("Empty Deck", "This deck has no cards to study.")
             return
-        self.study_frame.load_deck(deck)
+        # Auto-resume if there's a saved session for the same deck
+        saved = getattr(self.study_frame, '_saved_session', {})
+        if saved.get('deck_id') == deck.deck_id and saved.get('index', 0) < len(saved.get('cards', [])):
+            self.study_frame.load_deck(deck, resume=True)
+        else:
+            self.study_frame.load_deck(deck)
         self.show_frame("study")
 
     def show_quiz(self, deck: Deck):
@@ -1906,10 +2154,10 @@ class FlashcardApp(ctk.CTk):
             n = len(saved.question_order)
             answered = saved.current_index
             resume = messagebox.askyesno(
-                "Tiếp tục bài thi?",
-                f"Bạn đang làm dở bài thi '{deck.name}'\n"
-                f"Tiến độ: {answered}/{n} câu\n\n"
-                f"Chọn 'Yes' để tiếp tục, 'No' để làm lại từ đầu."
+                "Resume Quiz?",
+                f"You have an unfinished quiz for '{deck.name}'\n"
+                f"Progress: {answered}/{n} questions\n\n"
+                f"Select 'Yes' to continue, 'No' to start over."
             )
             if resume:
                 self.quiz_frame.load_quiz(deck, saved)

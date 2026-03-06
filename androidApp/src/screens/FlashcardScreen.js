@@ -1,11 +1,12 @@
 // src/screens/FlashcardScreen.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
     Animated, Platform, StatusBar, ScrollView,
     PanResponder, Dimensions,
 } from 'react-native';
 import { Colors, Spacing, Radius } from '../theme';
+import { updateDeck } from '../utils/storage';
 
 const SCREEN_W = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = SCREEN_W * 0.30;
@@ -27,6 +28,33 @@ export default function FlashcardScreen({ route, navigation }) {
     const unknownRef = useRef(0);
     const historyRef = useRef([]);
     const flipRef = useRef(false);
+
+    // Initialize progress on mount
+    useEffect(() => {
+        if (!cards.length) return;
+
+        // Count existing known (green) and unknown (orange)
+        const currentKnown = cards.filter(c => c.status === 2).length;
+        const currentUnknown = cards.filter(c => c.status === 1).length;
+
+        setKnown(currentKnown);
+        knownRef.current = currentKnown;
+
+        setUnknown(currentUnknown);
+        unknownRef.current = currentUnknown;
+
+        // Find the first unseen card (status is 0 or undefined)
+        const nextIndex = cards.findIndex(c => !c.status || c.status === 0);
+
+        if (nextIndex === -1 && cards.length > 0) {
+            // All cards are seen, show results immediately
+            setDone(true);
+        } else if (nextIndex > 0) {
+            // Resume from the next unseen card
+            setIndex(nextIndex);
+            indexRef.current = nextIndex;
+        }
+    }, [deck.deck_id]);
 
     const swipeX = useRef(new Animated.Value(0)).current;
     const swipeY = useRef(new Animated.Value(0)).current;
@@ -52,10 +80,20 @@ export default function FlashcardScreen({ route, navigation }) {
         const prevIndex = indexRef.current;
         const toX = wasKnown ? SCREEN_W * 1.5 : -SCREEN_W * 1.5;
         Animated.timing(swipeX, { toValue: toX, duration: 200, useNativeDriver: false }).start(() => {
-            historyRef.current.push({ index: prevIndex, wasKnown });
+            const oldStatus = cards[prevIndex].status || 0;
+            historyRef.current.push({ index: prevIndex, wasKnown, oldStatus });
             setCanUndo(true);
-            if (wasKnown) { knownRef.current++; setKnown(knownRef.current); }
-            else { unknownRef.current++; setUnknown(unknownRef.current); }
+
+            if (wasKnown) {
+                knownRef.current++; setKnown(knownRef.current);
+                cards[prevIndex].status = 2; // Green
+            } else {
+                unknownRef.current++; setUnknown(unknownRef.current);
+                cards[prevIndex].status = 1; // Orange
+            }
+            // Background save
+            updateDeck(deck).catch(() => { });
+
             const nextIndex = indexRef.current + 1;
             indexRef.current = nextIndex;
             cardOpacity.setValue(0);
@@ -77,6 +115,10 @@ export default function FlashcardScreen({ route, navigation }) {
         const last = historyRef.current.pop();
         if (last.wasKnown) { knownRef.current--; setKnown(knownRef.current); }
         else { unknownRef.current--; setUnknown(unknownRef.current); }
+
+        cards[last.index].status = last.oldStatus; // restore status
+        updateDeck(deck).catch(() => { });
+
         indexRef.current = last.index;
         flipRef.current = false;
         cardOpacity.setValue(0);
@@ -131,6 +173,8 @@ export default function FlashcardScreen({ route, navigation }) {
     })).current;
 
     function restart() {
+        cards.forEach(c => c.status = 0);
+        updateDeck(deck).catch(() => { });
         indexRef.current = 0; knownRef.current = 0; unknownRef.current = 0;
         historyRef.current = []; flipRef.current = false;
         swipeX.setValue(0); swipeY.setValue(0); flipAnim.setValue(0); cardOpacity.setValue(1);
@@ -213,11 +257,14 @@ export default function FlashcardScreen({ route, navigation }) {
                     </Animated.View>
 
                     {/* Front */}
-                    <Animated.View style={[styles.flashcard, styles.cardFront, { transform: [{ rotateY: frontRotateY }] }]}>
+                    <Animated.View
+                        pointerEvents={flipped ? "none" : "auto"}
+                        style={[styles.flashcard, styles.cardFront, { transform: [{ rotateY: frontRotateY }] }]}>
                         <Text style={styles.cardSide}>CÂU HỎI</Text>
                         <ScrollView
                             showsVerticalScrollIndicator={true}
                             nestedScrollEnabled={true}
+                            style={{ flex: 1, width: '100%' }}
                             contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
                         >
                             <Text style={styles.questionText}>{card.question}</Text>
@@ -234,11 +281,14 @@ export default function FlashcardScreen({ route, navigation }) {
                     </Animated.View>
 
                     {/* Back */}
-                    <Animated.View style={[styles.flashcard, styles.cardBack, { transform: [{ rotateY: backRotateY }] }]}>
+                    <Animated.View
+                        pointerEvents={flipped ? "auto" : "none"}
+                        style={[styles.flashcard, styles.cardBack, { transform: [{ rotateY: backRotateY }] }]}>
                         <Text style={[styles.cardSide, { color: Colors.success }]}>ĐÁP ÁN</Text>
                         <ScrollView
                             showsVerticalScrollIndicator={true}
                             nestedScrollEnabled={true}
+                            style={{ flex: 1, width: '100%' }}
                             contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
                         >
                             <Text style={styles.answerText}>{getAnswerText(card)}</Text>
