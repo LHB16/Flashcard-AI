@@ -1,146 +1,96 @@
-# Flashcard AI Ecosystem
+# 🃏 Flashcard AI Ecosystem
 
-A comprehensive learning ecosystem automated by Google Gemini AI, consisting of two components:
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![React Native](https://img.shields.io/badge/react--native-v0.83-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
+[![Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-orange?logo=google-gemini)](https://ai.google.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-1. **Desktop App (Python/Windows)** — Automatically extracts flashcards from document images, absolutely no manual typing required.
-2. **Mobile App (Android)** — A review application with flashcards and mock exams directly on your phone.
+A comprehensive learning ecosystem powered by **Google Gemini AI**. This project automates the entire process of creating study materials—from document images to interactive flashcards and mock exams.
 
----
-
-## 🖥️ Desktop App — Features
-
-The user interface is built using `customtkinter` with a light mode theme.
-
-### Home Screen
-- Displays a list of all created card sets (Decks), along with the card count and creation date.
-- **Search** by name, with instant list updates.
-- Each Deck has buttons: **Study ▶** (flashcard review), **Quiz 📝** (mock exam), **View** (view card list), **✕** (delete).
-- **Active Scans** — Displays background scanning processes directly on the home screen, complete with a progress bar and realtime logs.
-
-### Create New Deck (New Scan)
-1. Name the Deck.
-2. Select the **image folder** (`Browse`) — The system automatically counts images and auto-fills the Deck name based on the folder name.
-3. Click **"▶ Select API Keys & Start"** — A popup window appears allowing you to select which API Keys to use for this scan.
-4. Scanning runs in the **background** — You can continue using the interface or create additional scans simultaneously. Supports **Pause ⏸ / Resume ▶ / Stop ⏹**.
-5. Upon completion, a Windows Toast Notification appears to announce the results.
-
-### API Key Management
-- Add multiple Gemini API Keys, displayed in a masked format (`...XXXXXXXX`).
-- Supports **testing** individual keys or "Test All" simultaneously.
-- When scanning, each scan is assigned a specific group of keys — Keys currently in use by another scan will be marked `[In Use]` and cannot be selected again.
-
-### View & Edit Deck (View)
-- View all questions, options, and correct answers. Displays with pagination (50 cards/page — Load more).
-- Delete unnecessary individual cards.
-- **Export to Quizlet** — Export to a `.txt` file with 4 formats: Simple, Full, Compact, Safe. Import directly into quizlet.com.
-
-### Study on PC (Study)
-- Flip cards to view the question / answer.
-- **Keyboard Shortcuts**: `Space` or `Up/Down` to flip. `Left/Right` to mark Know/Don't-Know without using the mouse.
-- **Undo feature** to easily correct mistracked swipes or clicks.
-- Automatically saves and resumes your study progress exactly where you left off.
-
-### Mock Exam on PC (Quiz)
-- Displays questions and checkbox options.
-- Supports both **single-answer** and **multiple-answer** multiple-choice questions.
-- Zoom in/out font sizes for questions and answers independently.
-- Saves progress, displays results, and allows resetting with confirmation.
-
-### AI & Data Processing
-- Images are grouped into PDF batches (50 images/batch) and sent to Gemini for bulk extraction.
-- If the answer is not found in the document, the AI **infers it automatically** and marks the card with `[AI inferred]`.
-- All data is saved locally to `decks.json` (no server required).
+> [!TIP]
+> **No manual typing required!** Simply upload folders of images (lecture slides, book pages, notes) and let Gemini extract the core concepts for you.
 
 ---
 
-## 📱 Android App — Features
+## 📸 Preview
 
-Built with **React Native + Expo SDK 55**, running on **Android**.
+<p align="center">
+  <img src="C:/Users/luuhu/.gemini/antigravity/brain/d2f3e1d0-f946-4c2a-a35b-cc37197022da/media__1772785534238.png" width="80%" alt="Study Mode Desktop"/>
+  <br>
+  <i>Desktop Study Mode - Interface for reviewing extracted flashcards</i>
+</p>
 
-### Home Screen
-- List of all decks, displaying total cards, multiple-choice questions, and creation date.
-- **"📂 Import decks.json"** button — Opens a file picker, reads, and loads all data into the app.
-- **"Delete All"** button — Clears all data after confirmation.
+---
 
-### Deck Details (Deck Detail)
-- Displays statistics: Total cards, single-answer questions, multiple-answer questions, creation date.
-- 2 study mode buttons: **🃏 Flashcard** and **📝 Take Quiz**.
+## 🖥️ Desktop App (Windows)
+The control center for scanning and deck management.
 
-### Flashcard Mode
-- **Swipe Right** (✅) = Know it, **Swipe Left** (❌) = Don't know yet.
-- **Tap the card** to flip and view the answer (3D flip effect).
-- Underlines for ✅/❌ light up when swiped past the threshold (30% of screen width).
-- **↩️ Undo** button to revert the last swiped card.
-- ❌/✅ counters display at the top, and the % result is shown when the deck is finished.
-- Fully scrollable text areas for both questions and answers to support extra-long content.
-- **Auto-resume progress** directly from your last session.
+- **🤖 AI OCR Scanning**: Batched processing of folder images via Gemini API.
+- **⚡ Background Processing**: Multiple scans can run simultaneously with real-time logs and progress tracking.
+- **🛠️ API Key Management**: Support for multiple Gemini keys with per-key usage tracking.
+- **⌨️ Study Mode**: Advanced flashcard review with keyboard shortcuts (`Space` to flip, arrows to score) and **Undo** functionality.
+- **📝 Quiz Mode**: Practice with single/multiple-choice questions, font zooming, and progress auto-saving.
+- **📂 Export**: Seamlessly export decks to **Quizlet** (.txt) in four distinct formats.
 
-### Quiz Mode (Quiz)
-- Multiple choice with single or multiple answers.
-- Immediate correct/incorrect feedback after answering (green/red highlights).
-- **Auto-save progress** — If you close the app and reopen it, the app asks if you want to resume from where you left off.
-- Compact **Reset** button, requiring confirmation before erasing progress.
+---
+
+## 📱 Mobile App (Android)
+Your portable study companion built with **React Native**.
+
+- **📦 Easy Import**: Import your generated `decks.json` files directly from your phone's storage.
+- **🖐️ Gesture Control**: Smooth **Swipe-to-Score** mechanics (Swipe Right for Known, Left for Unknown).
+- **🔀 3D Flip Anim**: High-performance 3D card animations for a premium feel.
+- **🔄 Session Resume**: Automatically detects and resumes your last study or quiz session.
+- **📜 Smart Scrolling**: Fully supports extra-long text in both questions and answers with zero touch conflicts.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Component | Technology |
-|---|---|
-| Desktop GUI | Python 3.10+, `customtkinter` |
-| AI | `google-generativeai` (Gemini Flash/Pro) |
-| Desktop Storage | JSON file (`decks.json`) |
-| Mobile Framework | React Native, Expo SDK 55 |
-| Mobile Navigation | `@react-navigation/native-stack` |
-| Mobile Storage | `@react-native-async-storage/async-storage` |
-| Mobile Gestures | `PanResponder`, `Animated` |
-| Build (APK) | EAS Build (Expo Cloud) |
+| Desktop | Mobile | Core |
+|:---:|:---:|:---:|
+| Python 3.10+ | React Native (Expo SDK 55) | Google Gemini AI |
+| CustomTkinter | AsyncStorage | JSON Database |
+| PyInstaller | React Navigation | batch-PDF OCR |
 
 ---
 
-## 📁 Directory Structure
+## 🚀 Getting Started
 
-```
-PNGToQuizlet/
-├── app.py                     # Desktop app entry point
-├── models/flashcard.py        # Data classes: Flashcard, Deck, QuizSession
-├── services/
-│   ├── gemini_service.py      # Call Gemini API, batch PDF, parse JSON
-│   ├── storage_service.py     # Read/write decks.json and settings
-│   └── export_service.py      # Export Quizlet .txt formats
-├── androidApp/
-│   ├── App.js                 # Root navigation
-│   ├── src/screens/
-│   │   ├── HomeScreen.js      # Deck list, file import
-│   │   ├── DeckDetailScreen.js# Stats, study mode selection
-│   │   ├── FlashcardScreen.js # Flashcards + swipe gestures
-│   │   └── QuizScreen.js      # Mock exam + progress saving
-│   ├── src/utils/storage.js   # AsyncStorage helpers
-│   ├── src/theme.js           # Design tokens (colors, spacing)
-│   └── app.json               # Expo + EAS configuration
-└── requirements.txt           # Python dependencies
-```
-
----
-
-## 🚀 Installation Guide
-
-### Desktop App
+### 1. Desktop Setup
 ```bash
+# Clone the repository
+git clone https://github.com/LHB16/Flashcard-AI.git
+cd Flashcard-AI
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the app
 python app.py
 ```
-After running: Go to **"⚙ API Keys"** → Add Gemini API key → **"+ New Scan"** → Select image folder → Start.
 
-### Android App (Dev)
+### 2. Mobile Setup
 ```bash
 cd androidApp
 npm install
 npx expo start
 ```
-Scan the QR code with **Expo Go** on an Android phone.
+*Use **Expo Go** on your Android device to scan the QR code.*
 
-### Automated Local Build Scripts
-For added convenience, the root folder contains quick-build batch scripts to compile the software yourself:
-- **Windows Exe**: Run `build_exe.bat` to package the python app into a single `.exe` file.
-- **Android APK**: Run `build_apk_debug.bat` or `build_apk_release.bat` to build the Android app locally. (Note: These local Android builds require JDK 17 and Android SDK environment variables to be properly configured).
+### 📦 Build Executables
+We provide manual build scripts in the root directory:
+- `build_exe.bat`: Compiles the Windows Desktop binary.
+- `build_apk_release.bat`: Generates the production Android APK.
+
+---
+
+## 🛡️ Privacy & Security
+- **Local First**: All your decks and scan results are saved locally on your device (`decks.json`).
+- **Secure Keys**: Your API keys are stored in `api_keys.json` (ignored by Git) and are masked in the UI.
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/LHB16">LHB16</a>
+</p>
