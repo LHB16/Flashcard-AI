@@ -36,6 +36,9 @@ The user interface is built using `customtkinter` with a light mode theme.
 
 ### Study on PC (Study)
 - Flip cards to view the question / answer.
+- **Keyboard Shortcuts**: `Space` or `Up/Down` to flip. `Left/Right` to mark Know/Don't-Know without using the mouse.
+- **Undo feature** to easily correct mistracked swipes or clicks.
+- Automatically saves and resumes your study progress exactly where you left off.
 
 ### Mock Exam on PC (Quiz)
 - Displays questions and checkbox options.
@@ -69,6 +72,8 @@ Built with **React Native + Expo SDK 55**, running on **Android**.
 - Underlines for ✅/❌ light up when swiped past the threshold (30% of screen width).
 - **↩️ Undo** button to revert the last swiped card.
 - ❌/✅ counters display at the top, and the % result is shown when the deck is finished.
+- Fully scrollable text areas for both questions and answers to support extra-long content.
+- **Auto-resume progress** directly from your last session.
 
 ### Quiz Mode (Quiz)
 - Multiple choice with single or multiple answers.
@@ -135,10 +140,7 @@ npx expo start
 ```
 Scan the QR code with **Expo Go** on an Android phone.
 
-### Build APK (No Android Studio Required)
-```bash
-cd androidApp
-npx eas-cli login
-npx eas-cli build --platform android --profile preview
-```
-Receive the direct `.apk` download link after ~15 minutes.
+### Automated Local Build Scripts
+For added convenience, the root folder contains quick-build batch scripts to compile the software yourself:
+- **Windows Exe**: Run `build_exe.bat` to package the python app into a single `.exe` file.
+- **Android APK**: Run `build_apk_debug.bat` or `build_apk_release.bat` to build the Android app locally. (Note: These local Android builds require JDK 17 and Android SDK environment variables to be properly configured).
