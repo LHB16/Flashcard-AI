@@ -2,11 +2,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity, StyleSheet,
-    StatusBar, Alert, ActivityIndicator, Platform,
+    StatusBar, Alert, ActivityIndicator, Platform, Modal, Linking
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const pkg = require('../../package.json');
 const CURRENT_VERSION = pkg.version;
@@ -18,36 +19,51 @@ import { Colors, Typography, Spacing, Radius } from '../theme';
 export default function HomeScreen({ navigation }) {
     const [decks, setDecks] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [showInfoModal, setShowInfoModal] = useState(false);
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
+    const [updateInfo, setUpdateInfo] = useState(null);
+    const [ignoreUpdate, setIgnoreUpdate] = useState(false);
+    const [checkingUpdate, setCheckingUpdate] = useState(false);
 
     useFocusEffect(useCallback(() => {
         loadDecks().then(setDecks);
     }, []));
 
     useEffect(() => {
-        checkUpdates();
+        checkUpdates(false);
     }, []);
 
-    async function checkUpdates() {
+    async function checkUpdates(isManual = false) {
         try {
+            if (isManual) setCheckingUpdate(true);
             const res = await fetch('https://api.github.com/repos/LHB16/Flashcard-AI/releases/latest');
-            if (!res.ok) return;
+            if (!res.ok) {
+                if (isManual) Alert.alert('Thông báo', 'Không thể kiểm tra cập nhật lúc này.');
+                return;
+            }
             const data = await res.json();
             const latestVersion = data.tag_name.replace('v', '');
             if (latestVersion !== CURRENT_VERSION && data.assets && data.assets.length > 0) {
                 const apkAsset = data.assets.find(a => a.name.endsWith('.apk'));
                 if (apkAsset) {
-                    Alert.alert(
-                        'Cập nhật mới',
-                        `Đã có phiên bản ${latestVersion}. Bạn có muốn cập nhật không?`,
-                        [
-                            { text: 'Để sau', style: 'cancel' },
-                            { text: 'Cập nhật ngay', onPress: () => downloadUpdate(apkAsset.browser_download_url) }
-                        ]
-                    );
+                    if (!isManual) {
+                        const ignored = await AsyncStorage.getItem(`ignore_update_${latestVersion}`);
+                        if (ignored === 'true') return;
+                    }
+                    setUpdateInfo({ version: latestVersion, url: apkAsset.browser_download_url });
+                    setIgnoreUpdate(false);
+                    setShowUpdateModal(true);
+                } else if (isManual) {
+                    Alert.alert('Thông báo', 'Không tìm thấy file cập nhật.');
                 }
+            } else if (isManual) {
+                Alert.alert('Thông báo', 'Bạn đang ở phiên bản mới nhất!');
             }
         } catch (e) {
             console.log('Update check error:', e);
+            if (isManual) Alert.alert('Lỗi', 'Lỗi kiểm tra cập nhật: ' + e.message);
+        } finally {
+            if (isManual) setCheckingUpdate(false);
         }
     }
 
@@ -189,6 +205,106 @@ export default function HomeScreen({ navigation }) {
                     showsVerticalScrollIndicator={false}
                 />
             )}
+
+            {/* Floating Info Button */}
+            <TouchableOpacity style={styles.fab} onPress={() => setShowInfoModal(true)}>
+                <Text style={styles.fabText}>I</Text>
+            </TouchableOpacity>
+
+            {/* Info Modal */}
+            <Modal visible={showInfoModal} transparent animationType="fade" onRequestClose={() => setShowInfoModal(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.infoModalContent}>
+                        <Text style={styles.modalTitle}>Thông tin ứng dụng</Text>
+
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Phiên bản:</Text>
+                            <Text style={styles.infoValue}>v{CURRENT_VERSION}</Text>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Tác giả:</Text>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://github.com/LHB16')}>
+                                <Text style={styles.infoLink}>LHB16 (GitHub)</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Mã nguồn:</Text>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://github.com/LHB16/Flashcard-AI')}>
+                                <Text style={styles.infoLink}>LHB16/Flashcard-AI</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.checkUpdateBtn}
+                            onPress={() => {
+                                setShowInfoModal(false);
+                                checkUpdates(true);
+                            }}
+                            disabled={checkingUpdate}
+                        >
+                            <Text style={styles.checkUpdateBtnText}>
+                                {checkingUpdate ? 'Đang kiểm tra...' : 'Kiểm tra cập nhật'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.closeBtn} onPress={() => setShowInfoModal(false)}>
+                            <Text style={styles.closeBtnText}>Đóng</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Update Modal */}
+            <Modal visible={showUpdateModal} transparent animationType="fade" onRequestClose={() => setShowUpdateModal(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.updateModalContent}>
+                        <Text style={styles.modalTitle}>Cập nhật mới!</Text>
+                        <Text style={styles.updateMessage}>
+                            Đã có phiên bản v{updateInfo?.version}. Bạn có muốn tải về và cài đặt ngay không?
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.checkboxRow}
+                            onPress={() => setIgnoreUpdate(!ignoreUpdate)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.checkbox, ignoreUpdate && styles.checkboxActive]}>
+                                {ignoreUpdate && <Text style={styles.checkboxCheck}>✓</Text>}
+                            </View>
+                            <Text style={styles.checkboxLabel}>Không hiện lại thông báo này</Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.updateBtnRow}>
+                            <TouchableOpacity
+                                style={[styles.updateActionBtn, { backgroundColor: Colors.border }]}
+                                onPress={async () => {
+                                    if (ignoreUpdate && updateInfo?.version) {
+                                        await AsyncStorage.setItem(`ignore_update_${updateInfo.version}`, 'true');
+                                    }
+                                    setShowUpdateModal(false);
+                                }}
+                            >
+                                <Text style={[styles.updateActionBtnText, { color: Colors.text }]}>Để sau</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.updateActionBtn, { backgroundColor: Colors.primary }]}
+                                onPress={async () => {
+                                    if (ignoreUpdate && updateInfo?.version) {
+                                        await AsyncStorage.setItem(`ignore_update_${updateInfo.version}`, 'true');
+                                    }
+                                    setShowUpdateModal(false);
+                                    downloadUpdate(updateInfo.url);
+                                }}
+                            >
+                                <Text style={styles.updateActionBtnText}>Cập nhật ngay</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -262,4 +378,151 @@ const styles = StyleSheet.create({
     emptyIcon: { fontSize: 64, marginBottom: 16 },
     emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 8 },
     emptyHint: { fontSize: 14, color: Colors.textDim, textAlign: 'center', lineHeight: 22 },
+    fab: {
+        position: 'absolute',
+        bottom: 24,
+        right: 24,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: Colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 5,
+    },
+    fabText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#fff',
+        fontFamily: 'serif',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    infoModalContent: {
+        backgroundColor: Colors.surface,
+        borderRadius: Radius.lg,
+        padding: 24,
+        width: '100%',
+        maxWidth: 380,
+    },
+    updateModalContent: {
+        backgroundColor: Colors.surface,
+        borderRadius: Radius.lg,
+        padding: 24,
+        width: '100%',
+        maxWidth: 380,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: Colors.text,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    infoRow: {
+        flexDirection: 'row',
+        marginBottom: 14,
+        alignItems: 'center',
+    },
+    infoLabel: {
+        width: 90,
+        fontSize: 15,
+        color: Colors.textDim,
+        fontWeight: '500',
+    },
+    infoValue: {
+        flex: 1,
+        fontSize: 15,
+        color: Colors.text,
+        fontWeight: '600',
+    },
+    infoLink: {
+        flex: 1,
+        fontSize: 15,
+        color: Colors.primary,
+        fontWeight: '600',
+        textDecorationLine: 'underline',
+    },
+    checkUpdateBtn: {
+        backgroundColor: Colors.primary,
+        paddingVertical: 14,
+        borderRadius: Radius.md,
+        alignItems: 'center',
+        marginTop: 24,
+        marginBottom: 12,
+    },
+    checkUpdateBtnText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    closeBtn: {
+        paddingVertical: 10,
+        alignItems: 'center',
+    },
+    closeBtnText: {
+        color: Colors.textDim,
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    updateMessage: {
+        fontSize: 15,
+        color: Colors.text,
+        lineHeight: 22,
+        marginBottom: 20,
+    },
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    checkbox: {
+        width: 22,
+        height: 22,
+        borderWidth: 1.5,
+        borderColor: Colors.textDim,
+        borderRadius: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    checkboxActive: {
+        borderColor: Colors.primary,
+        backgroundColor: 'transparent',
+    },
+    checkboxCheck: {
+        color: Colors.primary,
+        fontSize: 15,
+        fontWeight: 'bold',
+    },
+    checkboxLabel: {
+        fontSize: 14,
+        color: Colors.textDim,
+    },
+    updateBtnRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 12,
+    },
+    updateActionBtn: {
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: Radius.md,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    updateActionBtnText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '700',
+    },
 });
