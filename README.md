@@ -12,17 +12,7 @@ A comprehensive learning ecosystem powered by **Google Gemini AI**. This project
 
 ---
 
-## 📸 Preview
-
-<p align="center">
-  <img src="C:/Users/luuhu/.gemini/antigravity/brain/d2f3e1d0-f946-4c2a-a35b-cc37197022da/media__1772785534238.png" width="80%" alt="Study Mode Desktop"/>
-  <br>
-  <i>Desktop Study Mode - Interface for reviewing extracted flashcards</i>
-</p>
-
----
-
-## 🖥️ Desktop App (Windows)
+## ️ Desktop App (Windows)
 The control center for scanning and deck management.
 
 - **🤖 AI OCR Scanning**: Batched processing of folder images via Gemini API.
