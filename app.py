@@ -23,6 +23,7 @@ from services.storage_service import (
     load_quiz_sessions, save_quiz_session, delete_quiz_session,
 )
 from services.export_service import export_to_quizlet, get_quizlet_preview
+from services.dedup_service import find_duplicate_questions
 
 
 # ─────────────────────────────────────────────
@@ -378,6 +379,166 @@ class ScanFrame(ctk.CTkFrame):
         self.folder_lbl.configure(text="No folder selected", text_color=TEXT_DIM)
         self.file_count_lbl.configure(text="")
         self.deck_name_entry.delete(0, "end")
+
+# ─────────────────────────────────────────────
+# DIALOG: Question Deduplication
+# ─────────────────────────────────────────────
+class QuestionDedupDialog(ctk.CTkToplevel):
+    def __init__(self, parent, deck, duplicates, on_apply):
+        super().__init__(parent)
+        self.deck = deck
+        self.duplicates = duplicates  # [(idx_a, idx_b, ratio), ...]
+        self.on_apply = on_apply
+        self.title("🔍 Lọc câu hỏi trùng")
+        self.geometry("820x680")
+        self.resizable(True, True)
+        self.grab_set()
+        self.configure(fg_color=CARD_BG)
+        center_window(self, 820, 680)
+
+        # Separate into exact and similar
+        exact = [(a, b, r) for a, b, r in duplicates if r >= 0.99]
+        similar = [(a, b, r) for a, b, r in duplicates if r < 0.99]
+
+        # Header
+        ctk.CTkLabel(self,
+                     text=f"🔍 Tìm thấy {len(exact)} giống 100%  ·  {len(similar)} tương tự",
+                     font=ctk.CTkFont(size=17, weight="bold"), text_color=TEXT).pack(pady=(15, 3))
+        ctk.CTkLabel(self,
+                     text="Đại trà các thẻ học có nội dung tương tự. Đánh dấu ☑ để xóa (mặc định chọn thẻ xuất hiện sau).",
+                     font=ctk.CTkFont(size=12), text_color=TEXT_DIM).pack(pady=(0, 8))
+
+        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        scroll.pack(fill="both", expand=True, padx=15, pady=5)
+
+        self._delete_vars = {}    # (pair_key, slot) -> BooleanVar
+        self._exact_b_keys = []   # keys for exact-group 'b' cards only
+        self._key_to_idx = {}     # (pair_key, slot) -> actual card index (int)
+
+        def _ans_text(c):
+            opts = getattr(c, 'options', []) or []
+            correct = getattr(c, 'correct_answers', []) or []
+            if not correct:
+                return "Đáp án: (không có)"
+            correct_set = {x.strip().upper() for x in correct}
+            matched = [opt for opt in opts if opt.strip() and opt.strip()[0].upper() in correct_set]
+            if matched:
+                return "Đáp án: " + " | ".join(matched)
+            return "Đáp án: " + ", ".join(correct)
+
+        def _build_section(title, color, items, default_checked_b):
+            if not items:
+                return
+            sec_lbl = ctk.CTkLabel(scroll, text=title,
+                                   font=ctk.CTkFont(size=14, weight="bold"),
+                                   text_color=color)
+            sec_lbl.pack(anchor="w", pady=(12, 4))
+            for i, (idx_a, idx_b, ratio) in enumerate(items):
+                self._build_pair(scroll, idx_a, idx_b, ratio, _ans_text, default_checked_b, f"{color}_{i}")
+
+        # Section 1: Exact (100%) — auto-check second card for deletion
+        _build_section(f"✅ Giống 100%  ({len(exact)} cặp) — nên xóa bớt", DANGER, exact, True)
+        # Section 2: Similar (<100%) — nothing pre-checked, user reviews manually
+        _build_section(f"🔍 Tương tự  ({len(similar)} cặp) — kiểm tra trước khi xóa", "#7C3AED", similar, False)
+
+        # Bottom buttons
+        btns = ctk.CTkFrame(self, fg_color="transparent")
+        btns.pack(pady=12)
+        ctk.CTkButton(btns, text="Hủy", width=90, height=36,
+                      fg_color=SURFACE, hover_color=SURFACE2, text_color=TEXT,
+                      command=self.destroy).pack(side="left", padx=8)
+        # Toggle button only affects exact pairs
+        self._toggle_btn = ctk.CTkButton(btns, text="☒ Chọn tất cả (100%)", width=170, height=36,
+                      fg_color="#B91C1C", hover_color="#991B1B", text_color="white",
+                      command=self._toggle_exact)
+        self._toggle_btn.pack(side="left", padx=8)
+        ctk.CTkButton(btns, text="🗑 Xóa thẻ đã chọn", width=160, height=36,
+                      fg_color=DANGER, hover_color="#DC2626", text_color="white",
+                      font=ctk.CTkFont(weight="bold"),
+                      command=self._apply).pack(side="left", padx=8)
+
+    def _build_pair(self, parent, idx_a, idx_b, ratio, ans_fn, default_checked_b=False, pair_key=None):
+        if pair_key is None:
+            pair_key = f"{idx_a}_{idx_b}"
+        pct = int(ratio * 100)
+        pair_frame = ctk.CTkFrame(parent, fg_color=SURFACE, corner_radius=8)
+        pair_frame.pack(fill="x", pady=4)
+
+        ctk.CTkLabel(pair_frame, text=f"🔗 {pct}% giống",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#6D28D9").pack(anchor="w", padx=12, pady=(7, 2))
+
+        card_a = self.deck.cards[idx_a]
+        card_b = self.deck.cards[idx_b]
+
+        # Two-column side-by-side layout
+        cols = ctk.CTkFrame(pair_frame, fg_color="transparent")
+        cols.pack(fill="x", padx=8, pady=(0, 6))
+        cols.columnconfigure(0, weight=1)
+        cols.columnconfigure(1, weight=1)
+
+        for col_i, (idx, card, slot, default_checked) in enumerate(
+            [(idx_a, card_a, 'a', False), (idx_b, card_b, 'b', default_checked_b)]
+        ):
+            key = (pair_key, slot)
+            # Each pair/slot gets its OWN BooleanVar (no sharing between groups)
+            self._delete_vars[key] = ctk.BooleanVar(value=default_checked)
+            if slot == 'b' and default_checked_b:
+                # Track for exact toggle
+                self._exact_b_keys.append(key)
+
+            # Track real card index for _apply
+            self._key_to_idx[key] = idx
+
+
+            cell = ctk.CTkFrame(cols, fg_color="transparent")
+            cell.grid(row=0, column=col_i, sticky="nsew", padx=4)
+
+            # Checkbox + header row
+            hdr = ctk.CTkFrame(cell, fg_color="transparent")
+            hdr.pack(fill="x")
+            ctk.CTkCheckBox(hdr, text=f"#{idx+1} — Xóa?",
+                            variable=self._delete_vars[key],
+                            width=24, checkbox_width=18, checkbox_height=18,
+                            fg_color=DANGER, hover_color="#DC2626",
+                            checkmark_color="white",
+                            font=ctk.CTkFont(size=12, weight="bold"),
+                            text_color=TEXT).pack(side="left", padx=4)
+
+            q = card.question[:160] + ("..." if len(card.question) > 160 else "")
+            ctk.CTkLabel(cell, text=q,
+                         font=ctk.CTkFont(size=11), text_color=TEXT,
+                         wraplength=320, anchor="w", justify="left").pack(anchor="w", padx=6, pady=(2, 0))
+            ctk.CTkLabel(cell, text=ans_fn(card),
+                         font=ctk.CTkFont(size=11), text_color=SUCCESS,
+                         wraplength=320, anchor="w", justify="left").pack(anchor="w", padx=6)
+
+        ctk.CTkFrame(pair_frame, height=1, fg_color=SURFACE2).pack(fill="x", padx=10, pady=(4, 5))
+
+    def _toggle_exact(self):
+        """Toggle: if all exact-pair 'b' cards are checked → uncheck all; otherwise → check all."""
+        if not self._exact_b_keys:
+            return
+        all_checked = all(self._delete_vars[k].get() for k in self._exact_b_keys)
+        new_state = not all_checked  # flip
+        for k in self._exact_b_keys:
+            self._delete_vars[k].set(new_state)
+        self._toggle_btn.configure(
+            text=("☒ Bỏ chọn tất cả (100%)" if new_state else "☑ Chọn tất cả (100%)")
+        )
+
+    def _apply(self):
+        # Collect unique card indices marked for deletion
+        indices_to_delete = sorted(
+            {self._key_to_idx[k] for k, var in self._delete_vars.items() if var.get()},
+            reverse=True
+        )
+        for idx in indices_to_delete:
+            if 0 <= idx < len(self.deck.cards):
+                self.deck.cards.pop(idx)
+        self.on_apply(len(indices_to_delete))
+        self.destroy()
+
 
 class ScanAssignDialog(ctk.CTkToplevel):
     def __init__(self, parent, app, image_files, deck_name):
@@ -897,6 +1058,10 @@ class DeckFrame(ctk.CTkFrame):
         ctk.CTkButton(btn_row, text="Export Quizlet", width=120, height=32,
                       fg_color=ACCENT, hover_color=ACCENT_HOVER, text_color="white",
                       command=self._export).pack(side="left", padx=3)
+        self._dedup_btn = ctk.CTkButton(btn_row, text="🔍 Lọc câu trùng", width=120, height=32,
+                      fg_color="#7C3AED", hover_color="#6D28D9", text_color="white",
+                      command=self._dedup_questions)
+        self._dedup_btn.pack(side="left", padx=3)
 
         # Stats bar
         self.stats_bar = ctk.CTkFrame(self, fg_color=SURFACE2, height=36, corner_radius=0)
@@ -1010,6 +1175,40 @@ class DeckFrame(ctk.CTkFrame):
         if not self.deck:
             return
         ExportDialog(self, self.app, self.deck)
+
+    def _dedup_questions(self):
+        if not self.deck or not self.deck.cards:
+            return
+        # Prevent spam: disable button and show loading state immediately
+        if hasattr(self, '_dedup_btn') and self._dedup_btn.winfo_exists():
+            self._dedup_btn.configure(text="⏳ Đang lọc...", state="disabled", fg_color="#9CA3AF")
+
+        def _run():
+            try:
+                dupes = find_duplicate_questions(self.deck.cards, threshold=0.85)
+            except Exception:
+                dupes = []
+            # Back on main thread
+            self.after(0, lambda: self._show_dedup_result(dupes))
+
+        threading.Thread(target=_run, daemon=True).start()
+
+    def _show_dedup_result(self, dupes):
+        # Restore button
+        if hasattr(self, '_dedup_btn') and self._dedup_btn.winfo_exists():
+            self._dedup_btn.configure(text="🔍 Lọc câu trùng", state="normal", fg_color="#7C3AED")
+        if not dupes:
+            messagebox.showinfo("Kết quả",
+                                f"Không tìm thấy thẻ học nào trùng nhau "
+                                f"(trong tổng số {len(self.deck.cards)} thẻ)! 🎉")
+            return
+        QuestionDedupDialog(self, self.deck, dupes, self._apply_question_dedup)
+
+    def _apply_question_dedup(self, removed_count):
+        save_decks(self.app.decks)
+        self.load_deck(self.deck)  # refresh stats + card list
+        if removed_count > 0:
+            messagebox.showinfo("✅ Hoàn tất", f"Đã xóa {removed_count} thẻ học trùng lặp.")
 
 
 # ─────────────────────────────────────────────
