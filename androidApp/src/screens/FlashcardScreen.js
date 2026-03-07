@@ -274,7 +274,7 @@ export default function FlashcardScreen({ route, navigation }) {
                                 </View>
                             )}
                         </ScrollView>
-                        {/* Tap button at the bottom — separate from swipe area */}
+                        {/* Tap button at the bottom — separate from swipe area, expanded touch area */}
                         <TouchableOpacity onPress={doFlip} style={styles.flipBtn}>
                             <Text style={styles.flipBtnText}>Nhấn để xem đáp án 👆</Text>
                         </TouchableOpacity>
@@ -381,7 +381,9 @@ const styles = StyleSheet.create({
     noteText: { fontSize: 12, color: Colors.warning, marginTop: 10, fontStyle: 'italic' },
     flipBtn: {
         borderTopWidth: 1, borderTopColor: Colors.border,
-        paddingTop: 10, marginTop: 8, alignItems: 'center',
+        paddingTop: 16, paddingBottom: 8, marginTop: 8,
+        alignItems: 'center', justifyContent: 'center',
+        width: '100%',
     },
     flipBtnText: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
     hintBar: {
