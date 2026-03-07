@@ -52,4 +52,9 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-*.bak
+# Custom Docs
+docs/
+flow_prompt_builder.html
+
+# Developer Tools
+flow_prompt_builder.html
