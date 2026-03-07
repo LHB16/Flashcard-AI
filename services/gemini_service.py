@@ -517,6 +517,154 @@ class GeminiService:
         return all_results
 
     # ─────────────────────────────────────
+    # Parallel multi-key processing
+    # ─────────────────────────────────────
+    def process_images_parallel(
+        self,
+        image_paths: List[str],
+        keys: List[str],
+        batch_size: int = PDF_BATCH_PAGES,
+        on_progress: Optional[Callable] = None,
+        on_error: Optional[Callable] = None,
+        stop_event: Optional[threading.Event] = None,
+        pause_event: Optional[threading.Event] = None,
+    ) -> List[Optional[Flashcard]]:
+        """
+        Split images into N packs (N = number of keys).
+        Each pack runs on a separate thread with a dedicated API key.
+        Results are merged in the original order.
+        """
+        total = len(image_paths)
+        n_keys = len(keys)
+
+        # Split images into N roughly-equal packs
+        packs = []
+        pack_size = max(1, (total + n_keys - 1) // n_keys)
+        for i in range(0, total, pack_size):
+            packs.append(image_paths[i:i + pack_size])
+
+        self._log(
+            f"\n⚡ PARALLEL MODE: {total} images → {len(packs)} packs "
+            f"across {n_keys} API key(s)"
+        )
+        for i, pack in enumerate(packs):
+            self._log(
+                f"   Pack {i+1}: {len(pack)} images → Key {i+1} [{_mask_key(keys[i])}]"
+            )
+
+        # Shared state for progress tracking
+        progress_lock = threading.Lock()
+        shared_progress = {"count": 0}
+        all_results: List[Optional[Flashcard]] = [None] * total
+
+        def worker(pack_idx: int, pack_images: List[str], api_key: str):
+            """Worker thread: process one pack with one dedicated key."""
+            key_label = f"Key {pack_idx + 1}"
+            masked = _mask_key(api_key)
+
+            # Create a dedicated GeminiService for this thread
+            worker_svc = GeminiService()
+            worker_svc.set_keys([api_key])
+            worker_svc.set_log_callback(
+                lambda msg: self._log(f"[{key_label}] {msg}")
+            )
+            worker_svc.set_stop_event(stop_event)
+
+            # Split this pack into sub-batches of `batch_size` pages
+            sub_batches = [
+                pack_images[j:j + batch_size]
+                for j in range(0, len(pack_images), batch_size)
+            ]
+
+            self._log(
+                f"[{key_label}] 🚀 Starting: {len(pack_images)} images "
+                f"→ {len(sub_batches)} sub-batch(es) [{masked}]"
+            )
+
+            pack_offset = sum(len(packs[p]) for p in range(pack_idx))
+            local_processed = 0
+
+            for sb_idx, sub_batch in enumerate(sub_batches):
+                if stop_event and stop_event.is_set():
+                    break
+                while pause_event and pause_event.is_set():
+                    if stop_event and stop_event.is_set():
+                        break
+                    time.sleep(0.5)
+
+                sb_label = f"{sb_idx + 1}/{len(sub_batches)}"
+
+                try:
+                    pdf_bytes = self.images_to_pdf(sub_batch)
+                    cards = worker_svc.process_pdf_bytes(
+                        pdf_bytes, sub_batch, batch_label=f"P{pack_idx+1}-{sb_label}"
+                    )
+
+                    while len(cards) < len(sub_batch):
+                        cards.append(None)
+
+                    for i, card in enumerate(cards[:len(sub_batch)]):
+                        global_idx = pack_offset + local_processed
+                        all_results[global_idx] = card
+                        local_processed += 1
+
+                        with progress_lock:
+                            shared_progress["count"] += 1
+                            current = shared_progress["count"]
+                        if on_progress:
+                            on_progress(current, total, card)
+
+                except Exception as e:
+                    self._log(
+                        f"[{key_label}] ✗ Sub-batch {sb_label} failed: "
+                        f"{str(e)[:120]}"
+                    )
+                    for img_path in sub_batch:
+                        global_idx = pack_offset + local_processed
+                        all_results[global_idx] = None
+                        local_processed += 1
+
+                        with progress_lock:
+                            shared_progress["count"] += 1
+                            current = shared_progress["count"]
+                        if on_error:
+                            on_error(global_idx, img_path, str(e))
+                        if on_progress:
+                            on_progress(current, total, None)
+
+                # Rate limit delay between sub-batches
+                if sb_idx < len(sub_batches) - 1:
+                    delay = max(60 / SAFE_RPM, 1.0)
+                    elapsed = 0.0
+                    while elapsed < delay:
+                        if stop_event and stop_event.is_set():
+                            break
+                        time.sleep(0.2)
+                        elapsed += 0.2
+
+            self._log(f"[{key_label}] ✔ Finished all sub-batches")
+
+        # Launch worker threads
+        threads = []
+        for idx, (pack, key) in enumerate(zip(packs, keys)):
+            t = threading.Thread(
+                target=worker, args=(idx, pack, key), daemon=True
+            )
+            threads.append(t)
+            t.start()
+
+        # Wait for all threads
+        for t in threads:
+            t.join()
+
+        valid_total = sum(1 for c in all_results if c is not None)
+        self._log(
+            f"\n🏁 PARALLEL DONE! {valid_total}/{total} cards extracted "
+            f"across {len(packs)} parallel workers."
+        )
+        return all_results
+
+    # ─────────────────────────────────────
     # Per-image batch (original mode)
     # ─────────────────────────────────────
     def process_images_batch(

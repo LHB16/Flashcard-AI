@@ -8,9 +8,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-const pkg = require('../../package.json');
-const CURRENT_VERSION = pkg.version;
+const CURRENT_VERSION = Constants.expoConfig?.version || '1.0.1';
 
 import { useFocusEffect } from '@react-navigation/native';
 import { loadDecks, saveDecks, clearDecks } from '../utils/storage';

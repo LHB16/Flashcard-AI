@@ -384,12 +384,14 @@ class ScanFrame(ctk.CTkFrame):
 # DIALOG: Question Deduplication
 # ─────────────────────────────────────────────
 class QuestionDedupDialog(ctk.CTkToplevel):
+    PAGE_SIZE = 20  # pairs per page
+
     def __init__(self, parent, deck, duplicates, on_apply):
         super().__init__(parent)
         self.deck = deck
         self.duplicates = duplicates  # [(idx_a, idx_b, ratio), ...]
         self.on_apply = on_apply
-        self.title("🔍 Lọc câu hỏi trùng")
+        self.title("🔍 Filter Duplicate Questions")
         self.geometry("820x680")
         self.resizable(True, True)
         self.grab_set()
@@ -397,57 +399,66 @@ class QuestionDedupDialog(ctk.CTkToplevel):
         center_window(self, 820, 680)
 
         # Separate into exact and similar
-        exact = [(a, b, r) for a, b, r in duplicates if r >= 0.99]
-        similar = [(a, b, r) for a, b, r in duplicates if r < 0.99]
+        self._exact = [(a, b, r) for a, b, r in duplicates if r >= 0.99]
+        self._similar = [(a, b, r) for a, b, r in duplicates if r < 0.99]
+        # Combined list for pagination: exact first, then similar
+        self._all_pairs = self._exact + self._similar
+        self._current_page = 0
+        self._total_pages = max(1, (len(self._all_pairs) + self.PAGE_SIZE - 1) // self.PAGE_SIZE)
 
-        # Header
-        ctk.CTkLabel(self,
-                     text=f"🔍 Found {len(exact)} exact duplicates (100%)  ·  {len(similar)} similar",
-                     font=ctk.CTkFont(size=17, weight="bold"), text_color=TEXT).pack(pady=(15, 3))
-        ctk.CTkLabel(self,
-                     text="Review potential duplicates based on content. Mark ☑ to delete (auto-selected the later one).",
-                     font=ctk.CTkFont(size=12), text_color=TEXT_DIM).pack(pady=(0, 8))
-
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=15, pady=5)
-
+        # Pre-create all BooleanVars (lightweight) for every pair
         self._delete_vars = {}    # (pair_key, slot) -> BooleanVar
         self._exact_b_keys = []   # keys for exact-group 'b' cards only
         self._key_to_idx = {}     # (pair_key, slot) -> actual card index (int)
 
-        def _ans_text(c):
-            opts = getattr(c, 'options', []) or []
-            correct = getattr(c, 'correct_answers', []) or []
-            if not correct:
-                return "Answer: (none)"
-            correct_set = {x.strip().upper() for x in correct}
-            matched = [opt for opt in opts if opt.strip() and opt.strip()[0].upper() in correct_set]
-            if matched:
-                return "Answer: " + " | ".join(matched)
-            return "Answer: " + ", ".join(correct)
+        for i, (idx_a, idx_b, ratio) in enumerate(self._all_pairs):
+            is_exact = ratio >= 0.99
+            pair_key = f"pair_{i}"
+            for slot, idx, default_checked in [('a', idx_a, False), ('b', idx_b, is_exact)]:
+                key = (pair_key, slot)
+                self._delete_vars[key] = ctk.BooleanVar(value=default_checked)
+                self._key_to_idx[key] = idx
+                if slot == 'b' and is_exact:
+                    self._exact_b_keys.append(key)
 
-        def _build_section(title, color, items, default_checked_b):
-            if not items:
-                return
-            sec_lbl = ctk.CTkLabel(scroll, text=title,
-                                   font=ctk.CTkFont(size=14, weight="bold"),
-                                   text_color=color)
-            sec_lbl.pack(anchor="w", pady=(12, 4))
-            for i, (idx_a, idx_b, ratio) in enumerate(items):
-                self._build_pair(scroll, idx_a, idx_b, ratio, _ans_text, default_checked_b, f"{color}_{i}")
+        # Header
+        exact_n = len(self._exact)
+        similar_n = len(self._similar)
+        ctk.CTkLabel(self,
+                     text=f"🔍 Found {exact_n} exact (100%)  ·  {similar_n} similar  ·  {len(self._all_pairs)} total",
+                     font=ctk.CTkFont(size=17, weight="bold"), text_color=TEXT).pack(pady=(15, 3))
+        ctk.CTkLabel(self,
+                     text="Review potential duplicates. Mark ☑ to delete (auto-selected the later one).",
+                     font=ctk.CTkFont(size=12), text_color=TEXT_DIM).pack(pady=(0, 8))
 
-        # Section 1: Exact (100%) — auto-check second card for deletion
-        _build_section(f"✅ Exact Match (100%) — {len(exact)} pairs", DANGER, exact, True)
-        # Section 2: Similar (<100%) — nothing pre-checked, user reviews manually
-        _build_section(f"🔍 Similar Match — {len(similar)} pairs (Review before deletion)", "#7C3AED", similar, False)
+        # Scrollable pair list (rebuilt per page)
+        self._scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        self._scroll.pack(fill="both", expand=True, padx=15, pady=5)
 
-        # Bottom buttons
+        # Pagination bar
+        self._page_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self._page_frame.pack(fill="x", padx=15, pady=(4, 0))
+
+        self._prev_btn = ctk.CTkButton(self._page_frame, text="◀ Prev", width=80, height=30,
+                      fg_color=SURFACE2, hover_color=SURFACE, text_color=TEXT,
+                      command=self._prev_page)
+        self._prev_btn.pack(side="left", padx=5)
+
+        self._page_lbl = ctk.CTkLabel(self._page_frame, text="",
+                     font=ctk.CTkFont(size=12, weight="bold"), text_color=TEXT_DIM)
+        self._page_lbl.pack(side="left", expand=True)
+
+        self._next_btn = ctk.CTkButton(self._page_frame, text="Next ▶", width=80, height=30,
+                      fg_color=SURFACE2, hover_color=SURFACE, text_color=TEXT,
+                      command=self._next_page)
+        self._next_btn.pack(side="right", padx=5)
+
+        # Bottom action buttons
         btns = ctk.CTkFrame(self, fg_color="transparent")
-        btns.pack(pady=12)
+        btns.pack(pady=10)
         ctk.CTkButton(btns, text="Cancel", width=90, height=36,
                       fg_color=SURFACE, hover_color=SURFACE2, text_color=TEXT,
                       command=self.destroy).pack(side="left", padx=8)
-        # Toggle button only affects exact pairs
         self._toggle_btn = ctk.CTkButton(btns, text="☒ Select All (100%)", width=170, height=36,
                       fg_color="#B91C1C", hover_color="#991B1B", text_color="white",
                       command=self._toggle_exact)
@@ -457,75 +468,112 @@ class QuestionDedupDialog(ctk.CTkToplevel):
                       font=ctk.CTkFont(weight="bold"),
                       command=self._apply).pack(side="left", padx=8)
 
-    def _build_pair(self, parent, idx_a, idx_b, ratio, ans_fn, default_checked_b=False, pair_key=None):
-        if pair_key is None:
-            pair_key = f"{idx_a}_{idx_b}"
-        pct = int(ratio * 100)
-        pair_frame = ctk.CTkFrame(parent, fg_color=SURFACE, corner_radius=8)
-        pair_frame.pack(fill="x", pady=4)
+        # Build first page
+        self._render_page()
 
-        ctk.CTkLabel(pair_frame, text=f"🔗 {pct}% similar",
-                     font=ctk.CTkFont(size=12, weight="bold"),
-                     text_color="#6D28D9").pack(anchor="w", padx=12, pady=(7, 2))
+    @staticmethod
+    def _ans_text(c):
+        opts = getattr(c, 'options', []) or []
+        correct = getattr(c, 'correct_answers', []) or []
+        if not correct:
+            return "Answer: (none)"
+        correct_set = {x.strip().upper() for x in correct}
+        matched = [opt for opt in opts if opt.strip() and opt.strip()[0].upper() in correct_set]
+        if matched:
+            return "Answer: " + " | ".join(matched)
+        return "Answer: " + ", ".join(correct)
 
-        card_a = self.deck.cards[idx_a]
-        card_b = self.deck.cards[idx_b]
+    def _render_page(self):
+        """Rebuild the scroll content for the current page only."""
+        for w in self._scroll.winfo_children():
+            w.destroy()
 
-        # Two-column side-by-side layout
-        cols = ctk.CTkFrame(pair_frame, fg_color="transparent")
-        cols.pack(fill="x", padx=8, pady=(0, 6))
-        cols.columnconfigure(0, weight=1)
-        cols.columnconfigure(1, weight=1)
+        start = self._current_page * self.PAGE_SIZE
+        end = min(start + self.PAGE_SIZE, len(self._all_pairs))
+        page_pairs = self._all_pairs[start:end]
+        exact_boundary = len(self._exact)
 
-        for col_i, (idx, card, slot, default_checked) in enumerate(
-            [(idx_a, card_a, 'a', False), (idx_b, card_b, 'b', default_checked_b)]
-        ):
-            key = (pair_key, slot)
-            # Each pair/slot gets its OWN BooleanVar (no sharing between groups)
-            self._delete_vars[key] = ctk.BooleanVar(value=default_checked)
-            if slot == 'b' and default_checked_b:
-                # Track for exact toggle
-                self._exact_b_keys.append(key)
+        for i, (idx_a, idx_b, ratio) in enumerate(page_pairs):
+            global_i = start + i
+            pair_key = f"pair_{global_i}"
+            pct = int(ratio * 100)
 
-            # Track real card index for _apply
-            self._key_to_idx[key] = idx
+            pair_frame = ctk.CTkFrame(self._scroll, fg_color=SURFACE, corner_radius=8)
+            pair_frame.pack(fill="x", pady=4)
 
+            if global_i < exact_boundary:
+                badge_text = f"✅ {pct}% exact"
+                badge_color = DANGER
+            else:
+                badge_text = f"🔍 {pct}% similar"
+                badge_color = "#6D28D9"
 
-            cell = ctk.CTkFrame(cols, fg_color="transparent")
-            cell.grid(row=0, column=col_i, sticky="nsew", padx=4)
+            ctk.CTkLabel(pair_frame, text=badge_text,
+                         font=ctk.CTkFont(size=12, weight="bold"),
+                         text_color=badge_color).pack(anchor="w", padx=12, pady=(7, 2))
 
-            # Checkbox + header row
-            hdr = ctk.CTkFrame(cell, fg_color="transparent")
-            hdr.pack(fill="x")
-            ctk.CTkCheckBox(hdr, text=f"#{idx+1} — Delete?",
-                            variable=self._delete_vars[key],
-                            width=24, checkbox_width=18, checkbox_height=18,
-                            fg_color=DANGER, hover_color="#DC2626",
-                            checkmark_color="white",
-                            font=ctk.CTkFont(size=12, weight="bold"),
-                            text_color=TEXT).pack(side="left", padx=4)
+            card_a = self.deck.cards[idx_a]
+            card_b = self.deck.cards[idx_b]
 
-            q = card.question[:160] + ("..." if len(card.question) > 160 else "")
-            ctk.CTkLabel(cell, text=q,
-                         font=ctk.CTkFont(size=11), text_color=TEXT,
-                         wraplength=320, anchor="w", justify="left").pack(anchor="w", padx=6, pady=(2, 0))
-            ctk.CTkLabel(cell, text=ans_fn(card),
-                         font=ctk.CTkFont(size=11), text_color=SUCCESS,
-                         wraplength=320, anchor="w", justify="left").pack(anchor="w", padx=6)
+            cols = ctk.CTkFrame(pair_frame, fg_color="transparent")
+            cols.pack(fill="x", padx=8, pady=(0, 6))
+            cols.columnconfigure(0, weight=1)
+            cols.columnconfigure(1, weight=1)
 
-        ctk.CTkFrame(pair_frame, height=1, fg_color=SURFACE2).pack(fill="x", padx=10, pady=(4, 5))
+            for col_i, (idx, card, slot) in enumerate(
+                [(idx_a, card_a, 'a'), (idx_b, card_b, 'b')]
+            ):
+                key = (pair_key, slot)
+                cell = ctk.CTkFrame(cols, fg_color="transparent")
+                cell.grid(row=0, column=col_i, sticky="nsew", padx=4)
+
+                hdr = ctk.CTkFrame(cell, fg_color="transparent")
+                hdr.pack(fill="x")
+                ctk.CTkCheckBox(hdr, text=f"#{idx+1} — Delete?",
+                                variable=self._delete_vars[key],
+                                width=24, checkbox_width=18, checkbox_height=18,
+                                fg_color=DANGER, hover_color="#DC2626",
+                                checkmark_color="white",
+                                font=ctk.CTkFont(size=12, weight="bold"),
+                                text_color=TEXT).pack(side="left", padx=4)
+
+                q = card.question[:160] + ("..." if len(card.question) > 160 else "")
+                ctk.CTkLabel(cell, text=q,
+                             font=ctk.CTkFont(size=11), text_color=TEXT,
+                             wraplength=320, anchor="w", justify="left").pack(anchor="w", padx=6, pady=(2, 0))
+                ctk.CTkLabel(cell, text=self._ans_text(card),
+                             font=ctk.CTkFont(size=11), text_color=SUCCESS,
+                             wraplength=320, anchor="w", justify="left").pack(anchor="w", padx=6)
+
+            ctk.CTkFrame(pair_frame, height=1, fg_color=SURFACE2).pack(fill="x", padx=10, pady=(4, 5))
+
+        # Update pagination UI
+        self._page_lbl.configure(text=f"Page {self._current_page + 1} / {self._total_pages}")
+        self._prev_btn.configure(state="normal" if self._current_page > 0 else "disabled")
+        self._next_btn.configure(state="normal" if self._current_page < self._total_pages - 1 else "disabled")
+
+    def _prev_page(self):
+        if self._current_page > 0:
+            self._current_page -= 1
+            self._render_page()
+
+    def _next_page(self):
+        if self._current_page < self._total_pages - 1:
+            self._current_page += 1
+            self._render_page()
 
     def _toggle_exact(self):
         """Toggle: if all exact-pair 'b' cards are checked → uncheck all; otherwise → check all."""
         if not self._exact_b_keys:
             return
         all_checked = all(self._delete_vars[k].get() for k in self._exact_b_keys)
-        new_state = not all_checked  # flip
+        new_state = not all_checked
         for k in self._exact_b_keys:
             self._delete_vars[k].set(new_state)
         self._toggle_btn.configure(
             text=("☒ Unselect All (100%)" if new_state else "☑ Select All (100%)")
         )
+        self._render_page()
 
     def _apply(self):
         # Collect unique card indices marked for deletion
@@ -548,11 +596,11 @@ class ScanAssignDialog(ctk.CTkToplevel):
         self.deck_name = deck_name
         self.selected_keys = []
         self.title("Assign API Keys for Scan")
-        self.geometry("500x400")
+        self.geometry("500x480")
         self.resizable(False, False)
         self.grab_set()
         self.configure(fg_color=CARD_BG)
-        center_window(self, 500, 400)
+        center_window(self, 500, 480)
         self._build_ui()
 
     def _build_ui(self):
@@ -589,8 +637,25 @@ class ScanAssignDialog(ctk.CTkToplevel):
                 ctk.CTkLabel(row, text="[In Use]", font=ctk.CTkFont(size=11, weight="bold"),
                              text_color=WARNING).pack(side="right", padx=10)
 
+        # Parallel mode toggle
+        parallel_frame = ctk.CTkFrame(self, fg_color="transparent")
+        parallel_frame.pack(fill="x", padx=20, pady=(5, 0))
+        self._parallel_var = ctk.BooleanVar(value=False)
+        ctk.CTkSwitch(
+            parallel_frame, text="⚡ Parallel (1 thread/key)",
+            variable=self._parallel_var,
+            onvalue=True, offvalue=False,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=TEXT,
+            fg_color=SURFACE2, progress_color=ACCENT,
+        ).pack(side="left", padx=5)
+        ctk.CTkLabel(
+            parallel_frame, text="~Nx Faster",
+            font=ctk.CTkFont(size=11), text_color=TEXT_DIM
+        ).pack(side="left", padx=(8, 0))
+
         btns = ctk.CTkFrame(self, fg_color="transparent")
-        btns.pack(pady=20)
+        btns.pack(pady=15)
         ctk.CTkButton(btns, text="Cancel", width=100, height=36,
                       fg_color=SURFACE, hover_color=SURFACE2, text_color=TEXT,
                       command=self.destroy).pack(side="left", padx=10)
@@ -605,24 +670,27 @@ class ScanAssignDialog(ctk.CTkToplevel):
             messagebox.showerror("Error", "You must select at least one API key to start the scan.")
             return
         
+        parallel = self._parallel_var.get()
         # Start background scan
-        scan = BackgroundScan(self.app, self.image_files, self.deck_name, selected)
+        scan = BackgroundScan(self.app, self.image_files, self.deck_name, selected, parallel=parallel)
         self.app.active_scans.append(scan)
         scan.start()
         
-        win_toast("Scan Started 🚀", f"Scanning '{self.deck_name}' in the background.")
+        mode_str = "⚡ parallel" if parallel else "sequential"
+        win_toast("Scan Started 🚀", f"Scanning '{self.deck_name}' ({mode_str}).")
         self.app.show_frame("home")
         self.app.frames["scan"].reset()
         self.destroy()
 
 
 class BackgroundScan:
-    def __init__(self, app, image_files, deck_name, keys):
+    def __init__(self, app, image_files, deck_name, keys, parallel=False):
         self.app = app
         self.id = str(uuid.uuid4())
         self.image_files = image_files
         self.deck_name = deck_name
         self.keys = keys
+        self.parallel = parallel
         
         self.gemini_service = GeminiService()
         self.stop_event = threading.Event()
@@ -679,8 +747,9 @@ class BackgroundScan:
         self.status_color = SUCCESS
         
         total = len(self.image_files)
+        mode_label = "⚡ PARALLEL" if self.parallel else "📁 Sequential"
         n_batches = (total + 49) // 50
-        self._log(f"📁 {total} images → {n_batches} PDF batch(es)")
+        self._log(f"{mode_label}: {total} images → {n_batches} PDF batch(es)")
         
         last_batch_logged = -1
         
@@ -706,13 +775,23 @@ class BackgroundScan:
         def on_error(idx, path, msg):
             pass
 
-        self.gemini_service.process_images_as_pdf_batches(
-            self.image_files,
-            on_progress=on_progress,
-            on_error=on_error,
-            stop_event=self.stop_event,
-            pause_event=self.pause_event
-        )
+        if self.parallel and len(alive_keys) > 1:
+            self.gemini_service.process_images_parallel(
+                self.image_files,
+                keys=alive_keys,
+                on_progress=on_progress,
+                on_error=on_error,
+                stop_event=self.stop_event,
+                pause_event=self.pause_event
+            )
+        else:
+            self.gemini_service.process_images_as_pdf_batches(
+                self.image_files,
+                on_progress=on_progress,
+                on_error=on_error,
+                stop_event=self.stop_event,
+                pause_event=self.pause_event
+            )
         
         if self.stop_event.is_set():
             self.status = "Stopped"
@@ -817,11 +896,11 @@ class HomeFrame(ctk.CTkFrame):
         self.scans_frame.pack(fill="x", padx=20, pady=(15, 0))
 
         # Search bar
-        search_row = ctk.CTkFrame(self, fg_color="transparent")
-        search_row.pack(fill="x", padx=20, pady=(10, 10))
+        self.search_row = ctk.CTkFrame(self, fg_color="transparent")
+        self.search_row.pack(fill="x", padx=20, pady=(10, 10))
         self.search_var = ctk.StringVar()
         self.search_var.trace("w", lambda *a: self.refresh())
-        ctk.CTkEntry(search_row, textvariable=self.search_var,
+        ctk.CTkEntry(self.search_row, textvariable=self.search_var,
                      placeholder_text="🔍  Search decks...",
                      height=36, font=ctk.CTkFont(size=13)).pack(fill="x")
 
@@ -852,7 +931,12 @@ class HomeFrame(ctk.CTkFrame):
         
         scans = getattr(self.app, "active_scans", [])
         if not scans:
+            self.scans_frame.pack_forget()
             return
+
+        # Re-pack scan frame if it was hidden
+        self.scans_frame.pack(fill="x", padx=20, pady=(15, 0),
+                              before=self.search_row)
 
         ctk.CTkLabel(self.scans_frame, text="🔄  Active Scans",
                      font=ctk.CTkFont(size=14, weight="bold"), text_color=SUCCESS).pack(anchor="w", pady=(0, 5))
