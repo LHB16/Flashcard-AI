@@ -52,9 +52,27 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-# Custom Docs
-docs/
-flow_prompt_builder.html
+
+# App data & Sensitive files
+*.json
+!app.json
+!androidApp/app.json
+!androidApp/package.json
+!androidApp/package-lock.json
+!androidApp/eas.json
+
+# Explicitly exclude sensitive login/data files
+credentials.json
+token.json
+decks.json
+decks_test.json
+quiz_sessions.json
+api_keys.json
+
+# Documentation (Ensure these are included)
+!docs/
+!AI_CONTEXT.md
+!README.md
 
 # Developer Tools
 flow_prompt_builder.html
