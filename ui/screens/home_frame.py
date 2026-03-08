@@ -9,12 +9,20 @@ from ui.theme import (
 )
 from models.flashcard import Deck, QuestionType
 from services.storage_service import save_decks
-
+import threading
+import time
 
 class HomeFrame(ctk.CTkFrame):
     def __init__(self, parent, app):
         super().__init__(parent, fg_color=CARD_BG)
         self.app = app
+        
+        # Initialize sync services lazily or carefully
+        from services.auth_service import GoogleAuthService
+        from services.sync_service import SyncService
+        self.auth_service = GoogleAuthService()
+        self.sync_service = SyncService(self.auth_service)
+        
         self._build_ui()
 
     def _build_ui(self):
@@ -27,6 +35,23 @@ class HomeFrame(ctk.CTkFrame):
 
         btn_row = ctk.CTkFrame(hdr, fg_color="transparent")
         btn_row.pack(side="right", padx=15, pady=10)
+        
+        # Sync Status Label
+        self.sync_status_lbl = ctk.CTkLabel(btn_row, text="", text_color=TEXT_DIM, font=ctk.CTkFont(size=12, slant="italic"))
+        self.sync_status_lbl.pack(side="left", padx=10)
+        
+        # Login/Logout Button
+        self.auth_btn = ctk.CTkButton(btn_row, text="Login Drive", width=100, height=36,
+                                      fg_color=SURFACE2, hover_color=SURFACE, text_color=TEXT,
+                                      command=self._toggle_auth)
+        self.auth_btn.pack(side="left", padx=4)
+        
+        # Sync Button
+        self.sync_btn = ctk.CTkButton(btn_row, text="🔄 Sync", width=90, height=36,
+                                      fg_color="#3B82F6", hover_color="#2563EB", text_color="white",
+                                      command=self._start_sync)
+        self.sync_btn.pack(side="left", padx=4)
+        
         ctk.CTkButton(btn_row, text="⚙ API Keys", width=100, height=36,
                       fg_color=SURFACE2, hover_color=SURFACE, text_color=TEXT,
                       command=self.app.open_api_keys).pack(side="left", padx=4)
@@ -34,6 +59,9 @@ class HomeFrame(ctk.CTkFrame):
                       fg_color=ACCENT, hover_color=ACCENT_HOVER, text_color="white",
                       font=ctk.CTkFont(weight="bold"),
                       command=lambda: self.app.show_frame("scan")).pack(side="left", padx=4)
+                      
+        # Update auth state on startup
+        self._update_auth_ui()
 
         # Active Scans Section (updated via refresh)
         self.scans_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -56,11 +84,66 @@ class HomeFrame(ctk.CTkFrame):
     def refresh(self):
         self._rebuild_scans()
         self._rebuild_decks()
+        self._update_auth_ui()
         # Force Tkinter to process layout updates immediately
         try:
             self.scroll.update_idletasks()
         except Exception:
             pass
+
+    def _update_auth_ui(self):
+        if self.auth_service.is_logged_in():
+            email = self.auth_service.get_user_email()
+            short_email = email.split('@')[0] if email else "Drive"
+            self.auth_btn.configure(text=f"Logout ({short_email})")
+            self.sync_btn.configure(state="normal")
+        else:
+            self.auth_btn.configure(text="Login Drive")
+            self.sync_btn.configure(state="disabled")
+
+    def _toggle_auth(self):
+        if self.auth_service.is_logged_in():
+            self.auth_service.logout()
+            self._update_auth_ui()
+        else:
+            self.sync_status_lbl.configure(text="Đang đăng nhập...", text_color=TEXT_DIM)
+            self.app.update_idletasks()
+            def do_login():
+                success = self.auth_service.login()
+                def on_done():
+                    self.sync_status_lbl.configure(text="")
+                    self._update_auth_ui()
+                    if not success:
+                        messagebox.showerror("Error", "Đăng nhập thất bại. Hãy kiểm tra credentials.json")
+                self.app.after(0, on_done)
+            threading.Thread(target=do_login, daemon=True).start()
+
+    def _start_sync(self):
+        self.sync_btn.configure(state="disabled")
+        self.sync_status_lbl.configure(text="Đang đồng bộ...", text_color="#3B82F6")
+        
+        def run_sync():
+            try:
+                success, msg = self.sync_service.perform_full_sync()
+            except Exception as e:
+                success, msg = False, str(e)
+                
+            def on_sync_done():
+                if success:
+                    self.sync_status_lbl.configure(text=f"✅ {msg}", text_color=SUCCESS)
+                    # Reload decks from storage and refresh UI
+                    from services.storage_service import load_decks
+                    self.app.decks = load_decks()
+                    self.refresh()
+                else:
+                    self.sync_status_lbl.configure(text=f"❌ {msg}", text_color=DANGER)
+                self.sync_btn.configure(state="normal")
+                # Clear status after 5 seconds
+                self.app.after(5000, lambda: self.sync_status_lbl.configure(text=""))
+                
+            self.app.after(0, on_sync_done)
+            
+        threading.Thread(target=run_sync, daemon=True).start()
 
     def _schedule_scan_update(self):
         """Thread-safe: schedule a UI update on the main thread (throttled)."""

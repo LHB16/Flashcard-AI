@@ -16,6 +16,7 @@ A comprehensive learning ecosystem powered by **Google Gemini AI**. This project
 The control center for scanning and deck management.
 
 - **🤖 AI OCR Scanning**: Batched processing of folder images via Gemini API.
+- **☁️ Cloud Sync**: Bi-directional Smart Merge synchronization via Google Drive AppData (keeps devices updated effortlessly).
 - **⚡ Background Processing**: Multiple scans can run simultaneously with real-time logs and progress tracking.
 - **🛠️ API Key Management**: Support for multiple Gemini keys with per-key usage tracking.
 - **⌨️ Study Mode**: Advanced flashcard review with keyboard shortcuts (`Space` to flip, arrows to score) and **Undo** functionality.
@@ -42,7 +43,8 @@ Your portable study companion built with **React Native**.
 |:---:|:---:|:---:|
 | Python 3.10+ | React Native (Expo SDK 55) | Google Gemini AI |
 | CustomTkinter | AsyncStorage | JSON Database |
-| PyInstaller | React Navigation | batch-PDF OCR |
+| Google Drive API (OAuth) | React Navigation | batch-PDF OCR |
+| PyInstaller | | |
 
 ---
 
@@ -78,7 +80,8 @@ We provide manual build scripts in the root directory:
 
 ## 🛡️ Privacy & Security
 - **Local First**: All your decks and scan results are saved locally on your device (`decks.json`).
-- **Secure Keys**: Your API keys are stored in `api_keys.json` (ignored by Git) and are masked in the UI.
+- **Secure Cloud Sync**: Uses the hidden Google Drive **AppData** folder, meaning the synced files cannot be tampered with or seen by users directly in standard Google Drive.
+- **Secure Keys**: Your API keys and OAuth tokens (`token.json`) are stored securely and ignored by Git. They are masked in the UI.
 
 ---
 

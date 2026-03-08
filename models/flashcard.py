@@ -115,6 +115,7 @@ class Deck:
     cards: List[Flashcard] = field(default_factory=list)
     deck_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     source_folder: str = ""
     description: str = ""
 
@@ -123,6 +124,7 @@ class Deck:
             "deck_id": self.deck_id,
             "name": self.name,
             "created_at": self.created_at,
+            "updated_at": self.updated_at,
             "source_folder": self.source_folder,
             "description": self.description,
             "cards": [c.to_dict() for c in self.cards],
@@ -135,6 +137,7 @@ class Deck:
             deck_id=data.get("deck_id", str(uuid.uuid4())),
             name=data.get("name", "Unnamed Deck"),
             created_at=data.get("created_at", datetime.now().isoformat()),
+            updated_at=data.get("updated_at", datetime.now().isoformat()),
             source_folder=data.get("source_folder", ""),
             description=data.get("description", ""),
             cards=cards,
@@ -156,6 +159,7 @@ class QuizSession:
     correct_count: int = 0
     wrong_count: int = 0
     started_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
     @property
     def is_complete(self) -> bool:
@@ -177,6 +181,7 @@ class QuizSession:
             "correct_count": self.correct_count,
             "wrong_count": self.wrong_count,
             "started_at": self.started_at,
+            "updated_at": self.updated_at,
         }
 
     @classmethod
@@ -190,6 +195,7 @@ class QuizSession:
             correct_count=data.get("correct_count", 0),
             wrong_count=data.get("wrong_count", 0),
             started_at=data.get("started_at", datetime.now().isoformat()),
+            updated_at=data.get("updated_at", datetime.now().isoformat()),
         )
 
     @classmethod

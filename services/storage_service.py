@@ -39,6 +39,9 @@ def load_decks() -> List[Deck]:
 
 def save_decks(decks: List[Deck]):
     _ensure_dir()
+    now_iso = __import__('datetime').datetime.now().isoformat()
+    for d in decks:
+        d.updated_at = now_iso
     with open(DECKS_FILE, "w", encoding="utf-8") as f:
         json.dump([d.to_dict() for d in decks], f, ensure_ascii=False, indent=2)
 
@@ -80,6 +83,7 @@ def load_quiz_sessions() -> Dict[str, QuizSession]:
 
 
 def save_quiz_session(session: QuizSession):
+    session.updated_at = __import__('datetime').datetime.now().isoformat()
     sessions = load_quiz_sessions()
     sessions[session.deck_id] = session
     _ensure_dir()

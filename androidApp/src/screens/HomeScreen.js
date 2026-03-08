@@ -96,7 +96,9 @@ export default function HomeScreen({ navigation }) {
 
             setLoading(true);
             const uri = result.assets[0].uri;
-            const text = await FileSystem.readAsStringAsync(uri);
+            let text = await FileSystem.readAsStringAsync(uri);
+            // Remove BOM and leading/trailing whitespace
+            text = text.replace(/^\uFEFF/, '').trim();
             const parsed = JSON.parse(text);
             const arr = Array.isArray(parsed) ? parsed : [];
             await saveDecks(arr);
