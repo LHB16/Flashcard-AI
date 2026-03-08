@@ -65,13 +65,14 @@ python app.py
 ```
 
 #### 🔑 Google Drive API Configuration
-To use the Cloud Sync feature on Desktop, you need to provide your own Google OAuth credentials:
+The official build now **includes embedded credentials**, so you can use the Cloud Sync feature out-of-the-box!
+
+If you are a developer or want to use your own Google Cloud project:
 1. Go to [Google Cloud Console](https://console.cloud.google.com/).
 2. Create a new project and enable the **Google Drive API**.
 3. Configure the **OAuth Consent Screen** (Internal or External with your email as a test user).
-4. Go to **Credentials** -> **Create Credentials** -> **OAuth Client ID**.
-5. Select **Desktop App** as the application type.
-6. Download the JSON file, rename it to `credentials.json`, and place it in the project root directory.
+4. Go to **Credentials** -> **Create Credentials** -> **OAuth Client ID** (Desktop App).
+5. Download the JSON file, rename it to `credentials.json`, and place it in the project root. The app will prioritize this file if it exists.
 
 ---
 

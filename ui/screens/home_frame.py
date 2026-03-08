@@ -114,7 +114,7 @@ class HomeFrame(ctk.CTkFrame):
                     self.sync_status_lbl.configure(text="")
                     self._update_auth_ui()
                     if not success:
-                        messagebox.showerror("Error", "Đăng nhập thất bại. Hãy kiểm tra credentials.json")
+                        messagebox.showerror("Error", "Đăng nhập thất bại. Hãy kiểm tra kết nối mạng hoặc cấu hình Google Drive.")
                 self.app.after(0, on_done)
             threading.Thread(target=do_login, daemon=True).start()
 

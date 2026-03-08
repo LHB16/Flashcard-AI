@@ -2,6 +2,8 @@
 services/auth_service.py - Google Drive Authentication
 """
 import os
+import json
+import base64
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -13,7 +15,10 @@ SCOPES = [
     'openid', # Required for userinfo
 ]
 TOKEN_FILE = "token.json"
-CREDENTIALS_FILE = "credentials.json"
+EXTERNAL_CREDENTIALS_FILE = "credentials.json"
+
+# Base64 encoded credentials.json content
+EMBEDDED_CREDENTIALS_B64 = "eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiOTAwNTU5Njc0MTQyLXA1ajlpbmZqaTgyMTNyNWI0MG02OXJwa3RlNWFvZzVvLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwicHJvamVjdF9pZCI6ImZsYXNoY2FyZGFwcC1zeW5jIiwiYXV0aF91cmkiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20vby9vYXV0aDIvYXV0aCIsInRva2VuX3VyaSI6Imh0dHBzOi8vb2F1dGgyLmdvb2dsZWFwaXMuY29tL3Rva2VuIiwiYXV0aF9wcm92aWRlcl94NTA5X2NlcnRfdXJsIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwiY2xpZW50X3NlY3JldCI6IkdPQ1NQWC1aaTdHYUhpTWJ2QUhwX0JqVUxVYTloeVc5blhOIiwicmVkaXJlY3RfdXJpcyI6WyJodHRwOi8vbG9jYWxob3N0Il19fQ=="
 
 class GoogleAuthService:
     def __init__(self):
@@ -29,11 +34,19 @@ class GoogleAuthService:
                 if self.creds and self.creds.expired and self.creds.refresh_token:
                     self.creds.refresh(Request())
                 else:
-                    if not os.path.exists(CREDENTIALS_FILE):
-                        print(f"Error: {CREDENTIALS_FILE} not found.")
-                        return False
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        CREDENTIALS_FILE, SCOPES)
+                    # Check for external credentials first (manual override for devs)
+                    if os.path.exists(EXTERNAL_CREDENTIALS_FILE):
+                        flow = InstalledAppFlow.from_client_secrets_file(
+                            EXTERNAL_CREDENTIALS_FILE, SCOPES)
+                    else:
+                        # Use embedded credentials
+                        try:
+                            creds_json = base64.b64decode(EMBEDDED_CREDENTIALS_B64).decode('utf-8')
+                            creds_dict = json.loads(creds_json)
+                            flow = InstalledAppFlow.from_client_config(creds_dict, SCOPES)
+                        except Exception as e:
+                            print(f"Error loading embedded credentials: {e}")
+                            return False
                     
                     # Run local server on a random port to capture redirect
                     self.creds = flow.run_local_server(port=0, access_type='offline')
