@@ -2,7 +2,11 @@
   "expo": {
     "name": "FlashcardAI",
     "slug": "flashcard-ai",
-    "version": "1.0.1",
+    "scheme": [
+      "flashcardai",
+      "com.googleusercontent.apps.900559674142-opri1224fsh2m708l2g2fd0bv1vkhnge"
+    ],
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,6 +22,7 @@
         "backgroundColor": "#4F46E5"
       },
       "package": "com.flashcardai.app",
+      "versionCode": 2,
       "permissions": [
         "REQUEST_INSTALL_PACKAGES"
       ]
@@ -30,6 +35,9 @@
         "projectId": "3f5f49f9-c808-4eec-9184-e7e56da18a7f"
       }
     },
-    "owner": "lhbinh"
+    "owner": "lhbinh",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

@@ -2,6 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![React Native](https://img.shields.io/badge/react--native-v0.83-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
+[![Version](https://img.shields.io/badge/version-1.0.2-green)](https://github.com/LHB16/Flashcard-AI)
 [![Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-orange?logo=google-gemini)](https://ai.google.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -33,7 +34,7 @@ Your portable study companion built with **React Native**.
 - **🔀 3D Flip Anim**: High-performance 3D card animations for a premium feel.
 - **🔄 Session Resume**: Automatically detects and resumes your last study or quiz session.
 - **📜 Smart Scrolling**: Fully supports extra-long text in both questions and answers with zero touch conflicts.
-- **🌐 English UI**: The app interface serves a global audience with a fully translated English UI.
+- **🌐 English UI**: The app interface is fully localized in English (v1.0.2).
 
 ---
 
@@ -63,6 +64,17 @@ pip install -r requirements.txt
 python app.py
 ```
 
+#### 🔑 Google Drive API Configuration
+To use the Cloud Sync feature on Desktop, you need to provide your own Google OAuth credentials:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project and enable the **Google Drive API**.
+3. Configure the **OAuth Consent Screen** (Internal or External with your email as a test user).
+4. Go to **Credentials** -> **Create Credentials** -> **OAuth Client ID**.
+5. Select **Desktop App** as the application type.
+6. Download the JSON file, rename it to `credentials.json`, and place it in the project root directory.
+
+---
+
 ### 2. Mobile Setup
 ```bash
 cd androidApp
@@ -82,6 +94,7 @@ We provide manual build scripts in the root directory:
 - **Local First**: All your decks and scan results are saved locally on your device (`decks.json`).
 - **Secure Cloud Sync**: Uses the hidden Google Drive **AppData** folder, meaning the synced files cannot be tampered with or seen by users directly in standard Google Drive.
 - **Secure Keys**: Your API keys and OAuth tokens (`token.json`) are stored securely and ignored by Git. They are masked in the UI.
+- **Sensitive Files Protection**: Critical files like `credentials.json` and `token.json` are strictly excluded from the repository. Each user should use their own credentials for maximum security.
 
 ---
 

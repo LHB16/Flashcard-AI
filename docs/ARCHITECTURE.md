@@ -16,8 +16,10 @@
 - `services/sync_service.py`: Background Smart Merge sync with Google Drive AppData
 - `services/export_service.py`: Quizlet text export + preview
 - `services/dedup_service.py`: near-duplicate detection using shingling + SequenceMatcher
-- `androidApp/src/screens/*`: Home, Deck detail, Flashcard mode, Quiz mode
-- `androidApp/src/utils/storage.js`: AsyncStorage CRUD + session persistence
+- `androidApp/src/utils/storage.js`: AsyncStorage CRUD + session persistence + timestamp injection
+- `androidApp/src/utils/syncService.js`: Mobile implementation of Smart Merge with Google Drive AppData
+- `androidApp/src/utils/googleAuth.js`: OAuth flow using `iOS Client ID` bypass for Android Redirect URIs
+- `androidApp/src/utils/googleDrive.js`: REST API interactions for `appDataFolder`
 
 ## Main Desktop Modules (ui/)
 - `ui/screens/scan_frame.py` + `ui/dialogs/scan_assign_dialog.py`: scan setup and key assignment
@@ -35,8 +37,9 @@
 4. Deck is persisted to `decks.json` and rendered in home/deck views.
 5. User studies/quizzes; card `status` and quiz sessions persist locally.
 6. Optional dedup removes similar cards; export writes Quizlet-compatible `.txt`.
-7. **Cloud Sync**: User initiates sync. Sync service fetches remote JSON, merges with local based on `updated_at`, and pushes the combined state back.
-8. Mobile app imports `decks.json` (exported manually or via drive) and continues study/quiz with local persistence.
+7. **Cloud Sync**: User initiates sync from either Desktop or Mobile. Both clients use the same `appDataFolder` and "Smart Merge" logic (checking `updated_at` per individual deck/session) to ensure consistency.
+8. **Mobile Sync Implementation**: Uses `expo-auth-session` with a manual Redirect URI scheme (`com.googleusercontent.apps...`) registered in `AndroidManifest.xml` to handle Google OAuth callbacks securely.
+9. Mobile app is fully localized in English (v1.0.2).
 
 ## Data Contracts
 - `Flashcard.status`: `0` unseen, `1` learning/wrong, `2` mastered/correct

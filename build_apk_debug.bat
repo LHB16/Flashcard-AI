@@ -14,6 +14,9 @@ echo Thiet lap bien moi truong...
 set "JAVA_HOME=C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot"
 set "ANDROID_HOME=C:\Users\luuhu\AppData\Local\Android\Sdk"
 
+echo Dang don dep cache gradle...
+call .\gradlew clean
+
 echo Dang chay gradlew assembleDebug...
 call .\gradlew assembleDebug
 

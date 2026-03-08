@@ -5,8 +5,8 @@
   - `services/dedup_service.py`
   - `models/flashcard.py` serialization/export behavior
   - `services/export_service.py` format correctness
-- Build native Google Drive auto-sync pipeline directly within the Android App (so the app fetches from AppData itself).
-- Centralize i18n/language strings (current UI mixes English and Vietnamese text).
+- [x] Build native Google Drive auto-sync pipeline directly within the Android App.
+- [x] Centralize i18n/language strings (Android UI is now English).
 - Add structured logging and crash-safe error reporting around scan threads.
 
 ## Technical Debt

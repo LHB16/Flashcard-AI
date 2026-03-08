@@ -16,6 +16,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { loadDecks, saveDecks, clearDecks } from '../utils/storage';
 import { Colors, Typography, Spacing, Radius } from '../theme';
 
+import { useGoogleAuth } from '../utils/googleAuth';
+import { performSync } from '../utils/syncService';
+
 export default function HomeScreen({ navigation }) {
     const [decks, setDecks] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -25,13 +28,47 @@ export default function HomeScreen({ navigation }) {
     const [ignoreUpdate, setIgnoreUpdate] = useState(false);
     const [checkingUpdate, setCheckingUpdate] = useState(false);
 
+    // Sync state
+    const { accessToken, userEmail, isRestoring, isReady, login, logout } = useGoogleAuth();
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [lastSyncTime, setLastSyncTime] = useState(null);
+    const [hasAutoSynced, setHasAutoSynced] = useState(false);
+
     useFocusEffect(useCallback(() => {
         loadDecks().then(setDecks);
     }, []));
 
     useEffect(() => {
         checkUpdates(false);
+        AsyncStorage.getItem('last_sync_time').then(val => {
+            if (val) setLastSyncTime(val);
+        });
     }, []);
+
+    async function handleSync() {
+        if (!accessToken) return;
+        setIsSyncing(true);
+        const result = await performSync(accessToken);
+        if (result.success) {
+            const time = new Date().toLocaleString('en-US');
+            setLastSyncTime(time);
+            await AsyncStorage.setItem('last_sync_time', time);
+            const freshDecks = await loadDecks();
+            setDecks(freshDecks);
+        } else {
+            Alert.alert('Sync Error', result.message);
+        }
+        setIsSyncing(false);
+    }
+
+    // Auto sync once on mount
+    useEffect(() => {
+        if (accessToken && !isRestoring && !hasAutoSynced) {
+            setHasAutoSynced(true);
+            handleSync();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [accessToken, isRestoring, hasAutoSynced]);
 
     async function checkUpdates(isManual = false) {
         try {
@@ -177,6 +214,30 @@ export default function HomeScreen({ navigation }) {
                 {decks.length > 0 && (
                     <TouchableOpacity onPress={confirmClear} style={styles.clearBtn}>
                         <Text style={styles.clearBtnText}>Delete all</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {/* Sync Area */}
+            <View style={styles.syncContainer}>
+                {isRestoring ? (
+                    <ActivityIndicator color={Colors.primary} size="small" />
+                ) : accessToken ? (
+                    <View style={styles.syncRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.syncEmail} numberOfLines={1}>👤 {userEmail}</Text>
+                            <Text style={styles.syncTime}>Last sync: {lastSyncTime || 'N/A'}</Text>
+                        </View>
+                        <TouchableOpacity onPress={handleSync} disabled={isSyncing} style={styles.syncBtn}>
+                            {isSyncing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.syncBtnText}>🔄 Sync</Text>}
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+                            <Text style={styles.logoutBtnText}>Logout</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <TouchableOpacity onPress={login} disabled={!isReady} style={styles.loginBtn}>
+                        <Text style={styles.loginBtnText}>Login with Google to Sync</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -331,6 +392,16 @@ const styles = StyleSheet.create({
         borderRadius: Radius.full,
     },
     clearBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+    syncContainer: { backgroundColor: Colors.surface, padding: Spacing.md, borderBottomWidth: 1, borderColor: Colors.border, paddingBottom: 12 },
+    syncRow: { flexDirection: 'row', alignItems: 'center' },
+    syncEmail: { fontSize: 13, fontWeight: '600', color: Colors.text },
+    syncTime: { fontSize: 11, color: Colors.textDim, marginTop: 2 },
+    syncBtn: { backgroundColor: Colors.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: Radius.sm, marginLeft: 10, minWidth: 70, alignItems: 'center' },
+    syncBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+    logoutBtn: { backgroundColor: Colors.border, paddingHorizontal: 10, paddingVertical: 8, borderRadius: Radius.sm, marginLeft: 8 },
+    logoutBtnText: { color: Colors.text, fontSize: 12, fontWeight: '600' },
+    loginBtn: { backgroundColor: '#4285F4', padding: 12, borderRadius: Radius.sm, alignItems: 'center', marginTop: 0 },
+    loginBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
     importBtn: {
         margin: Spacing.md,
         backgroundColor: Colors.primary,

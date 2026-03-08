@@ -7,6 +7,8 @@ When modifying this project, preserve local-first behavior, deck compatibility, 
 - Do not break JSON compatibility for existing `decks.json`, `settings.json`, `quiz_sessions.json`.
 - Keep `Flashcard`, `Deck`, and `QuizSession` field names stable unless adding backward-compatible migrations.
 - Preserve status mapping: `0=unseen`, `1=learning/wrong`, `2=mastered/correct`.
+- `Flashcard(question, options, correct_answers, question_type, status, notes, image_path, card_id, updated_at)`
+- `Deck(name, cards, deck_id, created_at, updated_at, source_folder, description)`
 - Keep `question_type` values compatible with both Python and React Native clients.
 - Keep long-running scan/network work off the desktop UI thread.
 

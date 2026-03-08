@@ -68,6 +68,14 @@ decks.json
 decks_test.json
 quiz_sessions.json
 api_keys.json
+Flashcard-Sync-Client-Android.json
+Flashcard-Sync-Client-IOS.plist
+FlashcardAI.spec
+crash_log.txt
+logcat_tmp.txt
+parsed_logcat.txt
+testBuild/
+build_apk_debug.bat.tmp
 
 # Documentation (Ensure these are included)
 !docs/

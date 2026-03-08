@@ -10,7 +10,7 @@ Flashcard AI is a local-first study-material pipeline that converts folders of e
 
 ## Tech Stack
 - Desktop: Python 3, CustomTkinter, Pillow, google-genai SDK, google-api-python-client (OAuth Drive)
-- Mobile: React Native 0.83 + Expo 55, React Navigation, AsyncStorage
+- Mobile: React Native 0.83 + Expo 55, React Navigation, AsyncStorage, English UI (v1.0.2)
 - Data: local JSON files (`decks.json`, `settings.json`, `quiz_sessions.json`, `token.json`) and Google Drive AppData Sync
 - Packaging: PyInstaller (`FlashcardAI.spec`), batch scripts for EXE/APK
 

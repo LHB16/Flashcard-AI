@@ -12,9 +12,9 @@
 - Question deduplication with similarity thresholding and selective removal
 - Quizlet export in 4 formats + preview
 - Windows toast notifications for scan events
-- Android app: import `decks.json` safely (BOM-handled), deck stats/progress, flashcard mode with swipe + undo, quiz mode with session resume, reset actions
-- Android app update check against GitHub Releases + APK download/install intent
-- **Google Drive Sync (Smart Merge)**: Bidirectional sync using AppData folder to keep Desktop and Mobile data consistent across multiple devices without file conflicts.
+- Mobile: React Native 0.83 + Expo 55, React Navigation, AsyncStorage, English UI (v1.0.2)
+- Data: local JSON files (`decks.json`, `settings.json`, `quiz_sessions.json`, `token.json`) and Google Drive AppData Sync
+- **Google Drive Sync (Smart Merge)**: Bidirectional sync using AppData folder (v1.0.2). Mobile implementation uses `iOS Client ID` bypass to support custom URI scheme redirects on Android.
 
 ## Incomplete / Planned Signals
 - No explicit roadmap file, but structure suggests future extraction:

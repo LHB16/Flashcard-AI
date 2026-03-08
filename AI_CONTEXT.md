@@ -12,7 +12,8 @@ Core entities:
 Persistence:
 - Desktop JSON: `decks.json`, `settings.json`, `quiz_sessions.json`, `token.json` (Google OAuth)
 - Multi-device Sync: Google Drive AppData folder (`decks.json`, `quiz_sessions.json` with Smart Merge based on `updated_at`)
-- Mobile AsyncStorage: deck list + quiz session map
+- Mobile AsyncStorage: deck list + quiz session map + Google Drive sync local state
+- Security: `credentials.json`, `token.json`, and `Flashcard-Sync-Client-*` files are excluded via `.gitignore`.
 
 Primary flows:
 1. Scan images -> Gemini extraction -> deck creation
@@ -27,7 +28,8 @@ Architecture notes:
 - Gemini service supports multi-key rotation, retry/fallback logic, and parallel batching.
 - Sync service handles intermittent connection issues gracefully and bypasses image path overwrites.
 - Mobile app is navigation-based with four screens: Home, DeckDetail, Flashcard, Quiz.
-- Mobile app interface is fully translated to English.
+- Mobile app interface is fully localized to English (v1.0.2).
+- Mobile Google Auth (via `expo-auth-session`) uses iOS Client ID bypass to support custom URI scheme redirects on Android.
 
 Risk areas for edits:
 - Cross-client data-contract drift (desktop Python vs mobile JS)
