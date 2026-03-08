@@ -24,6 +24,7 @@ Architecture notes:
 - Desktop UI orchestration is concentrated in `app.py` with service/model separation.
 - Gemini service supports multi-key rotation, retry/fallback logic, and parallel batching.
 - Mobile app is navigation-based with four screens: Home, DeckDetail, Flashcard, Quiz.
+- Mobile app interface is fully translated to English.
 
 Risk areas for edits:
 - Cross-client data-contract drift (desktop Python vs mobile JS)

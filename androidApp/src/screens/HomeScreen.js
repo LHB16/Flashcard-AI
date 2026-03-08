@@ -38,7 +38,7 @@ export default function HomeScreen({ navigation }) {
             if (isManual) setCheckingUpdate(true);
             const res = await fetch('https://api.github.com/repos/LHB16/Flashcard-AI/releases/latest');
             if (!res.ok) {
-                if (isManual) Alert.alert('Thông báo', 'Không thể kiểm tra cập nhật lúc này.');
+                if (isManual) Alert.alert('Notification', 'Unable to check for updates at this time.');
                 return;
             }
             const data = await res.json();
@@ -54,14 +54,14 @@ export default function HomeScreen({ navigation }) {
                     setIgnoreUpdate(false);
                     setShowUpdateModal(true);
                 } else if (isManual) {
-                    Alert.alert('Thông báo', 'Không tìm thấy file cập nhật.');
+                    Alert.alert('Notification', 'Update file not found.');
                 }
             } else if (isManual) {
-                Alert.alert('Thông báo', 'Bạn đang ở phiên bản mới nhất!');
+                Alert.alert('Notification', 'You are on the latest version!');
             }
         } catch (e) {
             console.log('Update check error:', e);
-            if (isManual) Alert.alert('Lỗi', 'Lỗi kiểm tra cập nhật: ' + e.message);
+            if (isManual) Alert.alert('Error', 'Update check error: ' + e.message);
         } finally {
             if (isManual) setCheckingUpdate(false);
         }
@@ -80,7 +80,7 @@ export default function HomeScreen({ navigation }) {
                 type: 'application/vnd.android.package-archive'
             });
         } catch (e) {
-            Alert.alert('Lỗi', 'Không thể tải bản cập nhật.\n' + e.message);
+            Alert.alert('Error', 'Unable to download update.\n' + e.message);
         } finally {
             setLoading(false);
         }
@@ -101,25 +101,25 @@ export default function HomeScreen({ navigation }) {
             const arr = Array.isArray(parsed) ? parsed : [];
             await saveDecks(arr);
             setDecks(arr);
-            Alert.alert('✅ Thành công', `Đã nhập ${arr.length} bộ thẻ.`);
+            Alert.alert('✅ Success', `Imported ${arr.length} decks.`);
         } catch (e) {
-            Alert.alert('Lỗi', 'File không hợp lệ hoặc không phải decks.json.\n' + e.message);
+            Alert.alert('Error', 'Invalid file or not decks.json.\n' + e.message);
         } finally {
             setLoading(false);
         }
     }
 
     function confirmClear() {
-        Alert.alert('Xoá tất cả?', 'Toàn bộ bộ thẻ sẽ bị xoá khỏi app.', [
-            { text: 'Huỷ', style: 'cancel' },
-            { text: 'Xoá', style: 'destructive', onPress: async () => { await clearDecks(); setDecks([]); } },
+        Alert.alert('Delete all?', 'All decks will be deleted from the app.', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: async () => { await clearDecks(); setDecks([]); } },
         ]);
     }
 
     function renderDeck({ item }) {
         const cards = item.cards ?? [];
         const mc = cards.filter(c => c.question_type === 'multiple_choice').length;
-        const date = item.created_at ? new Date(item.created_at).toLocaleDateString('vi-VN') : '';
+        const date = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US') : '';
 
         const green = cards.filter(c => c.status === 2).length;
         const orange = cards.filter(c => c.status === 1).length;
@@ -138,7 +138,7 @@ export default function HomeScreen({ navigation }) {
                     <View style={{ flex: 1 }}>
                         <Text style={styles.deckName} numberOfLines={2}>{item.name}</Text>
                         <Text style={styles.deckMeta}>
-                            {cards.length} thẻ  •  {mc} đa lựa chọn
+                            {cards.length} cards  •  {mc} multiple choice
                             {date ? `  •  ${date}` : ''}
                         </Text>
                         {cards.length > 0 && (
@@ -170,11 +170,11 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.header}>
                 <View>
                     <Text style={styles.headerTitle}>FlashcardAI</Text>
-                    <Text style={styles.headerSub}>{decks.length} bộ thẻ</Text>
+                    <Text style={styles.headerSub}>{decks.length} decks</Text>
                 </View>
                 {decks.length > 0 && (
                     <TouchableOpacity onPress={confirmClear} style={styles.clearBtn}>
-                        <Text style={styles.clearBtnText}>Xoá tất cả</Text>
+                        <Text style={styles.clearBtnText}>Delete all</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -183,7 +183,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity style={styles.importBtn} onPress={importDecks} disabled={loading}>
                 {loading
                     ? <ActivityIndicator color="#fff" />
-                    : <Text style={styles.importBtnText}>📂  Nhập decks.json</Text>
+                    : <Text style={styles.importBtnText}>📂 Import decks.json</Text>
                 }
             </TouchableOpacity>
 
@@ -191,9 +191,9 @@ export default function HomeScreen({ navigation }) {
             {decks.length === 0 ? (
                 <View style={styles.empty}>
                     <Text style={styles.emptyIcon}>📭</Text>
-                    <Text style={styles.emptyTitle}>Chưa có bộ thẻ nào</Text>
+                    <Text style={styles.emptyTitle}>No decks yet</Text>
                     <Text style={styles.emptyHint}>
-                        Copy file decks.json từ máy tính sang điện thoại{'\n'}rồi bấm "Nhập decks.json" ở trên.
+                        Copy the decks.json file from your computer to your phone{'\n'}then tap "Import decks.json" above.
                     </Text>
                 </View>
             ) : (
@@ -215,22 +215,22 @@ export default function HomeScreen({ navigation }) {
             <Modal visible={showInfoModal} transparent animationType="fade" onRequestClose={() => setShowInfoModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.infoModalContent}>
-                        <Text style={styles.modalTitle}>Thông tin ứng dụng</Text>
+                        <Text style={styles.modalTitle}>App Information</Text>
 
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Phiên bản:</Text>
+                            <Text style={styles.infoLabel}>Version:</Text>
                             <Text style={styles.infoValue}>v{CURRENT_VERSION}</Text>
                         </View>
 
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Tác giả:</Text>
+                            <Text style={styles.infoLabel}>Author:</Text>
                             <TouchableOpacity onPress={() => Linking.openURL('https://github.com/LHB16')}>
                                 <Text style={styles.infoLink}>LHB16 (GitHub)</Text>
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>Mã nguồn:</Text>
+                            <Text style={styles.infoLabel}>Source code:</Text>
                             <TouchableOpacity onPress={() => Linking.openURL('https://github.com/LHB16/Flashcard-AI')}>
                                 <Text style={styles.infoLink}>LHB16/Flashcard-AI</Text>
                             </TouchableOpacity>
@@ -245,12 +245,12 @@ export default function HomeScreen({ navigation }) {
                             disabled={checkingUpdate}
                         >
                             <Text style={styles.checkUpdateBtnText}>
-                                {checkingUpdate ? 'Đang kiểm tra...' : 'Kiểm tra cập nhật'}
+                                {checkingUpdate ? 'Checking...' : 'Check for updates'}
                             </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.closeBtn} onPress={() => setShowInfoModal(false)}>
-                            <Text style={styles.closeBtnText}>Đóng</Text>
+                            <Text style={styles.closeBtnText}>Close</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -260,9 +260,9 @@ export default function HomeScreen({ navigation }) {
             <Modal visible={showUpdateModal} transparent animationType="fade" onRequestClose={() => setShowUpdateModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.updateModalContent}>
-                        <Text style={styles.modalTitle}>Cập nhật mới!</Text>
+                        <Text style={styles.modalTitle}>New update!</Text>
                         <Text style={styles.updateMessage}>
-                            Đã có phiên bản v{updateInfo?.version}. Bạn có muốn tải về và cài đặt ngay không?
+                            Version v{updateInfo?.version} is available. Do you want to download and install it now?
                         </Text>
 
                         <TouchableOpacity
@@ -273,7 +273,7 @@ export default function HomeScreen({ navigation }) {
                             <View style={[styles.checkbox, ignoreUpdate && styles.checkboxActive]}>
                                 {ignoreUpdate && <Text style={styles.checkboxCheck}>✓</Text>}
                             </View>
-                            <Text style={styles.checkboxLabel}>Không hiện lại thông báo này</Text>
+                            <Text style={styles.checkboxLabel}>Do not show this message again</Text>
                         </TouchableOpacity>
 
                         <View style={styles.updateBtnRow}>
@@ -286,7 +286,7 @@ export default function HomeScreen({ navigation }) {
                                     setShowUpdateModal(false);
                                 }}
                             >
-                                <Text style={[styles.updateActionBtnText, { color: Colors.text }]}>Để sau</Text>
+                                <Text style={[styles.updateActionBtnText, { color: Colors.text }]}>Later</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -299,7 +299,7 @@ export default function HomeScreen({ navigation }) {
                                     downloadUpdate(updateInfo.url);
                                 }}
                             >
-                                <Text style={styles.updateActionBtnText}>Cập nhật ngay</Text>
+                                <Text style={styles.updateActionBtnText}>Update now</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

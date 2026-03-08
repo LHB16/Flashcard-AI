@@ -191,17 +191,17 @@ export default function FlashcardScreen({ route, navigation }) {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
                         <Text style={styles.backText}>‹</Text>
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Kết quả</Text>
+                    <Text style={styles.headerTitle}>Results</Text>
                 </View>
                 <View style={styles.resultBox}>
                     <Text style={{ fontSize: 64 }}>{pct >= 70 ? '🎉' : pct >= 50 ? '😐' : '😓'}</Text>
                     <Text style={[styles.pct, { color: pct >= 70 ? Colors.success : pct >= 50 ? Colors.warning : Colors.danger }]}>{pct}%</Text>
-                    <Text style={styles.resultSub}>✅ Biết: {known}  ❌ Chưa biết: {unknown}</Text>
+                    <Text style={styles.resultSub}>✅ Known: {known}  ❌ Unknown: {unknown}</Text>
                     <TouchableOpacity style={[styles.btn, { backgroundColor: Colors.primary, marginTop: 24 }]} onPress={restart}>
-                        <Text style={styles.btnText}>🔄 Học lại</Text>
+                        <Text style={styles.btnText}>🔄 Study again</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={[styles.btn, { backgroundColor: Colors.surface2, marginTop: 10 }]} onPress={() => navigation.goBack()}>
-                        <Text style={[styles.btnText, { color: Colors.text }]}>← Quay lại</Text>
+                        <Text style={[styles.btnText, { color: Colors.text }]}>← Go back</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -232,7 +232,7 @@ export default function FlashcardScreen({ route, navigation }) {
                     <Text style={styles.scoreEmoji}>❌</Text>
                     <Text style={[styles.scoreNum, { color: Colors.danger }]}>{unknown}</Text>
                 </View>
-                <Text style={{ color: Colors.textDim, fontSize: 11, fontStyle: 'italic' }}>← Chưa biết  /  Biết rồi →</Text>
+                <Text style={{ color: Colors.textDim, fontSize: 11, fontStyle: 'italic' }}>← Unknown  /  Known →</Text>
                 <View style={styles.scorePill}>
                     <Text style={[styles.scoreNum, { color: Colors.success }]}>{known}</Text>
                     <Text style={styles.scoreEmoji}>✅</Text>
@@ -250,17 +250,17 @@ export default function FlashcardScreen({ route, navigation }) {
                 >
                     {/* Overlays */}
                     <Animated.View style={[styles.overlay, styles.overlayRight, { opacity: rightOverlay }]}>
-                        <Text style={styles.overlayText}>✅ Biết rồi!</Text>
+                        <Text style={styles.overlayText}>✅ Known!</Text>
                     </Animated.View>
                     <Animated.View style={[styles.overlay, styles.overlayLeft, { opacity: leftOverlay }]}>
-                        <Text style={styles.overlayText}>❌ Chưa biết</Text>
+                        <Text style={styles.overlayText}>❌ Unknown</Text>
                     </Animated.View>
 
                     {/* Front */}
                     <Animated.View
                         pointerEvents={flipped ? "none" : "auto"}
                         style={[styles.flashcard, styles.cardFront, { transform: [{ rotateY: frontRotateY }] }]}>
-                        <Text style={styles.cardSide}>CÂU HỎI</Text>
+                        <Text style={styles.cardSide}>QUESTION</Text>
                         <ScrollView
                             showsVerticalScrollIndicator={true}
                             nestedScrollEnabled={true}
@@ -276,7 +276,7 @@ export default function FlashcardScreen({ route, navigation }) {
                         </ScrollView>
                         {/* Tap button at the bottom — separate from swipe area, expanded touch area */}
                         <TouchableOpacity onPress={doFlip} style={styles.flipBtn}>
-                            <Text style={styles.flipBtnText}>Nhấn để xem đáp án 👆</Text>
+                            <Text style={styles.flipBtnText}>Tap to see answer 👆</Text>
                         </TouchableOpacity>
                     </Animated.View>
 
@@ -284,7 +284,7 @@ export default function FlashcardScreen({ route, navigation }) {
                     <Animated.View
                         pointerEvents={flipped ? "auto" : "none"}
                         style={[styles.flashcard, styles.cardBack, { transform: [{ rotateY: backRotateY }] }]}>
-                        <Text style={[styles.cardSide, { color: Colors.success }]}>ĐÁP ÁN</Text>
+                        <Text style={[styles.cardSide, { color: Colors.success }]}>ANSWER</Text>
                         <ScrollView
                             showsVerticalScrollIndicator={true}
                             nestedScrollEnabled={true}
@@ -295,7 +295,7 @@ export default function FlashcardScreen({ route, navigation }) {
                             {card.notes ? <Text style={styles.noteText}>{card.notes}</Text> : null}
                         </ScrollView>
                         <TouchableOpacity onPress={doFlip} style={styles.flipBtn}>
-                            <Text style={styles.flipBtnText}>Nhấn để lật lại 👆</Text>
+                            <Text style={styles.flipBtnText}>Tap to flip back 👆</Text>
                         </TouchableOpacity>
                     </Animated.View>
                 </Animated.View>

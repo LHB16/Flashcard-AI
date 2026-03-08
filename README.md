@@ -32,6 +32,7 @@ Your portable study companion built with **React Native**.
 - **🔀 3D Flip Anim**: High-performance 3D card animations for a premium feel.
 - **🔄 Session Resume**: Automatically detects and resumes your last study or quiz session.
 - **📜 Smart Scrolling**: Fully supports extra-long text in both questions and answers with zero touch conflicts.
+- **🌐 English UI**: The app interface serves a global audience with a fully translated English UI.
 
 ---
 

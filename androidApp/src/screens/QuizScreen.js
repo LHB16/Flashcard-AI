@@ -36,12 +36,12 @@ export default function QuizScreen({ route, navigation }) {
             const saved = sessions[deck.deck_id];
             if (saved && saved.currentIdx < saved.order.length) {
                 Alert.alert(
-                    'Tiếp tục bài thi?',
-                    `Bạn đang làm dở câu ${saved.currentIdx + 1}/${saved.order.length}.`,
+                    'Continue Quiz?',
+                    `You left off at question ${saved.currentIdx + 1}/${saved.order.length}.`,
                     [
-                        { text: 'Làm lại', onPress: startNew },
+                        { text: 'Restart', onPress: startNew },
                         {
-                            text: 'Tiếp tục', onPress: () => {
+                            text: 'Continue', onPress: () => {
                                 setOrder(saved.order);
                                 setCurrentIdx(saved.currentIdx);
                                 setCorrect(saved.correct);
@@ -98,7 +98,7 @@ export default function QuizScreen({ route, navigation }) {
 
     function confirm() {
         if (selected.length === 0) {
-            Alert.alert('', 'Bạn chưa chọn đáp án!');
+            Alert.alert('', 'You have not selected an answer!');
             return;
         }
         setRevealed(true);
@@ -129,11 +129,11 @@ export default function QuizScreen({ route, navigation }) {
 
     function confirmRestart() {
         Alert.alert(
-            '🔄 Làm lại từ đầu?',
-            'Tiến độ hiện tại sẽ bị xoá.',
+            '🔄 Restart from beginning?',
+            'Current progress will be lost.',
             [
-                { text: 'Huỷ', style: 'cancel' },
-                { text: 'Làm lại', style: 'destructive', onPress: restart },
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Restart', style: 'destructive', onPress: restart },
             ]
         );
     }
@@ -165,7 +165,7 @@ export default function QuizScreen({ route, navigation }) {
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
                     <Text style={styles.headerTitle} numberOfLines={1}>{deck.name}</Text>
-                    <Text style={styles.headerSub}>Câu {currentIdx + 1} / {n}</Text>
+                    <Text style={styles.headerSub}>Question {currentIdx + 1} / {n}</Text>
                 </View>
                 <View style={styles.scoreBadge}>
                     <Text style={{ color: Colors.success, fontWeight: '700', fontSize: 12 }}>✅{correct}</Text>
@@ -183,7 +183,7 @@ export default function QuizScreen({ route, navigation }) {
                 {/* Type badge */}
                 <View style={[styles.badge, { backgroundColor: isMulti ? '#FFF3CD' : '#D1FAE5' }]}>
                     <Text style={{ color: isMulti ? Colors.warning : Colors.success, fontSize: 12, fontWeight: '700' }}>
-                        {isMulti ? '🔵 Chọn NHIỀU đáp án' : '🟢 Chọn MỘT đáp án'}
+                        {isMulti ? '🔵 Select MULTIPLE answers' : '🟢 Select ONE answer'}
                     </Text>
                 </View>
 
@@ -225,10 +225,10 @@ export default function QuizScreen({ route, navigation }) {
                         backgroundColor: selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s)) ? '#D1FAE5' : '#FEE2E2'
                     }]}>
                         <Text style={{ fontWeight: '700', fontSize: 15, color: (selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s))) ? Colors.success : Colors.danger }}>
-                            {(selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s))) ? '✅ Đúng!' : '❌ Sai!'}
+                            {(selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s))) ? '✅ Correct!' : '❌ Incorrect!'}
                         </Text>
                         {!(selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s))) && (
-                            <Text style={{ color: Colors.success, marginTop: 6, fontSize: 13 }}>Đáp án đúng: {correctAnswerText}</Text>
+                            <Text style={{ color: Colors.success, marginTop: 6, fontSize: 13 }}>Correct answer: {correctAnswerText}</Text>
                         )}
                         {card.notes ? <Text style={{ color: Colors.warning, marginTop: 4, fontSize: 12, fontStyle: 'italic' }}>{card.notes}</Text> : null}
                     </View>
@@ -239,15 +239,15 @@ export default function QuizScreen({ route, navigation }) {
             <View style={styles.footer}>
                 {!revealed ? (
                     <TouchableOpacity style={[styles.footerBtn, { backgroundColor: Colors.primary }]} onPress={confirm}>
-                        <Text style={styles.footerBtnText}>✔  Xác nhận</Text>
+                        <Text style={styles.footerBtnText}>✔ Confirm</Text>
                     </TouchableOpacity>
                 ) : currentIdx + 1 < n ? (
                     <TouchableOpacity style={[styles.footerBtn, { backgroundColor: Colors.success }]} onPress={next}>
-                        <Text style={styles.footerBtnText}>Câu tiếp →</Text>
+                        <Text style={styles.footerBtnText}>Next →</Text>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity style={[styles.footerBtn, { backgroundColor: Colors.success }]} onPress={next}>
-                        <Text style={styles.footerBtnText}>🏁 Xem kết quả</Text>
+                        <Text style={styles.footerBtnText}>🏁 View Results</Text>
                     </TouchableOpacity>
                 )}
                 <TouchableOpacity style={[styles.footerBtnSmall, { backgroundColor: '#FEF3C7', marginLeft: 8 }]} onPress={confirmRestart}>
@@ -267,17 +267,17 @@ function QuizDone({ correct, wrong, total, onRestart, onBack }) {
                 <TouchableOpacity onPress={onBack} style={styles.back}>
                     <Text style={styles.backText}>‹</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Kết quả bài thi</Text>
+                <Text style={styles.headerTitle}>Quiz Results</Text>
             </View>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
                 <Text style={{ fontSize: 72, marginBottom: 8 }}>{pct >= 70 ? '🎉' : pct >= 50 ? '😐' : '😓'}</Text>
                 <Text style={{ fontSize: 64, fontWeight: '900', color: pct >= 70 ? Colors.success : pct >= 50 ? Colors.warning : Colors.danger }}>{pct}%</Text>
-                <Text style={{ fontSize: 16, color: Colors.textDim, marginTop: 8 }}>✅ Đúng: {correct}  ❌ Sai: {wrong}  📋 Tổng: {total}</Text>
+                <Text style={{ fontSize: 16, color: Colors.textDim, marginTop: 8 }}>✅ Correct: {correct}  ❌ Incorrect: {wrong}  📋 Total: {total}</Text>
                 <TouchableOpacity style={[styles.footerBtn, { backgroundColor: Colors.primary, marginTop: 32, width: '100%' }]} onPress={onRestart}>
-                    <Text style={styles.footerBtnText}>🔄  Làm lại</Text>
+                    <Text style={styles.footerBtnText}>🔄 Restart</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.footerBtn, { backgroundColor: Colors.surface2, marginTop: 10, width: '100%' }]} onPress={onBack}>
-                    <Text style={[styles.footerBtnText, { color: Colors.text }]}>← Quay lại</Text>
+                    <Text style={[styles.footerBtnText, { color: Colors.text }]}>← Go back</Text>
                 </TouchableOpacity>
             </View>
         </View>

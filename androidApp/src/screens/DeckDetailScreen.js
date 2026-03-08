@@ -29,17 +29,17 @@ export default function DeckDetailScreen({ route, navigation }) {
     const gray = cards.filter(c => c.status === 0 || !c.status).length;
 
     const date = currentDeck.created_at
-        ? new Date(currentDeck.created_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        ? new Date(currentDeck.created_at).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
         : '—';
 
     function handleReset() {
         Alert.alert(
-            "Xác nhận",
-            "Bạn có chắc muốn đặt lại tiến độ học của bộ thẻ này? (Tất cả sẽ về trạng thái Chưa học)",
+            "Confirm",
+            "Are you sure you want to reset the learning progress of this deck? (All cards will be marked as Unstudied)",
             [
-                { text: "Huỷ", style: "cancel" },
+                { text: "Cancel", style: "cancel" },
                 {
-                    text: "Đặt lại", style: "destructive", onPress: async () => {
+                    text: "Reset", style: "destructive", onPress: async () => {
                         const updated = { ...currentDeck, cards: cards.map(c => ({ ...c, status: 0 })) };
                         await updateDeck(updated);
                         setCurrentDeck(updated);
@@ -64,10 +64,10 @@ export default function DeckDetailScreen({ route, navigation }) {
                 {cards.length > 0 && (
                     <View style={styles.progressContainer}>
                         <View style={styles.progressHeader}>
-                            <Text style={styles.sectionTitleProg}>Tiến độ học tập</Text>
+                            <Text style={styles.sectionTitleProg}>Learning Progress</Text>
                             {(green > 0 || orange > 0) && (
                                 <TouchableOpacity onPress={handleReset}>
-                                    <Text style={styles.resetText}>🔄 Đặt lại</Text>
+                                    <Text style={styles.resetText}>🔄 Reset</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -86,19 +86,19 @@ export default function DeckDetailScreen({ route, navigation }) {
 
                 {/* Stats */}
                 <View style={styles.statsRow}>
-                    <StatBox label="Tổng thẻ" value={cards.length} icon="🃏" />
-                    <StatBox label="Đơn lựa chọn" value={sc} icon="🟢" />
-                    <StatBox label="Đa lựa chọn" value={mc} icon="🔵" />
+                    <StatBox label="Total cards" value={cards.length} icon="🃏" />
+                    <StatBox label="Single choice" value={sc} icon="🟢" />
+                    <StatBox label="Multiple choice" value={mc} icon="🔵" />
                 </View>
 
                 <View style={styles.infoBox}>
-                    <InfoRow label="Ngày tạo" value={date} />
-                    {currentDeck.description ? <InfoRow label="Mô tả" value={currentDeck.description} /> : null}
-                    {currentDeck.source_folder ? <InfoRow label="Nguồn" value={currentDeck.source_folder} /> : null}
+                    <InfoRow label="Created date" value={date} />
+                    {currentDeck.description ? <InfoRow label="Description" value={currentDeck.description} /> : null}
+                    {currentDeck.source_folder ? <InfoRow label="Source" value={currentDeck.source_folder} /> : null}
                 </View>
 
                 {/* Actions */}
-                <Text style={styles.sectionTitle}>Chọn chế độ học</Text>
+                <Text style={styles.sectionTitle}>Select Study Mode</Text>
 
                 <TouchableOpacity
                     style={[styles.modeBtn, { backgroundColor: Colors.primary }]}
@@ -107,8 +107,8 @@ export default function DeckDetailScreen({ route, navigation }) {
                 >
                     <Text style={styles.modeIcon}>🃏</Text>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.modeName}>Thẻ Nhớ</Text>
-                        <Text style={styles.modeDesc}>Lật thẻ, tự đánh giá</Text>
+                        <Text style={styles.modeName}>Flashcards</Text>
+                        <Text style={styles.modeDesc}>Flip cards, self-assess</Text>
                     </View>
                     <Text style={styles.modeArrow}>›</Text>
                 </TouchableOpacity>
@@ -120,14 +120,14 @@ export default function DeckDetailScreen({ route, navigation }) {
                 >
                     <Text style={styles.modeIcon}>📝</Text>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.modeName}>Làm Bài Thi</Text>
-                        <Text style={styles.modeDesc}>Trắc nghiệm đơn + đa, lưu tiến độ</Text>
+                        <Text style={styles.modeName}>Take Quiz</Text>
+                        <Text style={styles.modeDesc}>Single & multiple tests, save progress</Text>
                     </View>
                     <Text style={styles.modeArrow}>›</Text>
                 </TouchableOpacity>
 
                 {cards.length === 0 && (
-                    <Text style={styles.noCards}>⚠ Bộ thẻ này không có câu hỏi nào.</Text>
+                    <Text style={styles.noCards}>⚠ This deck has no questions.</Text>
                 )}
             </ScrollView>
         </View>
