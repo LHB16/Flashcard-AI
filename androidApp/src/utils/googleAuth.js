@@ -15,6 +15,7 @@ export function useGoogleAuth() {
     const [accessToken, setAccessToken] = useState(null);
     const [userEmail, setUserEmail] = useState(null);
     const [isRestoring, setIsRestoring] = useState(true);
+    const [isVerifying, setIsVerifying] = useState(false);
 
     // Xác định Redirect URI khớp chính xác với scheme đã đăng ký trong AndroidManifest
     const redirectUri = makeRedirectUri({
@@ -58,11 +59,14 @@ export function useGoogleAuth() {
             setIsRestoring(true);
             const savedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
             const savedEmail = await AsyncStorage.getItem(EMAIL_STORAGE_KEY);
+
             if (savedToken) {
+                // We have a token, but we MUST verify it before letting the app use it
+                setIsVerifying(true);
                 setAccessToken(savedToken);
                 setUserEmail(savedEmail);
-                // Background verify
-                fetchUserInfo(savedToken);
+                await fetchUserInfo(savedToken);
+                setIsVerifying(false);
             }
         } catch (e) {
             console.error('Error restoring token', e);
@@ -105,7 +109,8 @@ export function useGoogleAuth() {
         accessToken,
         userEmail,
         isRestoring,
-        isReady: !!request,
+        isVerifying,
+        isReady: !!request && !isRestoring && !isVerifying,
         login: () => promptAsync(),
         logout
     };

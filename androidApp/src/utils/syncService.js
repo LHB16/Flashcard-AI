@@ -101,6 +101,10 @@ export async function performSync(accessToken) {
         return { success: true, message: 'Sync successful!' };
     } catch (e) {
         console.error("Sync error:", e);
+        // Identify 401 error specifically
+        if (e.message && e.message.includes('401')) {
+            return { success: false, message: 'Session expired', errorType: 'UNAUTHORIZED' };
+        }
         return { success: false, message: e.message };
     }
 }

@@ -10,7 +10,7 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-const CURRENT_VERSION = Constants.expoConfig?.version || '1.0.1';
+const CURRENT_VERSION = Constants.expoConfig?.version || '1.0.3';
 
 import { useFocusEffect } from '@react-navigation/native';
 import { loadDecks, saveDecks, clearDecks } from '../utils/storage';
@@ -56,7 +56,12 @@ export default function HomeScreen({ navigation }) {
             const freshDecks = await loadDecks();
             setDecks(freshDecks);
         } else {
-            Alert.alert('Sync Error', result.message);
+            if (result.errorType === 'UNAUTHORIZED') {
+                Alert.alert('Session Expired', 'Your login session has expired. Please login again to sync.');
+                logout(); // Reset auth state since token is dead
+            } else {
+                Alert.alert('Sync Error', result.message);
+            }
         }
         setIsSyncing(false);
     }
