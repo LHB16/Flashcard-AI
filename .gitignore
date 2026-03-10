@@ -84,3 +84,4 @@ build_apk_debug.bat.tmp
 
 # Developer Tools
 flow_prompt_builder.html
+.aider*

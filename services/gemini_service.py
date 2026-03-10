@@ -131,7 +131,10 @@ Return ONLY a valid JSON array, one object per page, no markdown:
 MODEL_LIST = [
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
-    "gemini-3-flash",
+    "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
 ]
 
 SAFE_RPM = 8
