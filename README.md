@@ -39,14 +39,12 @@ Your portable study companion built with **React Native**.
 
 ---
 
-## 🛠️ Tech Stack
-
-| Desktop (.NET 8) | Mobile | Core |
-|:---:|:---:|:---:|
-| C# / WPF (.NET 8) | React Native (Expo SDK 55) | Google Gemini AI |
-| MVVM Architecture | AsyncStorage | JSON Database |
-| Google Drive API (OAuth) | React Navigation | batch-PDF OCR |
-| Single-file EXE | | Python Legacy supported |
+| Desktop (.NET 8) | Desktop (Python) | Mobile | Core |
+|:---:|:---:|:---:|:---:|
+| C# / WPF (.NET 8) | Python 3.10+ | React Native (Expo SDK 55) | Google Gemini AI |
+| MVVM Architecture | CustomTkinter | AsyncStorage | JSON Database |
+| Google Drive API (OAuth) | Google Drive API | React Navigation | batch-PDF OCR |
+| Single-file EXE | PyInstaller (EXE) | Android APK | Cloud Sync (G-Drive) |
 
 ---
 
