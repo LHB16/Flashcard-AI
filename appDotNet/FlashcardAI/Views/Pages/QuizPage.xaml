@@ -1,0 +1,76 @@
+<Page x:Class="FlashcardAI.Views.Pages.QuizPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource CardBgBrush}" Focusable="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Background="{StaticResource SurfaceBrush}">
+            <DockPanel Margin="20,0">
+                <TextBlock x:Name="TitleLbl" FontSize="18" FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="QuizProgress" FontSize="13" FontWeight="Bold"
+                               Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Button Content="Exit &amp; Save" Style="{StaticResource SubtleBtn}" Padding="10,5" Click="ExitSave_Click"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Progress Bar -->
+        <ProgressBar x:Name="QuizProgressBar" Grid.Row="1" Height="6" Minimum="0" Maximum="100"
+                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource Surface2Brush}" BorderThickness="0"/>
+
+        <!-- Quiz Area -->
+        <Grid Grid.Row="2">
+            <!-- Active Quiz Panel -->
+            <ScrollViewer x:Name="QuizPanel" VerticalScrollBarVisibility="Auto" Margin="30,15">
+                <StackPanel HorizontalAlignment="Center" Width="680">
+                    <!-- Question Type Badge -->
+                    <Border x:Name="TypeBadge" CornerRadius="8" HorizontalAlignment="Left" Padding="8,3" Margin="0,0,0,6">
+                        <TextBlock x:Name="TypeBadgeText" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                    </Border>
+
+                    <!-- Question -->
+                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="25,20">
+                        <TextBlock x:Name="QuizQuestionText" FontSize="15" FontWeight="Bold"
+                                   Foreground="{StaticResource TextBrush}" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Options -->
+                    <StackPanel x:Name="OptionsPanel" Margin="0,10"/>
+
+                    <!-- Confirm/Next Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+                        <Button x:Name="ConfirmBtn" Content="✓  Confirm" Style="{StaticResource PrimaryBtn}"
+                                Padding="25,10" FontWeight="Bold" Click="Confirm_Click"/>
+                        <Button x:Name="NextBtn" Content="Next →" Style="{StaticResource SuccessBtn}"
+                                Padding="25,10" FontWeight="Bold" Click="Next_Click" Visibility="Collapsed"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Results Panel -->
+            <StackPanel x:Name="ResultsPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="🏆  Quiz Complete!" FontSize="32" FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="ScoreLbl" FontSize="22" FontWeight="Bold"
+                           Foreground="{StaticResource SuccessBrush}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                <TextBlock x:Name="ScoreDetailLbl" FontSize="15" Foreground="{StaticResource TextDimBrush}"
+                           HorizontalAlignment="Center" Margin="0,5,0,20"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="🔄  Quiz Again" Style="{StaticResource SuccessBtn}"
+                            Padding="18,10" Margin="5,0" Click="QuizAgain_Click"/>
+                    <Button Content="← Home" Style="{StaticResource SubtleBtn}"
+                            Padding="18,10" Margin="5,0" Click="Home_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

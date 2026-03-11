@@ -1,0 +1,87 @@
+<Page x:Class="FlashcardAI.Views.Pages.StudyPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{StaticResource CardBgBrush}" PreviewKeyDown="Page_PreviewKeyDown" 
+      Focusable="True" KeyboardNavigation.TabNavigation="None" FocusVisualStyle="{x:Null}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Background="{StaticResource SurfaceBrush}">
+            <DockPanel Margin="20,0">
+                <TextBlock x:Name="TitleLbl" FontSize="18" FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="ProgressLbl" FontSize="13" FontWeight="Bold"
+                               Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Button Content="🔄 Reset" Style="{StaticResource SubtleBtn}" Padding="10,5" Margin="3,0" Click="Reset_Click" Focusable="False"/>
+                    <Button Content="← Home" Style="{StaticResource SubtleBtn}" Padding="10,5" Margin="3,0" Click="Home_Click" Focusable="False"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Card Area -->
+        <Grid Grid.Row="1">
+            <!-- Study Card -->
+            <StackPanel x:Name="StudyPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Width="600">
+                <!-- Question -->
+                <Border x:Name="QuestionCard" Background="{StaticResource SurfaceBrush}" CornerRadius="12"
+                        Padding="30,20" Cursor="Hand" MouseDown="Card_Click">
+                    <StackPanel>
+                        <TextBlock x:Name="CardNumber" FontSize="12" FontWeight="Bold"
+                                   Foreground="{StaticResource TextDimBrush}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock x:Name="QuestionText" FontSize="16" FontWeight="Bold"
+                                   Foreground="{StaticResource TextBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
+                        <TextBlock x:Name="OptionsText" FontSize="13" Foreground="{StaticResource TextDimBrush}"
+                                   TextWrapping="Wrap" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Answer (hidden until flip) -->
+                <Border x:Name="AnswerCard" Background="#ECFDF5" CornerRadius="12" Padding="20,15" Margin="0,8,0,0"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="AnswerText" FontSize="16" FontWeight="Bold"
+                               Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
+                </Border>
+
+                <!-- Click to flip hint -->
+                <TextBlock x:Name="FlipHint" Text="👆 Click card to flip  (or press Space)" FontSize="12"
+                           Foreground="{StaticResource TextDimBrush}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+
+                <!-- Notes -->
+                <TextBlock x:Name="NotesText" FontSize="11" FontStyle="Italic"
+                           Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,6,0,0"
+                           Visibility="Collapsed"/>
+
+                <!-- Buttons -->
+                <StackPanel x:Name="ActionBtns" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0"
+                            Visibility="Collapsed">
+                    <Button x:Name="UndoBtn" Content="⟲ Undo" Style="{StaticResource SubtleBtn}" Padding="18,8"
+                            Margin="5,0" Click="Undo_Click" IsEnabled="False" Focusable="False"/>
+                    <Button Content="✗  Don't Know" Style="{StaticResource DangerBtn}" Padding="18,8"
+                            Margin="5,0" Click="DontKnow_Click" Focusable="False"/>
+                    <Button Content="✓  Know" Style="{StaticResource SuccessBtn}" Padding="18,8"
+                            Margin="5,0" Click="Know_Click" Focusable="False"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Results (hidden until finish) -->
+            <StackPanel x:Name="ResultsPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="🎉  Study Complete!" FontSize="28" FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="ResultStats" FontSize="16" Foreground="{StaticResource TextDimBrush}"
+                           HorizontalAlignment="Center" Margin="0,10,0,20"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="🔄  Study Again" Style="{StaticResource SuccessBtn}"
+                            Padding="18,10" Margin="5,0" Click="StudyAgain_Click" Focusable="False"/>
+                    <Button Content="← Home" Style="{StaticResource SubtleBtn}"
+                            Padding="18,10" Margin="5,0" Click="Home_Click" Focusable="False"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

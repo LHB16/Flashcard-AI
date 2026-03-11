@@ -1,0 +1,48 @@
+<Window x:Class="FlashcardAI.Views.Dialogs.ExportDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="📤 Export to Quizlet" Width="640" Height="500"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{StaticResource CardBgBrush}">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="📤  Export to Quizlet" FontSize="20" FontWeight="Bold"
+                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center" Margin="0,5,0,3"/>
+        <TextBlock Grid.Row="1" Text="Choose format → preview → export." FontSize="12"
+                   Foreground="{StaticResource TextDimBrush}" HorizontalAlignment="Center"/>
+        <TextBlock x:Name="HintLbl" Grid.Row="2" FontSize="11" Foreground="{StaticResource WarningBrush}"
+                   HorizontalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+        <!-- Format Selector -->
+        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="12,8" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Format:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <RadioButton x:Name="RbSimple" Content="Simple" GroupName="fmt" Margin="6,0" Click="Format_Changed"/>
+                <RadioButton x:Name="RbFull" Content="Full (Recommended)" GroupName="fmt" IsChecked="True" Margin="6,0" Click="Format_Changed"/>
+                <RadioButton x:Name="RbCompact" Content="Compact" GroupName="fmt" Margin="6,0" Click="Format_Changed"/>
+                <RadioButton x:Name="RbSafe" Content="Safe (code-safe)" GroupName="fmt" Margin="6,0" Click="Format_Changed"/>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Grid.Row="4" Text="Preview (first 5 cards):" FontSize="13" FontWeight="Bold"
+                   Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,3"/>
+
+        <TextBox x:Name="PreviewBox" Grid.Row="5" IsReadOnly="True" TextWrapping="Wrap"
+                 FontFamily="Consolas" FontSize="12" Background="{StaticResource SurfaceBrush}"
+                 Foreground="{StaticResource TextBrush}" BorderThickness="0" VerticalScrollBarVisibility="Auto"
+                 AcceptsReturn="True"/>
+
+        <Button Grid.Row="6" Content="💾  Export .txt File" Style="{StaticResource PrimaryBtn}"
+                Height="42" FontSize="14" FontWeight="Bold" Click="Export_Click" Margin="0,10,0,10"/>
+    </Grid>
+</Window>

@@ -1,0 +1,52 @@
+<Window x:Class="FlashcardAI.Views.Dialogs.DedupDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="🔍 Filter Duplicate Questions" Width="820" Height="680"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" MinWidth="700" MinHeight="500"
+        Background="{StaticResource CardBgBrush}">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="HeaderLbl" FontSize="17" FontWeight="Bold" HorizontalAlignment="Center"
+                   Foreground="{StaticResource TextBrush}" Margin="0,5,0,0"/>
+        <TextBlock Grid.Row="1" Text="Review potential duplicates. Mark ☑ to delete (auto-selected the later one)."
+                   FontSize="12" Foreground="{StaticResource TextDimBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+        <!-- Pair List (paginated) -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="PairList"/>
+        </ScrollViewer>
+
+        <!-- Pagination -->
+        <DockPanel Grid.Row="3" Margin="0,5">
+            <Button x:Name="PrevBtn" Content="◀ Prev" Style="{StaticResource SubtleBtn}" Padding="10,5" Click="Prev_Click"/>
+            <Button x:Name="NextBtn" DockPanel.Dock="Right" Content="Next ▶" Style="{StaticResource SubtleBtn}"
+                    Padding="10,5" Click="Next_Click" HorizontalAlignment="Right"/>
+            <TextBlock x:Name="PageLbl" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextDimBrush}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </DockPanel>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+            <Button Content="Cancel" Style="{StaticResource SubtleBtn}" Padding="12,8" Margin="5,0" Click="Cancel_Click"/>
+            <Button x:Name="ToggleExactBtn" Padding="12,8" Margin="5,0" Click="ToggleExact_Click"
+                    Background="#B91C1C" Foreground="White" FontWeight="SemiBold" BorderThickness="0" Cursor="Hand">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button Content="🗑 Delete Selected Cards" Style="{StaticResource DangerBtn}"
+                    Padding="12,8" FontWeight="Bold" Margin="5,0" Click="Apply_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

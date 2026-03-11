@@ -78,16 +78,32 @@ If you are a developer or want to use your own Google Cloud project:
 
 ### 2. Mobile Setup
 ```bash
-cd androidApp
+cd appAndroid
 npm install
 npx expo start
 ```
 *Use **Expo Go** on your Android device to scan the QR code.*
 
 ### 📦 Build Executables
-We provide manual build scripts in the root directory:
-- `build_exe.bat`: Compiles the Windows Desktop binary.
-- `build_apk_release.bat`: Generates the production Android APK.
+We provide manual build scripts to process binaries for all platforms. Once built, their outputs will be automatically named `FlashcardAI-<Platform>-v<version>.<ext>`:
+
+- **Desktop (.NET 8):**
+  ```bash
+  cd appDotNet
+  build_exe.bat
+  ```
+- **Desktop (Python Legacy):**
+  ```bash
+  cd appPython
+  build_exe.bat
+  ```
+- **Mobile (Android APK):**
+  ```bash
+  cd appAndroid
+  build_apk_release.bat
+  ```
+
+> To publish an all-in-one GitHub Release automatically, run `release_gh.bat` from the root directory.
 
 ---
 

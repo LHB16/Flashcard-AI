@@ -5,7 +5,7 @@
 - `ui/`: Desktop UI modules divided into `screens/`, `dialogs/`, and utilities
 - `models/`: core domain models (`Flashcard`, `Deck`, `QuizSession`)
 - `services/`: Gemini integration, persistence, Google Drive sync, dedup logic, export formatting
-- `androidApp/`: React Native app for mobile study/quiz consumption
+- `appAndroid/`: React Native app for mobile study/quiz consumption
 - `build_*.bat`, `FlashcardAI.spec`: build/release automation
 
 ## Folder Map
@@ -16,10 +16,10 @@
 - `services/sync_service.py`: Background Smart Merge sync with Google Drive AppData
 - `services/export_service.py`: Quizlet text export + preview
 - `services/dedup_service.py`: near-duplicate detection using shingling + SequenceMatcher
-- `androidApp/src/utils/storage.js`: AsyncStorage CRUD + session persistence + timestamp injection
-- `androidApp/src/utils/syncService.js`: Mobile implementation of Smart Merge with Google Drive AppData
-- `androidApp/src/utils/googleAuth.js`: OAuth flow using `iOS Client ID` bypass for Android Redirect URIs
-- `androidApp/src/utils/googleDrive.js`: REST API interactions for `appDataFolder`
+- `appAndroid/src/utils/storage.js`: AsyncStorage CRUD + session persistence + timestamp injection
+- `appAndroid/src/utils/syncService.js`: Mobile implementation of Smart Merge with Google Drive AppData
+- `appAndroid/src/utils/googleAuth.js`: OAuth flow using `iOS Client ID` bypass for Android Redirect URIs
+- `appAndroid/src/utils/googleDrive.js`: REST API interactions for `appDataFolder`
 
 ## Main Desktop Modules (ui/)
 - `ui/screens/scan_frame.py` + `ui/dialogs/scan_assign_dialog.py`: scan setup and key assignment

@@ -1,0 +1,53 @@
+<Window x:Class="FlashcardAI.Views.Dialogs.ApiKeyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="🔑 API Key Manager" Width="700" Height="660"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" MinWidth="600" MinHeight="500"
+        Background="{StaticResource CardBgBrush}">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="🔑  Gemini API Keys" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"
+                   Foreground="{StaticResource TextBrush}" Margin="0,5,0,0"/>
+        <TextBlock Grid.Row="1" Text="Keys rotate round-robin. On quota error, next key is used automatically."
+                   FontSize="12" Foreground="{StaticResource TextDimBrush}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+
+        <!-- Entry Row -->
+        <DockPanel Grid.Row="2" Margin="0,0,0,10">
+            <Button DockPanel.Dock="Right" Content="Test All" Style="{StaticResource WarningBtn}"
+                    Padding="10,6" Click="TestAll_Click"/>
+            <Button x:Name="ShowHideBtn" DockPanel.Dock="Right" Content="👁" Style="{StaticResource SubtleBtn}"
+                    Padding="8,6" Margin="0,0,4,0" Click="ShowHide_Click"/>
+            <Button DockPanel.Dock="Right" Content="Add" Style="{StaticResource PrimaryBtn}"
+                    Padding="12,6" Margin="0,0,4,0" Click="Add_Click"/>
+            <TextBox x:Name="KeyEntry" Height="36" FontSize="13" Padding="10,8"
+                     Background="{StaticResource SurfaceBrush}">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="FontFamily" Value="Consolas"/>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </DockPanel>
+
+        <!-- Key List -->
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="KeyList"/>
+        </ScrollViewer>
+
+        <!-- Status -->
+        <TextBlock x:Name="StatusLbl" Grid.Row="4" FontSize="12" Foreground="{StaticResource TextDimBrush}"
+                   HorizontalAlignment="Center" Margin="0,8"/>
+
+        <!-- Save -->
+        <Button Grid.Row="5" Content="Save &amp; Close" Style="{StaticResource SuccessBtn}"
+                Height="40" FontWeight="Bold" Click="SaveClose_Click" Margin="0,0,0,10"/>
+    </Grid>
+</Window>

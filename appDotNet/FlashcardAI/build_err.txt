@@ -1,0 +1,15 @@
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\App.xaml.cs(5,28): error CS0104: 'Application' is an ambiguous reference between 'System.Windows.Forms.Application' and 'System.Windows.Application' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Dialogs\DedupDialog.xaml.cs(29,51): error CS0104: 'CheckBox' is an ambiguous reference between 'System.Windows.Controls.CheckBox' and 'System.Windows.Forms.CheckBox' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Pages\QuizPage.xaml.cs(187,42): error CS0104: 'Control' is an ambiguous reference between 'System.Windows.Controls.Control' and 'System.Windows.Forms.Control' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Pages\StudyPage.xaml.cs(174,46): error CS0104: 'KeyEventArgs' is an ambiguous reference between 'System.Windows.Forms.KeyEventArgs' and 'System.Windows.Input.KeyEventArgs' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+
+Build FAILED.
+
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\App.xaml.cs(5,28): error CS0104: 'Application' is an ambiguous reference between 'System.Windows.Forms.Application' and 'System.Windows.Application' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Dialogs\DedupDialog.xaml.cs(29,51): error CS0104: 'CheckBox' is an ambiguous reference between 'System.Windows.Controls.CheckBox' and 'System.Windows.Forms.CheckBox' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Pages\QuizPage.xaml.cs(187,42): error CS0104: 'Control' is an ambiguous reference between 'System.Windows.Controls.Control' and 'System.Windows.Forms.Control' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Pages\StudyPage.xaml.cs(174,46): error CS0104: 'KeyEventArgs' is an ambiguous reference between 'System.Windows.Forms.KeyEventArgs' and 'System.Windows.Input.KeyEventArgs' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_garpbeqc_wpftmp.csproj]
+    0 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:00.95

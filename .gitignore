@@ -3,10 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# PyInstaller build folders
+# Build folders
 build/
 dist/
+appPython/build/
+appPython/dist/
+appDotNet/**/bin/
+appDotNet/**/obj/
 *.spec
+appPython/*.spec
 desktopApp/
 releaseApp/
 
@@ -27,10 +32,10 @@ venv.bak/
 # App data
 *.json
 !app.json
-!androidApp/app.json
-!androidApp/package.json
-!androidApp/package-lock.json
-!androidApp/eas.json
+!appAndroid/app.json
+!appAndroid/package.json
+!appAndroid/package-lock.json
+!appAndroid/eas.json
 
 # Screenshots & Media
 screenShotsApp/
@@ -56,10 +61,10 @@ Thumbs.db
 # App data & Sensitive files
 *.json
 !app.json
-!androidApp/app.json
-!androidApp/package.json
-!androidApp/package-lock.json
-!androidApp/eas.json
+!appAndroid/app.json
+!appAndroid/package.json
+!appAndroid/package-lock.json
+!appAndroid/eas.json
 
 # Explicitly exclude sensitive login/data files
 credentials.json

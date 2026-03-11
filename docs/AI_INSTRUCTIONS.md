@@ -16,7 +16,7 @@ When modifying this project, preserve local-first behavior, deck compatibility, 
 - Business logic/integrations belong in `services/`.
 - Data shape logic belongs in `models/`.
 - UI event wiring belongs in screen/frame classes.
-- Mobile persistence changes must go through `androidApp/src/utils/storage.js`.
+- Mobile persistence changes must go through `appAndroid/src/utils/storage.js`.
 
 ## Safety Checklist Before Finalizing
 - Verify deck load/save still works on desktop.

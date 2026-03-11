@@ -1,0 +1,9 @@
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Dialogs\ApiKeyDialog.xaml.cs(93,42): error CS0104: 'Clipboard' is an ambiguous reference between 'System.Windows.Forms.Clipboard' and 'System.Windows.Clipboard' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_i0i13vje_wpftmp.csproj]
+
+Build FAILED.
+
+D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\Views\Dialogs\ApiKeyDialog.xaml.cs(93,42): error CS0104: 'Clipboard' is an ambiguous reference between 'System.Windows.Forms.Clipboard' and 'System.Windows.Clipboard' [D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\FlashcardAI_i0i13vje_wpftmp.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.31

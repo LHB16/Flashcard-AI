@@ -7,7 +7,7 @@ echo       GitHub Release Configurator
 echo =========================================
 
 :: Đọc version hiện tại từ package.json
-set "PACKAGE_JSON=D:\Documents\Tool\PNGToQuizlet\androidApp\package.json"
+set "PACKAGE_JSON=D:\Documents\Tool\PNGToQuizlet\appAndroid\package.json"
 set "CURRENT_VERSION="
 
 for /f "tokens=2 delims=:," %%a in ('type "%PACKAGE_JSON%" ^| findstr /C:"\"version\""') do (
@@ -26,21 +26,38 @@ if not "%~1"=="" (
     set "CHOICE=%~1"
     set "NEW_VERSION=%~2"
     set "NOTES=%~3"
+    if "!CHOICE!"=="1" ( set "REL_DOTNET=y" & set "REL_PYTHON=y" & set "REL_MOBILE=n" )
+    if "!CHOICE!"=="2" ( set "REL_DOTNET=n" & set "REL_PYTHON=n" & set "REL_MOBILE=y" )
+    if "!CHOICE!"=="3" ( set "REL_DOTNET=y" & set "REL_PYTHON=y" & set "REL_MOBILE=y" )
     echo [AI-Mode] Dang chay tu dong voi lua chon: !CHOICE!, Version: !NEW_VERSION!
     goto auto_run
 )
 
-echo Chon phan ban muon release:
-echo 1. Update Desktop (chi up .exe)
-echo 2. Update Mobile (chi up .apk)
-echo 3. Update Ca Hai (.exe va .apk)
-set /p CHOICE="Nhap lua chon (1/2/3): "
-
+:ask_dotnet
 echo.
-set /p NEW_VERSION="Nhap version moi (vd: 1.0.5): "
+echo =========================================
+set /p REL_DOTNET="1. Ban co muon release Desktop (.NET exe)? (y/n, hoac x de thoat): "
+if /i "!REL_DOTNET!"=="x" goto end
 
+:ask_python
 echo.
-set /p NOTES="Nhap mo ta ban update nay: "
+set /p REL_PYTHON="2. Ban co muon release Desktop (Python lib)? (y/n, hoac x de quay lai): "
+if /i "!REL_PYTHON!"=="x" goto ask_dotnet
+
+:ask_mobile
+echo.
+set /p REL_MOBILE="3. Ban co muon release Mobile (.apk)? (y/n, hoac x de quay lai): "
+if /i "!REL_MOBILE!"=="x" goto ask_python
+
+:ask_version
+echo.
+set /p NEW_VERSION="4. Nhap version moi (vd: 1.0.5, hoac x de quay lai): "
+if /i "!NEW_VERSION!"=="x" goto ask_mobile
+
+:ask_notes
+echo.
+set /p NOTES="5. Nhap mo ta ban update nay (hoac x de quay lai): "
+if /i "!NOTES!"=="x" goto ask_version
 
 :auto_run
 echo.
@@ -54,13 +71,18 @@ if not exist "%RELEASE_DIR%" (
     goto end
 )
 
-:: Tìm file .exe mới nhất trong thư mục
-for %%f in ("%RELEASE_DIR%\*.exe") do (
-    set "EXE_FILE=%%f"
+set "DOTNET_EXE="
+set "PYTHON_EXE="
+:: Tìm file .exe mới nhất trong thư mục Publish của .NET và dist của Python
+for %%f in ("D:\Documents\Tool\PNGToQuizlet\appDotNet\FlashcardAI\bin\Release\net8.0-windows\win-x64\publish\FlashcardAI-DotNet-*.exe") do (
+    set "DOTNET_EXE=%%f"
+)
+for %%f in ("D:\Documents\Tool\PNGToQuizlet\appPython\dist\FlashcardAI-Python-*.exe") do (
+    set "PYTHON_EXE=%%f"
 )
 
-:: Tìm file .apk mới nhất trong thư mục
-for %%f in ("%RELEASE_DIR%\*.apk") do (
+:: Tìm file .apk mới nhất trong thư mục release Android
+for %%f in ("D:\Documents\Tool\PNGToQuizlet\appAndroid\android\app\build\outputs\apk\release\FlashcardAI-Android-*.apk") do (
     set "APK_FILE=%%f"
 )
 
@@ -68,37 +90,44 @@ echo =========================================
 echo Đang tiến hành Release (Version: %NEW_VERSION%)
 echo =========================================
 
-if "%CHOICE%"=="1" (
-    if "!EXE_FILE!"=="" (
-        echo [LỖI] Khong tim thay file .exe trong %RELEASE_DIR%
-        goto end
+set "ASSETS="
+set "RELEASE_TYPES="
+
+if /i "!REL_DOTNET!"=="y" (
+    if "!DOTNET_EXE!"=="" (
+        echo [CẢNH BÁO] Khong tim thay file DotNet .exe!
+    ) else (
+        set "ASSETS=!ASSETS! "!DOTNET_EXE!""
+        set "RELEASE_TYPES=!RELEASE_TYPES! .NET"
     )
-    echo [Desktop] Phat hanh version: desktop-v%NEW_VERSION%
-    gh release create "desktop-v%NEW_VERSION%" "!EXE_FILE!" --title "Desktop App v%NEW_VERSION%" --notes "%NOTES%"
-    echo Release Desktop thanh cong!
-) else if "%CHOICE%"=="2" (
-    if "!APK_FILE!"=="" (
-        echo [LỖI] Khong tim thay file .apk trong %RELEASE_DIR%
-        goto end
-    )
-    echo [Mobile] Phat hanh version: android-v%NEW_VERSION%
-    gh release create "android-v%NEW_VERSION%" "!APK_FILE!" --title "Android App v%NEW_VERSION%" --notes "%NOTES%"
-    echo Release Mobile thanh cong!
-) else if "%CHOICE%"=="3" (
-    if "!EXE_FILE!"=="" (
-        echo [LỖI] Khong tim thay file .exe trong %RELEASE_DIR%
-        goto end
-    )
-    if "!APK_FILE!"=="" (
-        echo [LỖI] Khong tim thay file .apk trong %RELEASE_DIR%
-        goto end
-    )
-    echo [Ca Hai] Phat hanh version: v%NEW_VERSION%
-    gh release create "v%NEW_VERSION%" "!EXE_FILE!" "!APK_FILE!" --title "Release v%NEW_VERSION%" --notes "%NOTES%"
-    echo Release ca hai thanh cong!
-) else (
-    echo [LỖI] Lựa chọn không hợp lệ! Vui lòng kiểm tra lại.
 )
+
+if /i "!REL_PYTHON!"=="y" (
+    if "!PYTHON_EXE!"=="" (
+        echo [CẢNH BÁO] Khong tim thay file Python .exe!
+    ) else (
+        set "ASSETS=!ASSETS! "!PYTHON_EXE!""
+        set "RELEASE_TYPES=!RELEASE_TYPES! Python"
+    )
+)
+
+if /i "!REL_MOBILE!"=="y" (
+    if "!APK_FILE!"=="" (
+        echo [CẢNH BÁO] Khong tim thay file .apk!
+    ) else (
+        set "ASSETS=!ASSETS! "!APK_FILE!""
+        set "RELEASE_TYPES=!RELEASE_TYPES! Android"
+    )
+)
+
+if "!ASSETS!"=="" (
+    echo [LỖI] Khong co file hop le nao duoc chon de release!
+    goto end
+)
+
+echo [Phat hanh] Dang phat hanh cac phien ban:!RELEASE_TYPES!
+gh release create "v%NEW_VERSION%" !ASSETS! --title "Release v%NEW_VERSION%" --notes "%NOTES%"
+echo Release thanh cong!
 
 :end
 :: Tự động cập nhật package.json sang version mới nếu thành công

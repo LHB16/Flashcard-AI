@@ -21,10 +21,10 @@ echo Xay dung hoan tat!
 echo Dang doi ten file hien tai thanh phien ban...
 
 :: Extract version from package.json
-for /f "delims=" %%i in ('node -p "require('./androidApp/package.json').version"') do set APP_VERSION=%%i
+for /f "delims=" %%i in ('node -p "require('../appAndroid/package.json').version"') do set APP_VERSION=%%i
 
 set "OLD_EXE=dist\FlashcardAI.exe"
-set "NEW_EXE=dist\FlashcardAI-v%APP_VERSION%.exe"
+set "NEW_EXE=dist\FlashcardAI-Python-v%APP_VERSION%.exe"
 
 if exist "%OLD_EXE%" (
     move /Y "%OLD_EXE%" "%NEW_EXE%" >nul
