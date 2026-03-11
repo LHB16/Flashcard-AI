@@ -1,5 +1,6 @@
 # 🃏 Flashcard AI Ecosystem
 
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![React Native](https://img.shields.io/badge/react--native-v0.83-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
 [![Version](https://img.shields.io/badge/version-1.0.3-green)](https://github.com/LHB16/Flashcard-AI)
@@ -40,27 +41,31 @@ Your portable study companion built with **React Native**.
 
 ## 🛠️ Tech Stack
 
-| Desktop | Mobile | Core |
+| Desktop (.NET 8) | Mobile | Core |
 |:---:|:---:|:---:|
-| Python 3.10+ | React Native (Expo SDK 55) | Google Gemini AI |
-| CustomTkinter | AsyncStorage | JSON Database |
+| C# / WPF (.NET 8) | React Native (Expo SDK 55) | Google Gemini AI |
+| MVVM Architecture | AsyncStorage | JSON Database |
 | Google Drive API (OAuth) | React Navigation | batch-PDF OCR |
-| PyInstaller | | |
+| Single-file EXE | | Python Legacy supported |
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Desktop Setup
+### 1. Desktop Setup (.NET 8)
 ```bash
 # Clone the repository
 git clone https://github.com/LHB16/Flashcard-AI.git
-cd Flashcard-AI
+cd Flashcard-AI/appDotNet/FlashcardAI
 
-# Install dependencies
+# Build and Run (requires .NET 8 SDK)
+dotnet run
+```
+
+### 1b. Desktop Setup (Python Legacy)
+```bash
+cd Flashcard-AI/appPython
 pip install -r requirements.txt
-
-# Run the app
 python app.py
 ```
 
