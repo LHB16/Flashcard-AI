@@ -26,7 +26,6 @@ call gradlew.bat assembleRelease
 if errorlevel 1 (
     echo.
     echo [LOI] Build APK that bai!
-    pause
     exit /b 1
 )
 
@@ -49,4 +48,3 @@ if exist "%OLD_APK%" (
     echo [LOI] Khong tim thay file APK goc de doi ten!
 )
 
-pause
