@@ -31,19 +31,27 @@ public class Flashcard
     public string GetCorrectAnswerText()
     {
         var result = new List<string>();
-        foreach (var letter in CorrectAnswers)
+        foreach (var answer in CorrectAnswers)
         {
-            bool found = false;
-            foreach (var opt in Options)
+            var ansTrim = answer.Trim();
+            if (ansTrim.Length == 1 && char.IsLetter(ansTrim[0]))
             {
-                if (opt.StartsWith($"{letter}.") || opt.StartsWith($"{letter})"))
+                bool found = false;
+                foreach (var opt in Options)
                 {
-                    result.Add(opt);
-                    found = true;
-                    break;
+                    if (opt.StartsWith($"{ansTrim}.") || opt.StartsWith($"{ansTrim})"))
+                    {
+                        result.Add(opt);
+                        found = true;
+                        break;
+                    }
                 }
+                if (!found) result.Add(answer);
             }
-            if (!found) result.Add(letter);
+            else
+            {
+                result.Add(answer);
+            }
         }
         return result.Count > 0 ? string.Join(" | ", result) : "Unknown";
     }

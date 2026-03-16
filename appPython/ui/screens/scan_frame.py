@@ -50,13 +50,20 @@ class ScanFrame(ctk.CTkFrame):
 
         folder_row = ctk.CTkFrame(form, fg_color="transparent")
         folder_row.pack(fill="x", padx=15)
-        self.folder_lbl = ctk.CTkLabel(folder_row, text="No folder selected",
+        self.folder_lbl = ctk.CTkLabel(folder_row, text="No input selected",
                                        font=ctk.CTkFont(size=13), text_color=TEXT_DIM,
-                                       wraplength=250, anchor="w")
+                                       wraplength=230, anchor="w")
         self.folder_lbl.pack(side="left", fill="x", expand=True)
-        ctk.CTkButton(folder_row, text="Browse", width=80, height=32,
+
+        btn_frame = ctk.CTkFrame(folder_row, fg_color="transparent")
+        btn_frame.pack(side="right")
+        
+        ctk.CTkButton(btn_frame, text="Folder", width=65, height=32,
                       fg_color=ACCENT, hover_color=ACCENT_HOVER, text_color="white",
-                      command=self._browse_folder).pack(side="right")
+                      command=self._browse_folder).pack(side="left", padx=(0, 5))
+        ctk.CTkButton(btn_frame, text="Video", width=65, height=32,
+                      fg_color=ACCENT, hover_color=ACCENT_HOVER, text_color="white",
+                      command=self._browse_video).pack(side="left")
 
         self.file_count_lbl = ctk.CTkLabel(form, text="",
                                            font=ctk.CTkFont(size=13), text_color=TEXT_DIM)
@@ -85,19 +92,41 @@ class ScanFrame(ctk.CTkFrame):
             if not self.deck_name_entry.get():
                 self.deck_name_entry.insert(0, short)
 
+    def _browse_video(self):
+        video_path = filedialog.askopenfilename(
+            title="Select Video File",
+            filetypes=[("Video Files", "*.mp4 *.mkv *.avi *.mov")]
+        )
+        if video_path:
+            self.folder_path = "video_mode" 
+            self.image_files = [] 
+            self.video_file = video_path 
+            short = __import__('os').path.basename(video_path)
+            self.folder_lbl.configure(text=short)
+            self.file_count_lbl.configure(
+                text="1 video file selected",
+                text_color=SUCCESS
+            )
+            if not self.deck_name_entry.get():
+                name_without_ext = __import__('os').path.splitext(short)[0]
+                self.deck_name_entry.insert(0, name_without_ext)
+
     def _start_scan(self):
-        if not self.image_files:
-            messagebox.showerror("Error", "Please select a folder with images first.")
+        video_file = getattr(self, "video_file", None)
+        if not self.image_files and not video_file:
+            messagebox.showerror("Error", "Please select an image folder or a video file first.")
             return
 
         deck_name = self.deck_name_entry.get().strip() or "Untitled Deck"
         from ui.dialogs.scan_assign_dialog import ScanAssignDialog
-        ScanAssignDialog(self, self.app, self.image_files, deck_name)
+        ScanAssignDialog(self, self.app, self.image_files, deck_name, video_file=video_file)
 
     def reset(self):
         """Call when returning to this frame."""
         self.folder_path = ""
         self.image_files = []
-        self.folder_lbl.configure(text="No folder selected", text_color=TEXT_DIM)
+        if hasattr(self, "video_file"):
+            delattr(self, "video_file")
+        self.folder_lbl.configure(text="No input selected", text_color=TEXT_DIM)
         self.file_count_lbl.configure(text="")
         self.deck_name_entry.delete(0, "end")

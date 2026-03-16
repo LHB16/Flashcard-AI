@@ -13,13 +13,14 @@ from ui.theme import win_toast
 
 
 class BackgroundScan:
-    def __init__(self, app, image_files, deck_name, keys, parallel=False):
+    def __init__(self, app, image_files, deck_name, keys, parallel=False, video_file=None):
         self.app = app
         self.id = str(uuid.uuid4())
         self.image_files = image_files
         self.deck_name = deck_name
         self.keys = keys
         self.parallel = parallel
+        self.video_file = video_file
 
         self.gemini_service = GeminiService()
         self.stop_event = threading.Event()
@@ -72,6 +73,40 @@ class BackgroundScan:
 
         self._log(f"✅ {len(alive_keys)} key(s) alive. Starting scan...")
         self.gemini_service.set_keys(alive_keys)
+        
+        # Extract frames if video_file is provided
+        if self.video_file:
+            self.status = "Extracting frames..."
+            self._log(f"🎬 Extracting frames from video...")
+            self._notify_home()
+            
+            from services.video_service import VideoService
+            import tempfile
+            
+            self.temp_dir = tempfile.mkdtemp(prefix="flashcard_frames_")
+            
+            try:
+                def on_extract_progress(count):
+                    self.status = f"Extracted {count} frames..."
+                    # Only notify home occasionally to avoid flooding UI
+                    if count % 10 == 0:
+                        self._notify_home()
+                    
+                self.image_files = VideoService.extract_frames(
+                    self.video_file, 
+                    self.temp_dir, 
+                    fps=1.0, 
+                    on_progress=on_extract_progress
+                )
+                self._log(f"✅ Extracted {len(self.image_files)} frames to temp directory.")
+            except Exception as e:
+                self.status = "Extraction Failed"
+                self.status_color = DANGER
+                self.is_finished = True
+                self._log(f"❌ Video extraction failed: {e}")
+                self._notify_home(full_rebuild=True)
+                return
+
         self.status = "Scanning"
         self.status_color = SUCCESS
 
@@ -141,6 +176,15 @@ class BackgroundScan:
                 win_toast("Scan Complete ✅", f"{len(self.results)} cards extracted — '{self.deck_name}'")
             else:
                 win_toast("Scan Finished", "No cards extracted. Check your images or API keys.")
+
+        # Cleanup temporary frames if used
+        if getattr(self, "temp_dir", None):
+            self._log("🧹 Cleaning up temporary frames...")
+            import shutil
+            try:
+                shutil.rmtree(self.temp_dir)
+            except Exception as e:
+                self._log(f"⚠ Failed to clean up temp dir: {e}")
 
         self.is_finished = True
         self._notify_home(full_rebuild=True)

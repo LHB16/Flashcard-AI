@@ -6,8 +6,8 @@ echo ==============================================
 echo       XAY DUNG UNG DUNG WINDOWS (EXE)
 echo ==============================================
 echo.
-echo Kiem tra va cai dat PyInstaller...
-pip install pyinstaller >nul 2>&1
+echo Kiem tra va cai dat PyInstaller, OpenCV...
+pip install pyinstaller opencv-python >nul 2>&1
 
 echo Dang tien hanh dong goi. Vui long doi vai phut...
 :: --onefile: Gom moi thu thanh 1 file cha duy nhat
@@ -43,4 +43,3 @@ if exist "dist" (
     echo Khong tim thay thu muc dist. Co the qua trinh build gap loi.
 )
 
-pause

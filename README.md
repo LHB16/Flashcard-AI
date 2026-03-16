@@ -3,7 +3,7 @@
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![React Native](https://img.shields.io/badge/react--native-v0.83-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
-[![Version](https://img.shields.io/badge/version-1.0.3-green)](https://github.com/LHB16/Flashcard-AI)
+[![Version](https://img.shields.io/badge/version-1.0.4-green)](https://github.com/LHB16/Flashcard-AI)
 [![Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-orange?logo=google-gemini)](https://ai.google.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -17,7 +17,7 @@ A comprehensive learning ecosystem powered by **Google Gemini AI**. This project
 ## ️ Desktop App (Windows)
 The control center for scanning and deck management.
 
-- **🤖 AI OCR Scanning**: Batched processing of folder images via Gemini API.
+- **🤖 AI OCR Scanning**: Extract flashcards from image folders or **Video files** (.mp4, .avi) using OpenCvSharp & Gemini API.
 - **☁️ Cloud Sync**: Bi-directional Smart Merge synchronization via Google Drive AppData (keeps devices updated effortlessly).
 - **⚡ Background Processing**: Multiple scans can run simultaneously with real-time logs and progress tracking.
 - **🛠️ API Key Management**: Support for multiple Gemini keys with per-key usage tracking.

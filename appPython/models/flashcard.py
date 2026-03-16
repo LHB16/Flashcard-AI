@@ -54,15 +54,22 @@ class Flashcard:
         )
 
     def get_correct_answer_text(self) -> str:
-        """Return the full text of correct answers."""
+        """Return the full text of correct answers.
+        Supports both letter format (['A']) and full-text format (['full answer text']).
+        """
         result = []
-        for letter in self.correct_answers:
-            for opt in self.options:
-                if opt.startswith(f"{letter}.") or opt.startswith(f"{letter})"):
-                    result.append(opt)
-                    break
+        for answer in self.correct_answers:
+            # If answer is a single letter, find the matching option by prefix
+            if len(answer.strip()) == 1 and answer.strip().isalpha():
+                for opt in self.options:
+                    if opt.startswith(f"{answer}.") or opt.startswith(f"{answer})"):
+                        result.append(opt)
+                        break
+                else:
+                    result.append(answer)
             else:
-                result.append(letter)
+                # Full-text format: the answer IS the text
+                result.append(answer)
         return " | ".join(result) if result else "Unknown"
 
     # Safe format separators — unique enough to never appear in real content

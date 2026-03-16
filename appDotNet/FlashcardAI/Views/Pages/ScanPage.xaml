@@ -29,12 +29,16 @@
                            Foreground="{StaticResource TextDimBrush}" Margin="0,5,0,3"/>
                 <TextBox x:Name="DeckNameBox" Height="36" FontSize="13" Padding="10,8"/>
 
-                <TextBlock Text="Image Folder" FontSize="13" FontWeight="Bold"
+                <TextBlock Text="Input Source (Folder or Video)" FontSize="13" FontWeight="Bold"
                            Foreground="{StaticResource TextDimBrush}" Margin="0,20,0,3"/>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Content="Browse" Style="{StaticResource PrimaryBtn}"
-                            Padding="12,6" Click="Browse_Click"/>
-                    <TextBlock x:Name="FolderLbl" Text="No folder selected" FontSize="13"
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="Browse Folder" Style="{StaticResource PrimaryBtn}"
+                                Padding="12,6" Margin="0,0,5,0" Click="BrowseFolder_Click"/>
+                        <Button Content="Browse Video" Style="{StaticResource PrimaryBtn}"
+                                Padding="12,6" Click="BrowseVideo_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="SourceLbl" Text="No input selected" FontSize="13"
                                Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center"
                                TextWrapping="Wrap" Margin="0,0,10,0"/>
                 </DockPanel>

@@ -13,9 +13,11 @@ public partial class ScanPage : Page
 {
     private readonly MainWindow _app;
     private string _folderPath = "";
+    private string _videoPath = "";
     private List<string> _imageFiles = new();
-
+    
     private static readonly HashSet<string> ImageExts = new() { ".png", ".jpg", ".jpeg", ".webp", ".bmp" };
+    private static readonly HashSet<string> VideoExts = new() { ".mp4", ".avi", ".mkv", ".mov" };
 
     public ScanPage(MainWindow app)
     {
@@ -25,17 +27,8 @@ public partial class ScanPage : Page
 
     private void Back_Click(object sender, RoutedEventArgs e) => _app.ShowHome();
 
-    private void Browse_Click(object sender, RoutedEventArgs e)
+    private void BrowseFolder_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-            // Use FolderPicker hack or use Microsoft.WindowsAPICodePack
-            CheckFileExists = false,
-            FileName = "Select Folder",
-            Filter = "Folder|*.folder"
-        };
-
-        // Use FolderBrowserDialog equivalent
         using var fbd = new System.Windows.Forms.FolderBrowserDialog
         {
             Description = "Select Image Folder"
@@ -44,12 +37,13 @@ public partial class ScanPage : Page
         if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
         {
             _folderPath = fbd.SelectedPath;
+            _videoPath = ""; // reset video
             _imageFiles = Directory.GetFiles(_folderPath)
                 .Where(f => ImageExts.Contains(Path.GetExtension(f).ToLower()))
                 .OrderBy(f => f)
                 .ToList();
 
-            FolderLbl.Text = Path.GetFileName(_folderPath);
+            SourceLbl.Text = Path.GetFileName(_folderPath);
             FileCountLbl.Text = $"Found {_imageFiles.Count} images";
             FileCountLbl.Foreground = _imageFiles.Count > 0
                 ? (SolidColorBrush)FindResource("SuccessBrush")
@@ -60,17 +54,40 @@ public partial class ScanPage : Page
         }
     }
 
+    private void BrowseVideo_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select Video File",
+            Filter = "Video Files|*.mp4;*.avi;*.mkv;*.mov|All Files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            _videoPath = dialog.FileName;
+            _folderPath = ""; // reset folder
+            _imageFiles.Clear();
+
+            SourceLbl.Text = Path.GetFileName(_videoPath);
+            FileCountLbl.Text = "Will extract frames on start";
+            FileCountLbl.Foreground = (SolidColorBrush)FindResource("SuccessBrush");
+
+            if (string.IsNullOrEmpty(DeckNameBox.Text))
+                DeckNameBox.Text = Path.GetFileNameWithoutExtension(_videoPath);
+        }
+    }
+
     private void Start_Click(object sender, RoutedEventArgs e)
     {
-        if (_imageFiles.Count == 0)
+        if (_imageFiles.Count == 0 && string.IsNullOrEmpty(_videoPath))
         {
-            MessageBox.Show("Please select a folder with images first.", "Error",
+            MessageBox.Show("Please select an image folder or a video file first.", "Error",
                 MessageBoxButton.OK, MessageBoxImage.Error);
             return;
         }
 
         var deckName = string.IsNullOrWhiteSpace(DeckNameBox.Text) ? "Untitled Deck" : DeckNameBox.Text.Trim();
-        var dialog = new ScanAssignDialog(_app, _imageFiles, deckName);
+        var dialog = new ScanAssignDialog(_app, _imageFiles, deckName, _videoPath);
         dialog.Owner = _app;
         dialog.ShowDialog();
     }

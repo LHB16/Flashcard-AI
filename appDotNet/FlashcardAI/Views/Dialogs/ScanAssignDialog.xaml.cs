@@ -14,14 +14,16 @@ public partial class ScanAssignDialog : Window
     private readonly MainWindow _app;
     private readonly List<string> _imageFiles;
     private readonly string _deckName;
+    private readonly string _videoPath;
     private readonly Dictionary<string, ToggleButton> _checkMap = new();
 
-    public ScanAssignDialog(MainWindow app, List<string> imageFiles, string deckName)
+    public ScanAssignDialog(MainWindow app, List<string> imageFiles, string deckName, string videoPath = "")
     {
         InitializeComponent();
         _app = app;
         _imageFiles = imageFiles;
         _deckName = deckName;
+        _videoPath = videoPath;
         BuildKeyList();
     }
 
@@ -90,7 +92,8 @@ public partial class ScanAssignDialog : Window
                     MainWindow.Instance.Decks = StorageService.LoadDecks();
                     MainWindow.Instance.ShowHome();
                 }
-            }
+            },
+            videoPath: _videoPath
         );
         scan.AppDecks = _app.Decks;
         _app.ActiveScans.Add(scan);

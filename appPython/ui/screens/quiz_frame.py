@@ -222,19 +222,31 @@ class QuizFrame(ctk.CTkFrame):
             if var is not selected_var:
                 var.set(False)
 
-    def _get_selected_letters(self):
+    def _is_letter_format(self, card: Flashcard) -> bool:
+        """Check if correct_answers uses letter format (e.g. ['A']) vs full-text."""
+        if not card.correct_answers:
+            return True
+        # Letter format: each answer is a single uppercase letter
+        return all(len(a.strip()) == 1 and a.strip().isalpha() for a in card.correct_answers)
+
+    def _get_selected_answers(self, card: Flashcard):
+        """Get selected answers in the same format as card.correct_answers."""
         selected = []
+        use_letters = self._is_letter_format(card)
         for var, (btn, opt_text) in zip(self._choice_vars, self._option_btns):
             if var.get():
-                letter = opt_text.strip()[0]  # "A", "B", etc.
-                selected.append(letter)
+                if use_letters:
+                    letter = opt_text.strip()[0]  # "A", "B", etc.
+                    selected.append(letter)
+                else:
+                    selected.append(opt_text.strip())
         return selected
 
     def _confirm(self):
         if self._revealed:
             return
         card = self._current_card()
-        selected = self._get_selected_letters()
+        selected = self._get_selected_answers(card)
 
         if not selected:
             self.feedback_lbl.configure(text="⚠ You haven't selected an answer!", text_color=WARNING)
@@ -249,13 +261,17 @@ class QuizFrame(ctk.CTkFrame):
 
         correct = set(card.correct_answers)
         chosen = set(selected)
+        use_letters = self._is_letter_format(card)
 
         # Highlight options
         for var, (btn, opt_text) in zip(self._choice_vars, self._option_btns):
-            letter = opt_text.strip()[0]
-            if letter in correct:
+            if use_letters:
+                identifier = opt_text.strip()[0]
+            else:
+                identifier = opt_text.strip()
+            if identifier in correct:
                 btn.configure(text_color=SUCCESS)
-            elif letter in chosen:
+            elif identifier in chosen:
                 btn.configure(text_color=DANGER)
 
         # Score and Status

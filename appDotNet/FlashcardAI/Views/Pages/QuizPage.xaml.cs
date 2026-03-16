@@ -142,11 +142,20 @@ public partial class QuizPage : Page
         var card = _deck.Cards[cardIdx];
 
         // Determine correct options text
-        var correctSet = card.CorrectAnswers.Select(a => a.Trim().ToUpper()).ToHashSet();
+        var correctSet = card.CorrectAnswers.Select(a => a.Trim()).ToHashSet();
         var correctOpts = card.Options.Where(opt =>
         {
             var trimmed = opt.Trim();
-            return trimmed.Length > 0 && correctSet.Contains(trimmed[0].ToString().ToUpper());
+            // Full-text match
+            if (correctSet.Contains(trimmed)) return true;
+            
+            // Letter match
+            if (trimmed.Length > 0 && char.IsLetter(trimmed[0]))
+            {
+                var letter = trimmed[0].ToString().ToUpper();
+                return correctSet.Any(c => c.Length == 1 && c.ToUpper() == letter);
+            }
+            return false;
         }).ToHashSet();
 
         bool isCorrect = selected.Count == correctOpts.Count && selected.All(s => correctOpts.Contains(s));

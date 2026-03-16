@@ -11,11 +11,12 @@ from ui.theme import (
 
 
 class ScanAssignDialog(ctk.CTkToplevel):
-    def __init__(self, parent, app, image_files, deck_name):
+    def __init__(self, parent, app, image_files, deck_name, video_file=None):
         super().__init__(parent)
         self.app = app
         self.image_files = image_files
         self.deck_name = deck_name
+        self.video_file = video_file
         self.selected_keys = []
         self.title("Assign API Keys for Scan")
         self.geometry("500x480")
@@ -95,7 +96,7 @@ class ScanAssignDialog(ctk.CTkToplevel):
 
         parallel = self._parallel_var.get()
         # Start background scan
-        scan = BackgroundScan(self.app, self.image_files, self.deck_name, selected, parallel=parallel)
+        scan = BackgroundScan(self.app, self.image_files, self.deck_name, selected, parallel=parallel, video_file=self.video_file)
         self.app.active_scans.append(scan)
         scan.start()
 

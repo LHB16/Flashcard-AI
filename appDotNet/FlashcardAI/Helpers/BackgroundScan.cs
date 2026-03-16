@@ -22,6 +22,7 @@ public class BackgroundScan : ViewModelBase
     public string DeckName { get; }
     public List<string> Keys { get; }
     public bool Parallel { get; }
+    public string VideoPath { get; }
     public GeminiService GeminiSvc { get; } = new();
 
     private CancellationTokenSource _cts = new();
@@ -61,12 +62,13 @@ public class BackgroundScan : ViewModelBase
     public List<Deck> AppDecks { get; set; } = new();
 
     public BackgroundScan(List<string> imageFiles, string deckName, List<string> keys,
-        bool parallel, Action<Action> dispatch, Action onRefresh)
+        bool parallel, Action<Action> dispatch, Action onRefresh, string videoPath = "")
     {
-        ImageFiles = imageFiles;
+        ImageFiles = imageFiles != null ? new List<string>(imageFiles) : new List<string>();
         DeckName = deckName;
         Keys = keys;
         Parallel = parallel;
+        VideoPath = videoPath;
         _dispatch = dispatch;
         _onRefresh = onRefresh;
     }
@@ -86,94 +88,139 @@ public class BackgroundScan : ViewModelBase
 
     private async Task RunAsync()
     {
-        // Step 1: Validate keys
-        _dispatch(() => Status = "Validating keys...");
-        Log($"🔑 Validating {Keys.Count} key(s)...");
+        string? tempVideoDir = null;
 
-        var aliveKeys = await GeminiSvc.ValidateKeysParallel(Keys, msg => Log(msg));
-
-        if (aliveKeys.Count == 0)
+        if (!string.IsNullOrEmpty(VideoPath))
         {
-            _dispatch(() =>
+            _dispatch(() => { Status = "Extracting video..."; StatusColor = ThemeColors.Warning; });
+            Log($"🎬 Found video input: {System.IO.Path.GetFileName(VideoPath)}");
+            tempVideoDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "flashcardAI_video_" + Guid.NewGuid().ToString("N")[..8]);
+            
+            try
             {
-                Status = "Failed: No alive keys";
-                StatusColor = ThemeColors.Danger;
-                IsFinished = true;
-            });
-            Log("❌ No alive API keys found. Aborted.");
-            _dispatch(_onRefresh);
-            return;
-        }
-
-        Log($"✅ {aliveKeys.Count} key(s) alive. Starting scan...");
-        GeminiSvc.SetKeys(aliveKeys);
-        _dispatch(() => { Status = "Scanning"; StatusColor = ThemeColors.Success; });
-
-        int total = ImageFiles.Count;
-        var modeLabel = Parallel ? "⚡ PARALLEL" : "📁 Sequential";
-        int nBatches = (total + 49) / 50;
-        Log($"{modeLabel}: {total} images → {nBatches} PDF batch(es)");
-
-        void OnProgress(int idx, int tot, Flashcard? card)
-        {
-            _dispatch(() =>
+                var extracted = await Task.Run(() => VideoService.ExtractFrames(VideoPath, tempVideoDir, 1, msg => Log(msg)));
+                if (extracted.Count == 0)
+                {
+                    _dispatch(() => { Status = "Failed: No frames"; StatusColor = ThemeColors.Danger; IsFinished = true; });
+                    Log("❌ Failed to extract any frames from video.");
+                    _dispatch(_onRefresh);
+                    return;
+                }
+                ImageFiles.AddRange(extracted);
+                Log($"✔ Ready to format and scan {ImageFiles.Count} frames.");
+            }
+            catch (Exception ex)
             {
-                ProgressFrac = (double)idx / tot;
-                ProgressText = $"{idx} / {tot}";
-                if (card != null) { SuccessCount++; Results.Add(card); }
-                else FailedCount++;
-                if (!_cts.IsCancellationRequested && !IsPaused)
-                    Status = $"✓ {SuccessCount}  ✗ {FailedCount}";
-            });
+                _dispatch(() => { Status = "Video Error"; StatusColor = ThemeColors.Danger; IsFinished = true; });
+                Log($"❌ Video extraction error: {ex.Message}");
+                _dispatch(_onRefresh);
+                return;
+            }
         }
-
-        GeminiSvc.OnLog = msg => Log(msg);
-        GeminiSvc.StopToken = _cts.Token;
 
         try
         {
-            if (Parallel && aliveKeys.Count > 1)
+            // Step 1: Validate keys
+            _dispatch(() => Status = "Validating keys...");
+            Log($"🔑 Validating {Keys.Count} key(s)...");
+
+            var aliveKeys = await GeminiSvc.ValidateKeysParallel(Keys, msg => Log(msg));
+
+            if (aliveKeys.Count == 0)
             {
-                await GeminiSvc.ProcessImagesParallel(
-                    ImageFiles, aliveKeys,
-                    onProgress: OnProgress,
-                    stopToken: _cts.Token,
-                    pauseEvent: _pauseEvent);
+                _dispatch(() =>
+                {
+                    Status = "Failed: No alive keys";
+                    StatusColor = ThemeColors.Danger;
+                    IsFinished = true;
+                });
+                Log("❌ No alive API keys found. Aborted.");
+                _dispatch(_onRefresh);
+                return;
+            }
+
+            Log($"✅ {aliveKeys.Count} key(s) alive. Starting scan...");
+            GeminiSvc.SetKeys(aliveKeys);
+            _dispatch(() => { Status = "Scanning"; StatusColor = ThemeColors.Success; });
+
+            int total = ImageFiles.Count;
+            var modeLabel = Parallel ? "⚡ PARALLEL" : "📁 Sequential";
+            int nBatches = (total + 49) / 50;
+            Log($"{modeLabel}: {total} images → {nBatches} PDF batch(es)");
+
+            void OnProgress(int idx, int tot, Flashcard? card)
+            {
+                _dispatch(() =>
+                {
+                    ProgressFrac = (double)idx / tot;
+                    ProgressText = $"{idx} / {tot}";
+                    if (card != null) { SuccessCount++; Results.Add(card); }
+                    else FailedCount++;
+                    if (!_cts.IsCancellationRequested && !IsPaused)
+                        Status = $"✓ {SuccessCount}  ✗ {FailedCount}";
+                });
+            }
+
+            GeminiSvc.OnLog = msg => Log(msg);
+            GeminiSvc.StopToken = _cts.Token;
+
+            try
+            {
+                if (Parallel && aliveKeys.Count > 1)
+                {
+                    await GeminiSvc.ProcessImagesParallel(
+                        ImageFiles, aliveKeys,
+                        onProgress: OnProgress,
+                        stopToken: _cts.Token,
+                        pauseEvent: _pauseEvent);
+                }
+                else
+                {
+                    await GeminiSvc.ProcessImagesAsPdfBatches(
+                        ImageFiles,
+                        onProgress: OnProgress,
+                        stopToken: _cts.Token,
+                        pauseEvent: _pauseEvent);
+                }
+            }
+            catch (OperationCanceledException) { }
+
+            if (_cts.IsCancellationRequested)
+            {
+                _dispatch(() => { Status = "Stopped"; StatusColor = ThemeColors.Danger; });
             }
             else
             {
-                await GeminiSvc.ProcessImagesAsPdfBatches(
-                    ImageFiles,
-                    onProgress: OnProgress,
-                    stopToken: _cts.Token,
-                    pauseEvent: _pauseEvent);
-            }
-        }
-        catch (OperationCanceledException) { }
-
-        if (_cts.IsCancellationRequested)
-        {
-            _dispatch(() => { Status = "Stopped"; StatusColor = ThemeColors.Danger; });
-        }
-        else
-        {
-            _dispatch(() => { Status = "Finished ✅"; StatusColor = ThemeColors.Success; });
-            if (Results.Count > 0)
-            {
-                var deck = new Deck
+                _dispatch(() => { Status = "Finished ✅"; StatusColor = ThemeColors.Success; });
+                if (Results.Count > 0)
                 {
-                    Name = DeckName,
-                    Cards = Results.ToList(),
-                    SourceFolder = "",
-                    CreatedAt = DateTime.Now.ToString("o")
-                };
-                AppDecks.Add(deck);
-                StorageService.SaveDecks(AppDecks);
+                    var deck = new Deck
+                    {
+                        Name = DeckName,
+                        Cards = Results.ToList(),
+                        SourceFolder = "",
+                        CreatedAt = DateTime.Now.ToString("o")
+                    };
+                    AppDecks.Add(deck);
+                    StorageService.SaveDecks(AppDecks);
+                }
             }
         }
+        finally
+        {
+            if (!string.IsNullOrEmpty(tempVideoDir) && System.IO.Directory.Exists(tempVideoDir))
+            {
+                try
+                {
+                    System.IO.Directory.Delete(tempVideoDir, true);
+                    Log("🧹 Cleaned up temporary video frames.");
+                }
+                catch { }
+            }
 
-        _dispatch(() => IsFinished = true);
-        _dispatch(_onRefresh);
+            _dispatch(() => IsFinished = true);
+            _dispatch(_onRefresh);
+        }
 
         // Auto-remove after 8 seconds
         await Task.Delay(8000);
