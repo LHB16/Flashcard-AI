@@ -1,43 +1,43 @@
 {
-  "expo": {
-    "name": "FlashcardAI",
-    "slug": "flashcard-ai",
-    "scheme": [
-      "flashcardai",
-      "com.googleusercontent.apps.900559674142-opri1224fsh2m708l2g2fd0bv1vkhnge"
-    ],
-    "version": "1.0.5",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#4F46E5"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "backgroundColor": "#4F46E5"
-      },
-      "package": "com.flashcardai.app",
-      "versionCode": 5,
-      "permissions": [
-        "REQUEST_INSTALL_PACKAGES"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "3f5f49f9-c808-4eec-9184-e7e56da18a7f"
-      }
-    },
-    "owner": "lhbinh",
-    "plugins": [
-      "expo-web-browser"
-    ]
-  }
+    "expo":  {
+                 "name":  "FlashcardAI",
+                 "slug":  "flashcard-ai",
+                 "scheme":  [
+                                "flashcardai",
+                                "com.googleusercontent.apps.900559674142-opri1224fsh2m708l2g2fd0bv1vkhnge"
+                            ],
+                 "version":  "1.0.6",
+                 "orientation":  "portrait",
+                 "icon":  "./assets/icon.png",
+                 "userInterfaceStyle":  "light",
+                 "splash":  {
+                                "image":  "./assets/splash-icon.png",
+                                "resizeMode":  "contain",
+                                "backgroundColor":  "#4F46E5"
+                            },
+                 "android":  {
+                                 "adaptiveIcon":  {
+                                                      "foregroundImage":  "./assets/android-icon-foreground.png",
+                                                      "backgroundImage":  "./assets/android-icon-background.png",
+                                                      "backgroundColor":  "#4F46E5"
+                                                  },
+                                 "package":  "com.flashcardai.app",
+                                 "versionCode":  6,
+                                 "permissions":  [
+                                                     "REQUEST_INSTALL_PACKAGES"
+                                                 ]
+                             },
+                 "web":  {
+                             "favicon":  "./assets/favicon.png"
+                         },
+                 "extra":  {
+                               "eas":  {
+                                           "projectId":  "3f5f49f9-c808-4eec-9184-e7e56da18a7f"
+                                       }
+                           },
+                 "owner":  "lhbinh",
+                 "plugins":  [
+                                 "expo-web-browser"
+                             ]
+             }
 }

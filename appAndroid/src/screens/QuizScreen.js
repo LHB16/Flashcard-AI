@@ -105,12 +105,12 @@ export default function QuizScreen({ route, navigation }) {
     const isMulti = card.question_type === 'multiple_choice';
     const n = order.length;
 
-    function toggleOption(letter) {
+    function toggleOption(index) {
         if (revealed) return;
         if (isMulti) {
-            setSelected(prev => prev.includes(letter) ? prev.filter(x => x !== letter) : [...prev, letter]);
+            setSelected(prev => prev.includes(index) ? prev.filter(x => x !== index) : [...prev, index]);
         } else {
-            setSelected([letter]);
+            setSelected([index]);
         }
     }
 
@@ -121,7 +121,8 @@ export default function QuizScreen({ route, navigation }) {
         }
         setRevealed(true);
         const correctSet = new Set(card.correct_answers ?? []);
-        const chosenSet = new Set(selected);
+        const chosenLetters = selected.map(idx => (card.options[idx] ?? "").trim()[0]);
+        const chosenSet = new Set(chosenLetters);
         const isCorrect = [...correctSet].every(x => chosenSet.has(x)) && [...chosenSet].every(x => correctSet.has(x));
 
         if (isCorrect) {
@@ -211,7 +212,7 @@ export default function QuizScreen({ route, navigation }) {
                 {/* Options */}
                 {(card.options ?? []).map((opt, i) => {
                     const letter = opt.trim()[0];
-                    const isSelected = selected.includes(letter);
+                    const isSelected = selected.includes(i);
                     const isCorrectOpt = correctAnswers.includes(letter);
                     let bg = Colors.surface;
                     let borderColor = Colors.border;
@@ -226,7 +227,7 @@ export default function QuizScreen({ route, navigation }) {
                         <TouchableOpacity
                             key={i}
                             style={[styles.option, { backgroundColor: bg, borderColor }]}
-                            onPress={() => toggleOption(letter)}
+                            onPress={() => toggleOption(i)}
                             activeOpacity={revealed ? 1 : 0.7}
                         >
                             <View style={[styles.optLetter, { borderColor, backgroundColor: isSelected || (revealed && isCorrectOpt) ? borderColor : 'transparent' }]}>
