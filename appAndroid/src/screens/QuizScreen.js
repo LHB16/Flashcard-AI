@@ -32,27 +32,45 @@ export default function QuizScreen({ route, navigation }) {
 
     useFocusEffect(useCallback(() => {
         async function init() {
-            const sessions = await loadSessions();
-            const saved = sessions[deck.deck_id];
-            if (saved && saved.currentIdx < saved.order.length) {
-                Alert.alert(
-                    'Continue Quiz?',
-                    `You left off at question ${saved.currentIdx + 1}/${saved.order.length}.`,
-                    [
-                        { text: 'Restart', onPress: startNew },
-                        {
-                            text: 'Continue', onPress: () => {
-                                setOrder(saved.order);
-                                setCurrentIdx(saved.currentIdx);
-                                setCorrect(saved.correct);
-                                setWrong(saved.wrong);
-                                setAnswers(saved.answers ?? {});
-                                setSessionLoaded(true);
-                            }
-                        },
-                    ]
-                );
-            } else {
+            try {
+                const sessions = await loadSessions();
+                let saved = sessions[deck.deck_id];
+
+                // Normalize Python format → Android format
+                if (saved && saved.question_order && !saved.order) {
+                    saved = {
+                        order: saved.question_order,
+                        currentIdx: saved.current_index ?? 0,
+                        correct: saved.correct_count ?? 0,
+                        wrong: saved.wrong_count ?? 0,
+                        answers: saved.answers ?? {},
+                    };
+                }
+
+                if (saved && Array.isArray(saved.order) && saved.order.length > 0
+                    && typeof saved.currentIdx === 'number' && saved.currentIdx < saved.order.length) {
+                    Alert.alert(
+                        'Continue Quiz?',
+                        `You left off at question ${saved.currentIdx + 1}/${saved.order.length}.`,
+                        [
+                            { text: 'Restart', onPress: startNew },
+                            {
+                                text: 'Continue', onPress: () => {
+                                    setOrder(saved.order);
+                                    setCurrentIdx(saved.currentIdx);
+                                    setCorrect(saved.correct ?? 0);
+                                    setWrong(saved.wrong ?? 0);
+                                    setAnswers(saved.answers ?? {});
+                                    setSessionLoaded(true);
+                                }
+                            },
+                        ]
+                    );
+                } else {
+                    startNew();
+                }
+            } catch (e) {
+                console.warn('Quiz init error, starting new:', e);
                 startNew();
             }
         }
