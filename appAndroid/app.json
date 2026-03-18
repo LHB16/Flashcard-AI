@@ -6,7 +6,7 @@
                                 "flashcardai",
                                 "com.googleusercontent.apps.900559674142-opri1224fsh2m708l2g2fd0bv1vkhnge"
                             ],
-                 "version":  "1.0.7",
+                 "version":  "1.0.8",
                  "orientation":  "portrait",
                  "icon":  "./assets/icon.png",
                  "userInterfaceStyle":  "light",
@@ -22,7 +22,7 @@
                                                       "backgroundColor":  "#4F46E5"
                                                   },
                                  "package":  "com.flashcardai.app",
-                                 "versionCode":  7,
+                                 "versionCode":  8,
                                  "permissions":  [
                                                      "REQUEST_INSTALL_PACKAGES"
                                                  ]

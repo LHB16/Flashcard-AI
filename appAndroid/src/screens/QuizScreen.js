@@ -106,6 +106,10 @@ export default function QuizScreen({ route, navigation }) {
     const isMulti = card.question_type === 'multiple_choice';
     const n = order.length;
 
+    // Detect if correct_answers uses letter format ["A"] or full-text format ["full answer"]
+    const isLetterFmt = (card.correct_answers ?? []).length > 0 &&
+        (card.correct_answers ?? []).every(a => a.trim().length === 1 && /^[A-Za-z]$/.test(a.trim()));
+
     function toggleOption(index) {
         if (revealed) return;
         if (isMulti) {
@@ -121,12 +125,28 @@ export default function QuizScreen({ route, navigation }) {
             return;
         }
         setRevealed(true);
-        const correctSet = new Set(card.correct_answers ?? []);
-        const chosenLetters = selected.map(idx => String.fromCharCode(65 + idx));
-        const chosenSet = new Set(chosenLetters);
-        const isCorrect = [...correctSet].every(x => chosenSet.has(x)) && [...chosenSet].every(x => correctSet.has(x));
 
-        setLastResult({ isCorrect, chosenLetters, correctLetters: [...correctSet] });
+        let isCorrect;
+        if (isLetterFmt) {
+            // correct_answers = ["A", "C"] — compare by letter
+            const correctSet = new Set((card.correct_answers ?? []).map(a => a.trim().toUpperCase()));
+            const chosenLetters = selected.map(idx => {
+                const opt = (card.options[idx] ?? '').trim();
+                return opt.length > 0 && /^[A-Za-z]/.test(opt[0]) && (opt.length === 1 || opt[1] === '.' || opt[1] === ')')
+                    ? opt[0].toUpperCase()
+                    : String.fromCharCode(65 + idx);
+            });
+            const chosenSet = new Set(chosenLetters);
+            isCorrect = [...correctSet].every(x => chosenSet.has(x)) && [...chosenSet].every(x => correctSet.has(x));
+        } else {
+            // correct_answers = ["full text answer"] — compare by full text
+            const correctSet = new Set((card.correct_answers ?? []).map(a => a.trim().toLowerCase()));
+            const chosenTexts = selected.map(idx => (card.options[idx] ?? '').trim().toLowerCase());
+            const chosenSet = new Set(chosenTexts);
+            isCorrect = [...correctSet].every(x => chosenSet.has(x)) && [...chosenSet].every(x => correctSet.has(x));
+        }
+
+        setLastResult({ isCorrect });
 
         if (isCorrect) {
             setCorrect(c => c + 1);
@@ -173,10 +193,12 @@ export default function QuizScreen({ route, navigation }) {
     }
 
     const correctAnswers = card.correct_answers ?? [];
-    const correctAnswerText = correctAnswers.map(letter => {
-        const opt = (card.options ?? []).find(o => o.trim().startsWith(letter + '.') || o.trim().startsWith(letter + ')'));
-        return opt ?? letter;
-    }).join('\n');
+    const correctAnswerText = isLetterFmt
+        ? correctAnswers.map(letter => {
+            const opt = (card.options ?? []).find(o => o.trim().startsWith(letter + '.') || o.trim().startsWith(letter + ')'));
+            return opt ?? letter;
+        }).join('\n')
+        : correctAnswers.join('\n');
 
     return (
         <View style={styles.container}>
@@ -215,8 +237,18 @@ export default function QuizScreen({ route, navigation }) {
                 {/* Options */}
                 {(card.options ?? []).map((opt, i) => {
                     const label = String.fromCharCode(65 + i);
+                    // Check if this option is a correct answer
+                    let isCorrectOpt;
+                    if (isLetterFmt) {
+                        // Extract the letter prefix from option text (e.g. "A" from "A. 255")
+                        const optText = opt.trim();
+                        const optLetter = (optText.length > 0 && /^[A-Za-z]/.test(optText[0]) && (optText.length === 1 || optText[1] === '.' || optText[1] === ')'))
+                            ? optText[0].toUpperCase() : label;
+                        isCorrectOpt = correctAnswers.some(a => a.trim().toUpperCase() === optLetter);
+                    } else {
+                        isCorrectOpt = correctAnswers.some(a => a.trim().toLowerCase() === opt.trim().toLowerCase());
+                    }
                     const isSelected = selected.includes(i);
-                    const isCorrectOpt = correctAnswers.includes(label);
                     let bg = Colors.surface;
                     let borderColor = Colors.border;
                     let textColor = Colors.text;
