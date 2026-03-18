@@ -28,6 +28,7 @@ export default function QuizScreen({ route, navigation }) {
     const [correct, setCorrect] = useState(0);
     const [wrong, setWrong] = useState(0);
     const [answers, setAnswers] = useState({});
+    const [lastResult, setLastResult] = useState(null); // { isCorrect: bool, chosenLetters: [], correctLetters: [] }
     const [sessionLoaded, setSessionLoaded] = useState(false);
 
     useFocusEffect(useCallback(() => {
@@ -121,9 +122,11 @@ export default function QuizScreen({ route, navigation }) {
         }
         setRevealed(true);
         const correctSet = new Set(card.correct_answers ?? []);
-        const chosenLetters = selected.map(idx => (card.options[idx] ?? "").trim()[0]);
+        const chosenLetters = selected.map(idx => String.fromCharCode(65 + idx));
         const chosenSet = new Set(chosenLetters);
         const isCorrect = [...correctSet].every(x => chosenSet.has(x)) && [...chosenSet].every(x => correctSet.has(x));
+
+        setLastResult({ isCorrect, chosenLetters, correctLetters: [...correctSet] });
 
         if (isCorrect) {
             setCorrect(c => c + 1);
@@ -211,9 +214,9 @@ export default function QuizScreen({ route, navigation }) {
 
                 {/* Options */}
                 {(card.options ?? []).map((opt, i) => {
-                    const letter = opt.trim()[0];
+                    const label = String.fromCharCode(65 + i);
                     const isSelected = selected.includes(i);
-                    const isCorrectOpt = correctAnswers.includes(letter);
+                    const isCorrectOpt = correctAnswers.includes(label);
                     let bg = Colors.surface;
                     let borderColor = Colors.border;
                     let textColor = Colors.text;
@@ -231,7 +234,7 @@ export default function QuizScreen({ route, navigation }) {
                             activeOpacity={revealed ? 1 : 0.7}
                         >
                             <View style={[styles.optLetter, { borderColor, backgroundColor: isSelected || (revealed && isCorrectOpt) ? borderColor : 'transparent' }]}>
-                                <Text style={{ fontWeight: '700', color: (isSelected || (revealed && isCorrectOpt)) ? '#fff' : Colors.textDim, fontSize: 13 }}>{letter}</Text>
+                                <Text style={{ fontWeight: '700', color: (isSelected || (revealed && isCorrectOpt)) ? '#fff' : Colors.textDim, fontSize: 13 }}>{label}</Text>
                             </View>
                             <Text style={[styles.optText, { color: textColor }]}>{opt.replace(/^[A-Za-z][.)]\s*/, '')}</Text>
                         </TouchableOpacity>
@@ -239,14 +242,14 @@ export default function QuizScreen({ route, navigation }) {
                 })}
 
                 {/* Feedback */}
-                {revealed && (
+                {revealed && lastResult && (
                     <View style={[styles.feedback, {
-                        backgroundColor: selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s)) ? '#D1FAE5' : '#FEE2E2'
+                        backgroundColor: lastResult.isCorrect ? '#D1FAE5' : '#FEE2E2'
                     }]}>
-                        <Text style={{ fontWeight: '700', fontSize: 15, color: (selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s))) ? Colors.success : Colors.danger }}>
-                            {(selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s))) ? '✅ Correct!' : '❌ Incorrect!'}
+                        <Text style={{ fontWeight: '700', fontSize: 15, color: lastResult.isCorrect ? Colors.success : Colors.danger }}>
+                            {lastResult.isCorrect ? '✅ Correct!' : '❌ Incorrect!'}
                         </Text>
-                        {!(selected.every(s => correctAnswers.includes(s)) && correctAnswers.every(s => selected.includes(s))) && (
+                        {!lastResult.isCorrect && (
                             <Text style={{ color: Colors.success, marginTop: 6, fontSize: 13 }}>Correct answer: {correctAnswerText}</Text>
                         )}
                         {card.notes ? <Text style={{ color: Colors.warning, marginTop: 4, fontSize: 12, fontStyle: 'italic' }}>{card.notes}</Text> : null}
