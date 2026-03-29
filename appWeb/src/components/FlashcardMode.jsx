@@ -3,19 +3,19 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 
 const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
-  
+
   const [index, setIndex] = useState(0);
   const [isFlipped, setFlipped] = useState(false);
   const [known, setKnown] = useState(0);
   const [unknown, setUnknown] = useState(0);
   const [done, setDone] = useState(false);
-  
+
   // Drag tilt state
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   // Swipe-out animation state: 'left' | 'right' | null
   const [swipeOut, setSwipeOut] = useState(null);
-  
+
   const touchStartX = useRef(null);
   const isAnimating = useRef(false);
   const cardRef = useRef(null);
@@ -25,10 +25,10 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     if (!cards.length) return;
     const currentKnown = cards.filter(c => c.status === 2).length;
     const currentUnknown = cards.filter(c => c.status === 1).length;
-    
+
     setKnown(currentKnown);
     setUnknown(currentUnknown);
-    
+
     const nextIndex = cards.findIndex(c => !c.status || c.status === 0);
     if (nextIndex === -1 && cards.length > 0) {
       setDone(true);
@@ -40,36 +40,36 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   // Core advance with swipe-out animation
   const advanceCardWithAnimation = useCallback((wasKnown) => {
     if (index >= cards.length || isAnimating.current) return;
-    
+
     isAnimating.current = true;
-    
+
     if (wasKnown) {
       cards[index].status = 2;
     } else {
       cards[index].status = 1;
     }
-    
+
     setKnown(cards.filter(c => c.status === 2).length);
     setUnknown(cards.filter(c => c.status === 1).length);
-    
+
     if (onDeckModified) onDeckModified();
-    
+
     // Trigger swipe-out animation
     setSwipeOut(wasKnown ? 'right' : 'left');
-    
+
     // After animation completes, advance card
     setTimeout(() => {
       setSwipeOut(null);
       setFlipped(false);
       setDragX(0);
-      
+
       const nextIndex = index + 1;
       if (nextIndex >= cards.length) {
         setDone(true);
       } else {
         setIndex(nextIndex);
       }
-      
+
       setTimeout(() => {
         isAnimating.current = false;
       }, 200);
@@ -78,13 +78,13 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
   const goBackCard = useCallback(() => {
     if (isAnimating.current) return;
-    
+
     let prevIndex = index - 1;
     if (done) prevIndex = cards.length - 1;
-    
+
     if (prevIndex >= 0) {
       isAnimating.current = true;
-      
+
       const prevStatus = cards[prevIndex].status;
       if (prevStatus === 2) {
         setKnown(k => Math.max(0, k - 1));
@@ -98,7 +98,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
       setFlipped(false);
       setDragX(0);
       setIndex(prevIndex);
-      
+
       setTimeout(() => {
         isAnimating.current = false;
       }, 500);
@@ -137,7 +137,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         goBackCard();
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [advanceCardWithAnimation, goBackCard, done]);
@@ -164,7 +164,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     const dx = touch.clientX - touchStartX.current;
     const dy = touch.clientY - touchStartY.current;
 
-    if (!directionLocked.current && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+    if (!directionLocked.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
       directionLocked.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
     }
 
@@ -301,10 +301,10 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     if (isDragging && Math.abs(dragX) > 5) {
       const rotation = Math.max(-20, Math.min(20, dragX * 0.15));
       const translateX = dragX;
-      return { 
-        transform: `translateX(${translateX}px) rotate(${rotation}deg)`, 
-        opacity: 1, 
-        transition: 'none' 
+      return {
+        transform: `translateX(${translateX}px) rotate(${rotation}deg)`,
+        opacity: 1,
+        transition: 'none'
       };
     }
     return { transform: 'translateX(0) rotate(0deg)', opacity: 1, transition: 'transform 0.3s ease-out, opacity 0.3s ease-out' };
@@ -342,7 +342,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   if (done) {
     const total = known + unknown;
     const pct = total > 0 ? Math.round((known / total) * 100) : 0;
-    
+
     return (
       <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto', padding: '1rem 0' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%', marginBottom: '1.5rem' }}>
@@ -350,7 +350,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             <ArrowLeft size={18} /> Select Deck
           </button>
         </div>
-        
+
         <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', width: '100%', maxWidth: '500px' }}>
           <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', color: 'var(--text-main)' }}>Results</h2>
           <div style={{ fontSize: '4rem', margin: '1rem 0' }}>
@@ -360,9 +360,9 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             {pct}%
           </div>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            ✅ Known: <strong style={{color:'var(--success)', fontSize:'1.2rem'}}>{known}</strong> &nbsp;  ❌ Unknown: <strong style={{color:'var(--danger)', fontSize:'1.2rem'}}>{unknown}</strong>
+            ✅ Known: <strong style={{ color: 'var(--success)', fontSize: '1.2rem' }}>{known}</strong> &nbsp;  ❌ Unknown: <strong style={{ color: 'var(--danger)', fontSize: '1.2rem' }}>{unknown}</strong>
           </p>
-          
+
           <button className="btn" style={{ background: 'var(--primary)', color: 'white', padding: '1rem', width: '100%', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', cursor: 'pointer' }} onClick={restartStudy}>
             🔄 Study again
           </button>
@@ -380,7 +380,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto', padding: '0 0 2rem 0', overflow: 'hidden' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '1rem', alignItems: 'center' }}>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
@@ -389,7 +389,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>
           {index + 1} / {cards.length}
         </span>
-        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background:'rgba(239, 68, 68, 0.1)', color:'var(--danger)' }} onClick={restartStudy} title="Reset all progress (Restart)">
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={restartStudy} title="Reset all progress (Restart)">
           Reset
         </button>
       </div>
@@ -415,11 +415,11 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
       </div>
 
       {/* Card with drag tilt */}
-      <div 
+      <div
         ref={cardRef}
-        className={`flip-card ${isFlipped ? 'flipped' : ''}`} 
-        style={{ 
-          cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', maxHeight: '65vh', 
+        className={`flip-card ${isFlipped ? 'flipped' : ''}`}
+        style={{
+          cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', maxHeight: '65vh',
           touchAction: 'pan-y', width: '100%',
           ...cardTransform
         }}
@@ -431,13 +431,13 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         <div className="flip-card-inner" style={cardBorder}>
           <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>QUESTION</span>
-            <div 
+            <div
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
             >
               <h3 style={{ fontSize: '1.2rem', lineHeight: '1.5', fontWeight: 600, width: '100%', marginBottom: '1.5rem', color: 'var(--text-main)', textAlign: 'left' }}>
                 {currentCard?.question}
               </h3>
-              
+
               {currentCard?.options && currentCard.options.length > 0 && (
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem', textAlign: 'left' }}>
                   {currentCard.options.map((opt, i) => (
@@ -448,7 +448,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
                 </div>
               )}
             </div>
-            
+
             <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
               👆 Tap / Space to flip
             </p>
@@ -456,16 +456,16 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
           <div className="flip-card-back" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>ANSWER</span>
-            <div 
+            <div
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
             >
               <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left' }}>
                 {getCorrectAnswerText(currentCard)}
               </p>
               {currentCard?.notes && (
-                 <p style={{ marginTop: '1rem', fontSize: '1rem', color: 'var(--warning)', fontStyle: 'italic', textAlign: 'left' }}>
-                   {currentCard.notes}
-                 </p>
+                <p style={{ marginTop: '1rem', fontSize: '1rem', color: 'var(--warning)', fontStyle: 'italic', textAlign: 'left' }}>
+                  {currentCard.notes}
+                </p>
               )}
             </div>
             <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
@@ -477,13 +477,13 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', width: '100%' }}>
-        <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
+        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
           <span style={{ fontSize: '2rem', display: 'block' }}>❌</span>
         </button>
         <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Previous Card (R)">
           <RotateCcw size={24} />
         </button>
-        <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
+        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
           <span style={{ fontSize: '2rem', display: 'block' }}>✅</span>
         </button>
       </div>
