@@ -59,6 +59,14 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 body {
@@ -188,9 +196,6 @@ body {
   min-height: 450px;
   perspective: 1000px; 
   margin: 0 auto;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
 .flip-card-inner {

@@ -162,18 +162,15 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     const dx = touch.clientX - touchStartX.current;
     const dy = touch.clientY - touchStartY.current;
 
-    // Lock direction on first significant movement
     if (!directionLocked.current && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
       directionLocked.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
     }
 
     if (directionLocked.current === 'horizontal') {
-      // Prevent page scroll, handle card drag
       e.preventDefault();
       setIsDragging(true);
       setDragX(dx);
     }
-    // vertical → do nothing, let browser scroll page naturally
   }, []);
 
   const handleTouchEnd = useCallback((e) => {
@@ -198,7 +195,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         setDragX(0);
       }
     } else if (!directionLocked.current) {
-      // No significant movement → tap to flip
       setDragX(0);
       setFlipped(f => !f);
     } else {
@@ -208,7 +204,61 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     touchStartX.current = null;
     touchStartY.current = null;
     directionLocked.current = null;
-  }, [advanceCardWithAnimation, isFlipped]);
+  }, [advanceCardWithAnimation]);
+
+  // Mouse drag handlers for desktop
+  const mouseDownRef = useRef(false);
+
+  const handleMouseDown = (e) => {
+    if (isAnimating.current || e.button !== 0) return;
+    e.preventDefault();
+    mouseDownRef.current = true;
+    touchStartX.current = e.clientX;
+    setIsDragging(false);
+    setDragX(0);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!mouseDownRef.current || touchStartX.current === null || isAnimating.current) return;
+      const dx = e.clientX - touchStartX.current;
+      if (Math.abs(dx) > 5) {
+        setIsDragging(true);
+        setDragX(dx);
+      }
+    };
+
+    const handleMouseUp = (e) => {
+      if (!mouseDownRef.current) return;
+      mouseDownRef.current = false;
+      if (touchStartX.current === null || isAnimating.current) {
+        setIsDragging(false);
+        setDragX(0);
+        return;
+      }
+      const dx = e.clientX - touchStartX.current;
+      setIsDragging(false);
+
+      if (dx > 80) {
+        advanceCardWithAnimation(true);
+      } else if (dx < -80) {
+        advanceCardWithAnimation(false);
+      } else if (Math.abs(dx) < 5) {
+        setDragX(0);
+        setFlipped(f => !f);
+      } else {
+        setDragX(0);
+      }
+      touchStartX.current = null;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [advanceCardWithAnimation]);
 
   const getCorrectAnswerText = (card) => {
     if (card.correct_answers && card.correct_answers.length > 0) {
@@ -358,7 +408,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={(e) => { if (!('ontouchstart' in window)) setFlipped(f => !f); }}
+        onMouseDown={handleMouseDown}
       >
         <div className="flip-card-inner" style={cardBorder}>
           <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
