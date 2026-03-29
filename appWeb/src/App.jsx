@@ -23,25 +23,17 @@ function App() {
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // Initialize Google API Auth
-    const timer = setInterval(() => {
-      if (window.google) {
-        clearInterval(timer);
-        initGoogleIdentity(
-          (token) => {
-            setUserLoggedIn(true);
-            handleSyncFromDrive();
-          },
-          (err) => {
-            console.error(err);
-            setSyncMessage({ type: 'error', text: 'Authentication failed. Please check your browser settings.' });
-            setIsSyncing(false);
-          }
-        );
+    // Kích hoạt nhận diện Google ngầm từ Backend Auth Flow
+    initGoogleIdentity(
+      (token) => {
+        setUserLoggedIn(true);
+        handleSyncFromDrive();
+      },
+      (err) => {
+        console.warn("Chưa đăng nhập Google hoặc phiên đã hết hạn:", err);
+        setIsSyncing(false);
       }
-    }, 500);
-
-    return () => clearInterval(timer);
+    );
   }, []);
 
   const toggleTheme = () => {
@@ -118,16 +110,34 @@ function App() {
   const syncTimeoutRef = useRef(null);
 
   const handleDeckModified = () => {
-    setData([...data]); // trigger global re-render to reflect stat changes if needed
+    setData([...data]);
 
     if (!userLoggedIn || !driveFileId) return;
 
-    // Auto sync to Drive softly in the background after 3s of inactivity
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     syncTimeoutRef.current = setTimeout(async () => {
       try {
         await uploadDecksToDrive(data, driveFileId);
-        console.log("Background sync complete");
+        console.log("Drive background sync complete");
+
+        if (selectedDeck) {
+          const known = selectedDeck.cards.filter(c => c.status === 2).length;
+          const total = selectedDeck.cards.length;
+          const percent = total > 0 ? Math.round((known / total) * 100) : 0;
+          const gId = localStorage.getItem('g_id');
+          
+          if (gId) {
+            fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/progress/save`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                 google_id: gId, 
+                 deck_id: selectedDeck.deck_id || selectedDeck.title, 
+                 percent 
+              })
+            }).catch(e => console.warn("Supabase Progress Sync issue:", e));
+          }
+        }
       } catch (e) {
         console.error("Background sync failed:", e);
       }

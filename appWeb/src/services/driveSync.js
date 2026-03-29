@@ -1,93 +1,88 @@
-const CLIENT_ID = '900559674142-os3o3k7k0hs995rk303g05dvl7n5ohne.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-let tokenClient;
-let accessToken = null;
-let tokenResolveCallback = null;
-let tokenRejectCallback = null;
+let accessToken = localStorage.getItem('g_token');
+let googleId = localStorage.getItem('g_id');
 
-export const initGoogleIdentity = (onSuccess, onError) => {
-  if (!window.google) return;
-  
-  tokenClient = window.google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (tokenResponse) => {
-      if (tokenResponse && tokenResponse.access_token) {
-        accessToken = tokenResponse.access_token;
-        // Save token to localStorage. Deduct 100 seconds to be safe before actual expiry
-        const expiryTime = Date.now() + 3500 * 1000;
-        localStorage.setItem('g_token', accessToken);
-        localStorage.setItem('g_expiry', expiryTime.toString());
-        
-        if (tokenResolveCallback) {
-          tokenResolveCallback(accessToken);
-          tokenResolveCallback = null;
-          tokenRejectCallback = null;
-        }
-        if (onSuccess) onSuccess(accessToken);
-      } else {
-        if (tokenRejectCallback) {
-          tokenRejectCallback(new Error('Error getting authentication token'));
-          tokenResolveCallback = null;
-          tokenRejectCallback = null;
-        }
-        if (onError) onError('Error getting authentication token');
-      }
-    },
-  });
+export const initGoogleIdentity = async (onSuccess, onError) => {
+  // 1. Kiểm tra tham số Callback từ Backend URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get('access_token');
+  const googleIdFromUrl = urlParams.get('google_id');
+  const expiryFromUrl = urlParams.get('expiry');
 
-  // Check saved token on initialization
-  const savedToken = localStorage.getItem('g_token');
-  const savedExpiry = localStorage.getItem('g_expiry');
-  
-  if (savedToken && savedExpiry && Date.now() < parseInt(savedExpiry, 10)) {
-    accessToken = savedToken;
+  if (tokenFromUrl && googleIdFromUrl) {
+    accessToken = tokenFromUrl;
+    googleId = googleIdFromUrl;
+    localStorage.setItem('g_token', tokenFromUrl);
+    localStorage.setItem('g_id', googleIdFromUrl);
+    localStorage.setItem('g_expiry', expiryFromUrl);
+    
+    // Dọn dẹp URL cho gọn gàng, tránh lộ token ra thanh địa chỉ
+    window.history.replaceState({}, document.title, window.location.pathname);
+    
     if (onSuccess) onSuccess(accessToken);
+    return;
+  }
+
+  // 2. Refresh lại Token ngầm
+  if (googleId) {
+    try {
+      const token = await getValidToken();
+      if (token && onSuccess) onSuccess(token);
+    } catch (err) {
+      if (onError) onError(err.message || 'Hết hạn phiên đăng nhập');
+    }
+  } else {
+    if (onError) onError('Bạn chưa đăng nhập');
   }
 };
 
-const getValidToken = () => {
-  return new Promise((resolve, reject) => {
-    if (!tokenClient) {
-      reject(new Error("Google Services haven't loaded yet."));
-      return;
+const getValidToken = async () => {
+  if (!googleId) {
+    throw new Error('Bạn cần đồng bộ với Google trước');
+  }
+
+  const savedExpiry = localStorage.getItem('g_expiry');
+  // Trừ hao 2 phút trước khi hết hạn
+  if (accessToken && savedExpiry && Date.now() < parseInt(savedExpiry, 10) - 120000) {
+    return accessToken;
+  }
+
+  // Gọi lên BE xin Token mới bằng con đường Refresh Token
+  try {
+    const res = await fetch(`${BACKEND_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ google_id: googleId })
+    });
+
+    if (!res.ok) {
+       logoutGoogle();
+       throw new Error('Refresh Token từ Server thất bại. Vui lòng đăng nhập lại.');
     }
     
-    // Check current loaded token or freshly grabbed token locally
-    if (accessToken) {
-      const savedExpiry = localStorage.getItem('g_expiry');
-      if (savedExpiry && Date.now() < parseInt(savedExpiry, 10)) {
-        resolve(accessToken);
-        return;
-      }
-    }
-    
-    // Token is expired or missing. Try to get a new one silently using prompt empty
-    tokenResolveCallback = resolve;
-    tokenRejectCallback = reject;
-    tokenClient.requestAccessToken({ prompt: '' });
-  });
+    const data = await res.json();
+    accessToken = data.access_token;
+    localStorage.setItem('g_token', accessToken);
+    localStorage.setItem('g_expiry', data.expiry.toString());
+
+    return accessToken;
+  } catch (err) {
+    console.error("Refresh auth error:", err);
+    throw err;
+  }
 };
 
 export const loginGoogle = () => {
-  if (tokenClient) {
-    tokenClient.requestAccessToken({ prompt: '' });
-  } else {
-    alert("Google Services haven't loaded yet. Please refresh the page.");
-  }
+  // Gọi redirect thẳng sang Express Backend để tạo chuỗi xoay vòng OAuth
+  window.location.href = `${BACKEND_URL}/auth/google`;
 };
 
 export const logoutGoogle = () => {
-  if (accessToken) {
-    if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-      window.google.accounts.oauth2.revoke(accessToken, () => {
-        console.log('Token revoked.');
-      });
-    }
-  }
   accessToken = null;
+  googleId = null;
   localStorage.removeItem('g_token');
+  localStorage.removeItem('g_id');
   localStorage.removeItem('g_expiry');
 };
 

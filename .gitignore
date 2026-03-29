@@ -91,3 +91,7 @@ build_apk_debug.bat.tmp
 flow_prompt_builder.html
 .aider*
 .gitnexus
+
+# Node Backend
+appWeb/appBackend/.env
+appWeb/appBackend/node_modules/
