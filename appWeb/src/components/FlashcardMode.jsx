@@ -144,6 +144,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
   // Touch drag handlers with direction detection
   const touchStartY = useRef(null);
+  const touchStartTime = useRef(0);
   const directionLocked = useRef(null); // 'horizontal' | 'vertical' | null
 
   const handleTouchStart = (e) => {
@@ -151,6 +152,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     const touch = e.touches[0];
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
+    touchStartTime.current = Date.now();
     directionLocked.current = null;
     setIsDragging(false);
     setDragX(0);
@@ -183,10 +185,16 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
     const touch = e.changedTouches[0];
     const dx = touch.clientX - touchStartX.current;
+    const dy = touch.clientY - touchStartY.current;
+    const timeDelta = Date.now() - touchStartTime.current;
 
     setIsDragging(false);
 
-    if (directionLocked.current === 'horizontal') {
+    // Priority: Quick tap (duration < 300ms, displacement < 15px)
+    if (timeDelta < 300 && Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+      setDragX(0);
+      setFlipped(f => !f);
+    } else if (directionLocked.current === 'horizontal') {
       if (dx > 80) {
         advanceCardWithAnimation(true);
       } else if (dx < -80) {
@@ -194,9 +202,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
       } else {
         setDragX(0);
       }
-    } else if (!directionLocked.current) {
-      setDragX(0);
-      setFlipped(f => !f);
     } else {
       setDragX(0);
     }
