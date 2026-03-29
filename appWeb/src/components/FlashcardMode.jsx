@@ -249,7 +249,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
       {/* Card */}
       <div 
         className={`flip-card ${isFlipped ? 'flipped' : ''}`} 
-        style={{ cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', touchAction: 'pan-y', width: '100%' }}
+        style={{ cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', maxHeight: '65vh', touchAction: 'pan-y', width: '100%' }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={() => { touchStartX.current = null; }}
@@ -259,7 +259,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>QUESTION</span>
             <div 
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
-              onPointerDown={(e) => e.stopPropagation()}
             >
               <h3 style={{ fontSize: '1.2rem', lineHeight: '1.5', fontWeight: 600, width: '100%', marginBottom: '1.5rem', color: 'var(--text-main)', textAlign: 'left' }}>
                 {currentCard?.question}
@@ -285,7 +284,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>ANSWER</span>
             <div 
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
-              onPointerDown={(e) => e.stopPropagation()}
             >
               <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left' }}>
                 {getCorrectAnswerText(currentCard)}
