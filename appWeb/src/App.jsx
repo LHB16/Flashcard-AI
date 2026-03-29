@@ -58,10 +58,12 @@ function App() {
   };
 
   const handleLogoutClick = () => {
-    logoutGoogle();
-    setUserLoggedIn(false);
-    setDriveFileId(null);
-  }
+    if (window.confirm("Are you sure you want to log out / disconnect from Google Drive?")) {
+      logoutGoogle();
+      setUserLoggedIn(false);
+      setDriveFileId(null);
+    }
+  };
 
   const handleSyncFromDrive = async () => {
     setIsSyncing(true);
@@ -116,7 +118,9 @@ function App() {
   // 1. Render file selection & Login first
   if (!data) {
     return (
-      <main style={{ padding: '2rem' }}>
+      <>
+        {isSyncing && <div className="top-progress-bar"></div>}
+        <main style={{ padding: '2rem' }}>
         <header style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '2rem', position: 'relative' }}>
           <button className="btn btn-glass btn-icon" onClick={toggleTheme} style={{ position: 'absolute', right: '1rem', top: 0 }} title="Switch Theme">
             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
@@ -178,13 +182,16 @@ function App() {
           )}
         </div>
       </main>
+      </>
     );
   }
 
   // 2. Render deck selection if multiple decks and none selected
   if (data && !selectedDeck) {
     return (
-      <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+      <>
+        {isSyncing && <div className="top-progress-bar"></div>}
+        <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
         <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
           <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Select a Deck</h1>
@@ -216,12 +223,15 @@ function App() {
           ))}
         </div>
       </main>
+      </>
     )
   }
 
   // 3. Render chosen deck mode options
   return (
-    <main className="app-main" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: '1000px', margin: '0 auto' }}>
+    <>
+      {isSyncing && <div className="top-progress-bar"></div>}
+      <main className="app-main" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: '1000px', margin: '0 auto' }}>
       <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
         <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Flashcard AI</h1>
@@ -279,6 +289,7 @@ function App() {
         {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} />}
       </div>
     </main>
+    </>
   );
 }
 
