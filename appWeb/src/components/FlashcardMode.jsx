@@ -186,12 +186,11 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     const touch = e.changedTouches[0];
     const dx = touch.clientX - touchStartX.current;
     const dy = touch.clientY - touchStartY.current;
-    const timeDelta = Date.now() - touchStartTime.current;
 
     setIsDragging(false);
 
-    // Priority: Quick tap (duration < 300ms, displacement < 15px)
-    if (timeDelta < 300 && Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+    // Priority: Tap (displacement < 15px, regardless of time)
+    if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
       setDragX(0);
       setFlipped(f => !f);
     } else if (directionLocked.current === 'horizontal') {
