@@ -10,7 +10,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const [unknown, setUnknown] = useState(0);
   const [done, setDone] = useState(false);
   
-  const touchStart = useRef({ x: null, y: null });
+  const touchStartX = useRef(null);
   const isAnimating = useRef(false);
 
   // Initialize
@@ -73,10 +73,14 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     if (prevIndex >= 0) {
       isAnimating.current = true;
       
-      // Hoàn tác lại trạng thái cũ
+      // Xóa trạng thái của thẻ trước đó (Undo thực thụ)
+      const prevStatus = cards[prevIndex].status;
+      if (prevStatus === 2) {
+        setKnown(k => Math.max(0, k - 1));
+      } else if (prevStatus === 1) {
+        setUnknown(u => Math.max(0, u - 1));
+      }
       cards[prevIndex].status = 0;
-      setKnown(cards.filter(c => c.status === 2).length);
-      setUnknown(cards.filter(c => c.status === 1).length);
       if (onDeckModified) onDeckModified();
 
       setDone(false);
@@ -128,25 +132,23 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   // Trình bắt Touch vuốt
   const handlePointerDown = (e) => {
     if (isAnimating.current) return;
-    touchStart.current = { x: e.clientX, y: e.clientY };
+    touchStartX.current = e.clientX;
   };
 
   const handlePointerUp = (e) => {
-    if (touchStart.current.x === null || isAnimating.current) return;
+    if (touchStartX.current === null || isAnimating.current) return;
+    const diffX = e.clientX - touchStartX.current;
     
-    const diffX = e.clientX - touchStart.current.x;
-    const diffY = e.clientY - touchStart.current.y;
-    
-    // Chỉ lật thẻ (tiếp nhận hành động Xanh/Đỏ) nếu người dùng vuốt trượt ngang, không kéo dọc
-    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-      if (diffX > 0) advanceCard(true); // Know
-      else advanceCard(false); // Unknown
-    } else if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+    // Vuốt > 50px
+    if (diffX > 50) {
+      advanceCard(true); // Know
+    } else if (diffX < -50) {
+      advanceCard(false); // Unknown
+    } else if (Math.abs(diffX) < 10) {
       // Tap lật
       setFlipped(!isFlipped);
     }
-    
-    touchStart.current = { x: null, y: null };
+    touchStartX.current = null;
   };
 
   const getCorrectAnswerText = (card) => {
@@ -250,12 +252,15 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         style={{ cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', touchAction: 'pan-y', width: '100%' }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        onPointerCancel={() => { touchStart.current = { x: null, y: null }; }}
+        onPointerCancel={() => { touchStartX.current = null; }}
       >
         <div className="flip-card-inner">
           <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>QUESTION</span>
-            <div className="scrollable-content">
+            <div 
+              style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <h3 style={{ fontSize: '1.2rem', lineHeight: '1.5', fontWeight: 600, width: '100%', marginBottom: '1.5rem', color: 'var(--text-main)', textAlign: 'left' }}>
                 {currentCard?.question}
               </h3>
@@ -278,7 +283,10 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
           <div className="flip-card-back" style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>ANSWER</span>
-            <div className="scrollable-content">
+            <div 
+              style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left' }}>
                 {getCorrectAnswerText(currentCard)}
               </p>
