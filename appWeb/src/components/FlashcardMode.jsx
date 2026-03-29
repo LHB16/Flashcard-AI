@@ -142,63 +142,73 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [advanceCardWithAnimation, goBackCard, done]);
 
-  // Touch/pointer drag handlers
-  const handlePointerDown = (e) => {
+  // Touch drag handlers with direction detection
+  const touchStartY = useRef(null);
+  const directionLocked = useRef(null); // 'horizontal' | 'vertical' | null
+
+  const handleTouchStart = (e) => {
     if (isAnimating.current) return;
-    touchStartX.current = e.clientX;
-    setIsDragging(true);
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+    directionLocked.current = null;
+    setIsDragging(false);
     setDragX(0);
   };
 
-  const handlePointerMove = useCallback((e) => {
-    if (touchStartX.current === null || !isDragging || isAnimating.current) return;
-    const diffX = e.clientX - touchStartX.current;
-    setDragX(diffX);
-  }, [isDragging]);
+  const handleTouchMove = useCallback((e) => {
+    if (touchStartX.current === null || isAnimating.current) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartX.current;
+    const dy = touch.clientY - touchStartY.current;
 
-  const handlePointerUp = (e) => {
+    // Lock direction on first significant movement
+    if (!directionLocked.current && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+      directionLocked.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+    }
+
+    if (directionLocked.current === 'horizontal') {
+      // Prevent page scroll, handle card drag
+      e.preventDefault();
+      setIsDragging(true);
+      setDragX(dx);
+    }
+    // vertical → do nothing, let browser scroll page naturally
+  }, []);
+
+  const handleTouchEnd = useCallback((e) => {
     if (touchStartX.current === null || isAnimating.current) {
       setIsDragging(false);
       setDragX(0);
+      directionLocked.current = null;
       return;
     }
-    const diffX = e.clientX - touchStartX.current;
-    
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX.current;
+
     setIsDragging(false);
-    
-    if (diffX > 80) {
-      advanceCardWithAnimation(true);
-    } else if (diffX < -80) {
-      advanceCardWithAnimation(false);
-    } else if (Math.abs(diffX) < 10) {
+
+    if (directionLocked.current === 'horizontal') {
+      if (dx > 80) {
+        advanceCardWithAnimation(true);
+      } else if (dx < -80) {
+        advanceCardWithAnimation(false);
+      } else {
+        setDragX(0);
+      }
+    } else if (!directionLocked.current) {
+      // No significant movement → tap to flip
       setDragX(0);
-      setFlipped(!isFlipped);
+      setFlipped(f => !f);
     } else {
-      // Snap back
       setDragX(0);
     }
-    touchStartX.current = null;
-  };
 
-  const handlePointerCancel = () => {
     touchStartX.current = null;
-    setIsDragging(false);
-    setDragX(0);
-  };
-
-  // PointerMove listener on window for smooth dragging
-  useEffect(() => {
-    if (isDragging) {
-      const onMove = (e) => handlePointerMove(e);
-      const onUp = (e) => handlePointerUp(e);
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-      return () => {
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-      };
-    }
-  }, [isDragging, handlePointerMove]);
+    touchStartY.current = null;
+    directionLocked.current = null;
+  }, [advanceCardWithAnimation, isFlipped]);
 
   const getCorrectAnswerText = (card) => {
     if (card.correct_answers && card.correct_answers.length > 0) {
@@ -342,18 +352,19 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         className={`flip-card ${isFlipped ? 'flipped' : ''}`} 
         style={{ 
           cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', maxHeight: '65vh', 
-          touchAction: 'none', width: '100%',
+          touchAction: 'pan-y', width: '100%',
           ...cardTransform
         }}
-        onPointerDown={handlePointerDown}
-        onPointerCancel={handlePointerCancel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => { if (!('ontouchstart' in window)) setFlipped(f => !f); }}
       >
         <div className="flip-card-inner" style={cardBorder}>
           <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>QUESTION</span>
             <div 
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
-              onPointerDown={(e) => e.stopPropagation()}
             >
               <h3 style={{ fontSize: '1.2rem', lineHeight: '1.5', fontWeight: 600, width: '100%', marginBottom: '1.5rem', color: 'var(--text-main)', textAlign: 'left' }}>
                 {currentCard?.question}
@@ -379,7 +390,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>ANSWER</span>
             <div 
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
-              onPointerDown={(e) => e.stopPropagation()}
             >
               <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left' }}>
                 {getCorrectAnswerText(currentCard)}
