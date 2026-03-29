@@ -39,12 +39,24 @@ Your portable study companion built with **React Native**.
 
 ---
 
-| Desktop (.NET 8) | Desktop (Python) | Mobile | Core |
-|:---:|:---:|:---:|:---:|
-| C# / WPF (.NET 8) | Python 3.10+ | React Native (Expo SDK 55) | Google Gemini AI |
-| MVVM Architecture | CustomTkinter | AsyncStorage | JSON Database |
-| Google Drive API (OAuth) | Google Drive API | React Navigation | batch-PDF OCR |
-| Single-file EXE | PyInstaller (EXE) | Android APK | Cloud Sync (G-Drive) |
+## 🌐 Web App (React + Netlify)
+Try the fully functional web version instantly from your browser! No installation required.
+
+- **URL**: [https://lhb16-flashcard-ai.netlify.app](https://lhb16-flashcard-ai.netlify.app)
+- **Features**: 
+  - **Direct Import**: Easily load your `decks.json` files.
+  - **Cloud Sync**: Full integration with Google Drive AppData (shares decks with Desktop/Mobile).
+  - **Study Modes**: Flashcard 3D flipping & smart Quiz mode.
+  - **Responsive Design**: Beautiful UI available on both Mobile & Desktop.
+
+---
+
+| Desktop (.NET) | Desktop (Python) | Mobile | Web App | Core |
+|:---:|:---:|:---:|:---:|:---:|
+| C# / WPF (.NET 8) | Python 3.10+ | React Native | React + Vite | Google Gemini AI |
+| MVVM Architecture | CustomTkinter | AsyncStorage | React Hooks | JSON Database |
+| Drive API (OAuth) | Drive API (OAuth) | React Navigation | Google Drive API | batch-PDF OCR |
+| Single-file EXE | PyInstaller (EXE) | Android APK | Netlify Hosted | Cloud Sync |
 
 ---
 
