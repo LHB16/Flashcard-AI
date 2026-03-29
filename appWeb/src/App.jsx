@@ -55,6 +55,7 @@ function App() {
       logoutGoogle();
       setUserLoggedIn(false);
       setDriveFileId(null);
+      setSyncMessage(null); // Tắt thông báo đỏ/xanh
     }
   };
 
