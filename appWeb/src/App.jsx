@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import FileLoader from './components/FileLoader';
 import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
@@ -113,6 +113,25 @@ function App() {
     setData(null);
     setSelectedDeck(null);
     setMode(null);
+  };
+
+  const syncTimeoutRef = useRef(null);
+
+  const handleDeckModified = () => {
+    setData([...data]); // trigger global re-render to reflect stat changes if needed
+
+    if (!userLoggedIn || !driveFileId) return;
+
+    // Auto sync to Drive softly in the background after 3s of inactivity
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    syncTimeoutRef.current = setTimeout(async () => {
+      try {
+        await uploadDecksToDrive(data, driveFileId);
+        console.log("Background sync complete");
+      } catch (e) {
+        console.error("Background sync failed:", e);
+      }
+    }, 3000);
   };
 
   // 1. Render file selection & Login first
@@ -285,7 +304,7 @@ function App() {
           </div>
         )}
 
-        {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} />}
+        {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
         {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} />}
       </div>
     </main>

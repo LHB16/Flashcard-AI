@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 
-const FlashcardMode = ({ deck, onBack }) => {
+const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
   
   const [index, setIndex] = useState(0);
@@ -12,6 +12,7 @@ const FlashcardMode = ({ deck, onBack }) => {
   const [history, setHistory] = useState([]);
   
   const touchStartX = useRef(null);
+  const isAnimating = useRef(false);
 
   // Khởi tạo thẻ chưa học
   useEffect(() => {
@@ -31,8 +32,9 @@ const FlashcardMode = ({ deck, onBack }) => {
   }, [deck?.deck_id, cards]);
 
   const advanceCard = useCallback((wasKnown) => {
-    if (index >= cards.length) return;
+    if (index >= cards.length || isAnimating.current) return;
     
+    isAnimating.current = true;
     const currentStatus = cards[index].status || 0;
     setHistory(prev => [...prev, { index, wasKnown, oldStatus: currentStatus }]);
     
@@ -44,9 +46,11 @@ const FlashcardMode = ({ deck, onBack }) => {
       cards[index].status = 1;
     }
     
+    if (onDeckModified) onDeckModified();
+    
     setFlipped(false);
     
-    // Auto-advance
+    // Auto-advance and 1-second block
     setTimeout(() => {
       const nextIndex = index + 1;
       if (nextIndex >= cards.length) {
@@ -54,11 +58,16 @@ const FlashcardMode = ({ deck, onBack }) => {
       } else {
         setIndex(nextIndex);
       }
-    }, 150); // Mượt hơn chút
-  }, [index, cards]);
+      
+      // Giữ khóa thêm 850ms nữa (Tổng cộng 1 giây)
+      setTimeout(() => {
+        isAnimating.current = false;
+      }, 850);
+    }, 150);
+  }, [index, cards, onDeckModified]);
 
   const undo = useCallback(() => {
-    if (history.length === 0) return;
+    if (history.length === 0 || isAnimating.current) return;
     
     const last = history[history.length - 1];
     setHistory(prev => prev.slice(0, -1));
@@ -67,14 +76,22 @@ const FlashcardMode = ({ deck, onBack }) => {
     else setUnknown(u => u - 1);
     
     cards[last.index].status = last.oldStatus;
+    if (onDeckModified) onDeckModified();
     
     setDone(false);
     setFlipped(false);
     setIndex(last.index);
-  }, [history, cards]);
+
+    isAnimating.current = true;
+    setTimeout(() => {
+      isAnimating.current = false;
+    }, 1000); // 1 giây mới cho undo hoặc đánh giá tiếp
+  }, [history, cards, onDeckModified]);
 
   const restartStudy = () => {
+    if (isAnimating.current) return;
     cards.forEach(c => c.status = 0);
+    if (onDeckModified) onDeckModified();
     setIndex(0);
     setKnown(0);
     setUnknown(0);
@@ -86,6 +103,8 @@ const FlashcardMode = ({ deck, onBack }) => {
   // Trình bắt phím tắt
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (e.repeat) return; // Chống nhấn giữ đè phím (Auto-repeat)
+
       if (done) {
         if (e.key === 'r' || e.key === 'R') restartStudy();
         return;
@@ -108,11 +127,12 @@ const FlashcardMode = ({ deck, onBack }) => {
 
   // Trình bắt Touch vuốt
   const handlePointerDown = (e) => {
+    if (isAnimating.current) return;
     touchStartX.current = e.clientX;
   };
 
   const handlePointerUp = (e) => {
-    if (touchStartX.current === null) return;
+    if (touchStartX.current === null || isAnimating.current) return;
     const diffX = e.clientX - touchStartX.current;
     
     // Vuốt > 50px
@@ -250,7 +270,7 @@ const FlashcardMode = ({ deck, onBack }) => {
             </div>
             
             <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
-              👆 Lật thẻ (Space)
+              👆 Tap / Space to flip
             </p>
           </div>
 
@@ -267,7 +287,7 @@ const FlashcardMode = ({ deck, onBack }) => {
               )}
             </div>
             <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
-              👆 Lật lại (Space)
+              👆 Tap / Space to flip back
             </p>
           </div>
         </div>
@@ -276,15 +296,13 @@ const FlashcardMode = ({ deck, onBack }) => {
       {/* Swipe Overlay Hint Bar */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', width: '100%' }}>
         <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCard(false); }}>
-          <span style={{ fontSize: '1.5rem', marginBottom: '0.3rem', display: 'block' }}>❌</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 'bold' }}>Không biết (⬅️)</span>
+          <span style={{ fontSize: '2rem', display: 'block' }}>❌</span>
         </button>
-        <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); undo(); }} disabled={history.length === 0} style={{ padding: '0 1rem', alignSelf: 'center', height: '100%' }} title="Undo (R)">
+        <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); undo(); }} disabled={history.length === 0} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Undo (R)">
           <RotateCcw size={24} />
         </button>
         <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCard(true); }}>
-          <span style={{ fontSize: '1.5rem', marginBottom: '0.3rem', display: 'block' }}>✅</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--success)', fontWeight: 'bold' }}>Biết (➡️)</span>
+          <span style={{ fontSize: '2rem', display: 'block' }}>✅</span>
         </button>
       </div>
 
