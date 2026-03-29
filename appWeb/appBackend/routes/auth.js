@@ -67,7 +67,9 @@ router.get('/callback', async (req, res) => {
       if (upsertErr) console.error("Lỗi cập nhật token Supabase:", upsertErr);
     }
 
-    const frontendCallback = process.env.FRONTEND_CALLBACK_URL || 'http://localhost:5173/auth/callback';
+    const frontendCallback = process.env.FRONTEND_CALLBACK_URL || 'http://localhost:5173';
+    console.log('🔗 FRONTEND_CALLBACK_URL =', process.env.FRONTEND_CALLBACK_URL);
+    console.log('🔗 Redirecting to:', frontendCallback);
     
     // Điều hướng ngược lại Frontend kèm URL params
     res.redirect(`${frontendCallback}?access_token=${tokens.access_token}&google_id=${googleId}&expiry=${tokens.expiry_date || (Date.now() + 3599000)}`);
