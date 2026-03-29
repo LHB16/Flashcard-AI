@@ -19,3 +19,18 @@ CREATE TABLE IF NOT EXISTS progress (
   last_studied TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(google_id, deck_id) -- Bắt buộc chỉ có 1 dòng Progress duy nhất cho mỗi user-deck
 );
+
+-- 3. Tạo bảng Quiz Sessions lưu phiên làm bài quiz
+CREATE TABLE IF NOT EXISTS quiz_sessions (
+  deck_id TEXT NOT NULL,
+  google_id TEXT REFERENCES users(google_id) ON DELETE CASCADE,
+  session_id TEXT,
+  question_order JSONB,
+  current_index INTEGER DEFAULT 0,
+  answers JSONB DEFAULT '{}',
+  correct_count INTEGER DEFAULT 0,
+  wrong_count INTEGER DEFAULT 0,
+  started_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (google_id, deck_id)
+);
