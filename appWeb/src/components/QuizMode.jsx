@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Square, CheckSquare } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -7,6 +7,7 @@ const QuizMode = ({ deck, onBack }) => {
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [selectedMulti, setSelectedMulti] = useState([]); // For multiple_choice
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
@@ -15,11 +16,28 @@ const QuizMode = ({ deck, onBack }) => {
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const syncTimeoutRef = useRef(null);
 
   const deckId = deck?.deck_id || deck?.title || 'unknown';
   const googleId = localStorage.getItem('g_id');
+
+  // Helper: extract letter from option like "A. Something..."
+  const getLetterFromOpt = (opt) => {
+    const m = opt.match(/^([A-Z])\./);
+    return m ? m[1] : opt;
+  };
+
+  // Helper: check if an option matches a correct answer entry
+  const optMatchesAnswer = (opt, correctEntry) => {
+    const letter = getLetterFromOpt(opt);
+    return letter === correctEntry || opt === correctEntry || opt.startsWith(correctEntry + ".");
+  };
+
+  // Helper: is this a multiple_choice question?
+  const isMultiChoice = (card) => {
+    return card?.question_type === 'multiple_choice' && card?.correct_answers?.length > 1;
+  };
 
   // Tải session cũ từ Backend khi mở quiz
   useEffect(() => {
@@ -32,15 +50,13 @@ const QuizMode = ({ deck, onBack }) => {
       .then(res => res.json())
       .then(result => {
         if (result.data && result.data.current_index < cards.length) {
-          // Có session cũ chưa hoàn thành → Resume
-          setCurrentIndex(result.data.current_index + 1); // Nhảy tới câu tiếp theo
+          setCurrentIndex(result.data.current_index + 1);
           setAnswers(result.data.answers || {});
           setScore(result.data.correct_count || 0);
           setWrongCount(result.data.wrong_count || 0);
           setSessionId(result.data.session_id || sessionId);
           setStartedAt(result.data.started_at || startedAt);
-          
-          // Nếu đã trả lời hết → Hiện kết quả
+
           if ((result.data.current_index + 1) >= cards.length) {
             setIsFinished(true);
           }
@@ -93,21 +109,23 @@ const QuizMode = ({ deck, onBack }) => {
   }
 
   const currentCard = cards[currentIndex];
+  const multiChoice = isMultiChoice(currentCard);
+  const correctCount = currentCard?.correct_answers?.length || 1;
 
+  // --- Single choice handler (original logic) ---
   const handleSelectOption = (index, opt) => {
     if (isAnswered) return;
-    
-    const letterMatch = opt.match(/^([A-Z])\./);
-    const answerLetter = letterMatch ? letterMatch[1] : opt;
+
+    const answerLetter = getLetterFromOpt(opt);
     const correctLetter = currentCard.correct_answers[0];
-    const isCorrect = (answerLetter === correctLetter) || (opt === correctLetter) || (opt.startsWith(correctLetter + "."));
-    
+    const isCorrect = optMatchesAnswer(opt, correctLetter);
+
     setSelectedAnswer(opt);
     setIsAnswered(true);
 
     const newAnswers = { ...answers, [currentIndex]: { selected: opt, correct: isCorrect } };
     setAnswers(newAnswers);
-    
+
     let newScore = score;
     let newWrong = wrongCount;
 
@@ -119,11 +137,54 @@ const QuizMode = ({ deck, onBack }) => {
       setWrongCount(newWrong);
     }
 
-    saveToBackend({ 
-      answers: newAnswers, 
-      correct_count: newScore, 
-      wrong_count: newWrong, 
-      current_index: currentIndex 
+    saveToBackend({
+      answers: newAnswers,
+      correct_count: newScore,
+      wrong_count: newWrong,
+      current_index: currentIndex
+    });
+  };
+
+  // --- Multiple choice: toggle selection ---
+  const handleToggleMulti = (opt) => {
+    if (isAnswered) return;
+    setSelectedMulti(prev =>
+      prev.includes(opt) ? prev.filter(o => o !== opt) : [...prev, opt]
+    );
+  };
+
+  // --- Multiple choice: submit ---
+  const handleSubmitMulti = () => {
+    if (isAnswered || selectedMulti.length === 0) return;
+
+    const selectedLetters = selectedMulti.map(getLetterFromOpt).sort();
+    const correctLetters = [...currentCard.correct_answers].sort();
+
+    const isCorrect =
+      selectedLetters.length === correctLetters.length &&
+      selectedLetters.every((l, i) => l === correctLetters[i]);
+
+    setIsAnswered(true);
+
+    const newAnswers = { ...answers, [currentIndex]: { selected: selectedMulti, correct: isCorrect } };
+    setAnswers(newAnswers);
+
+    let newScore = score;
+    let newWrong = wrongCount;
+
+    if (isCorrect) {
+      newScore = score + 1;
+      setScore(newScore);
+    } else {
+      newWrong = wrongCount + 1;
+      setWrongCount(newWrong);
+    }
+
+    saveToBackend({
+      answers: newAnswers,
+      correct_count: newScore,
+      wrong_count: newWrong,
+      current_index: currentIndex
     });
   };
 
@@ -132,6 +193,7 @@ const QuizMode = ({ deck, onBack }) => {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
       setSelectedAnswer(null);
+      setSelectedMulti([]);
       setIsAnswered(false);
     } else {
       setIsFinished(true);
@@ -141,6 +203,7 @@ const QuizMode = ({ deck, onBack }) => {
   const resetQuiz = () => {
     setCurrentIndex(0);
     setSelectedAnswer(null);
+    setSelectedMulti([]);
     setIsAnswered(false);
     setScore(0);
     setWrongCount(0);
@@ -160,7 +223,7 @@ const QuizMode = ({ deck, onBack }) => {
           {pct}%
         </div>
         <p style={{ marginBottom: '2.5rem', color: 'var(--text-muted)', fontSize: '1.1rem' }}>
-          ✅ Correct: <strong style={{color:'var(--success)'}}>{score}</strong> &nbsp; ❌ Wrong: <strong style={{color:'var(--danger)'}}>{wrongCount}</strong> &nbsp; / &nbsp; {cards.length} questions
+          ✅ Correct: <strong style={{ color: 'var(--success)' }}>{score}</strong> &nbsp; ❌ Wrong: <strong style={{ color: 'var(--danger)' }}>{wrongCount}</strong> &nbsp; / &nbsp; {cards.length} questions
         </p>
         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
           <button className="btn btn-glass" onClick={resetQuiz}>Study again</button>
@@ -188,51 +251,98 @@ const QuizMode = ({ deck, onBack }) => {
 
       <div className="glass-panel" style={{ padding: '2.5rem', marginBottom: '2rem', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <h3 style={{ fontSize: '1.4rem', lineHeight: '1.6', fontWeight: 500 }}>{currentCard.question}</h3>
+        {multiChoice && (
+          <p style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.8rem', opacity: 0.9 }}>
+            ☑️ Choose {correctCount} options
+          </p>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
         {currentCard.options?.map((opt, i) => {
-          const letterMatch = opt.match(/^([A-Z])\./);
-          const answerLetter = letterMatch ? letterMatch[1] : opt;
-          const correctLetter = currentCard.correct_answers[0];
-          const isCorrectAns = (answerLetter === correctLetter) || (opt === correctLetter) || opt.startsWith(correctLetter + ".");
-          
-          let btnClass = "btn btn-glass";
-          if (isAnswered) {
-            if (isCorrectAns) {
-              btnClass = "btn";
-            } else if (selectedAnswer === opt) {
-              btnClass = "btn";
-            }
-          } else if (selectedAnswer === opt) {
-             btnClass = "btn btn-glass";
-          }
+          const isCorrectAns = currentCard.correct_answers.some(ca => optMatchesAnswer(opt, ca));
 
-          return (
-            <button 
-              key={i} 
-              className={btnClass}
-              style={{
-                justifyContent: 'flex-start',
-                padding: '1.2rem 1.5rem',
-                textAlign: 'left',
-                background: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.2)' : 
-                            isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.2)' : undefined,
-                borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' : 
-                             isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined
-              }}
-              onClick={() => handleSelectOption(i, opt)}
-              disabled={isAnswered}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                <span>{opt}</span>
-                {isAnswered && isCorrectAns && <CheckCircle size={20} color="var(--success)" />}
-                {isAnswered && selectedAnswer === opt && !isCorrectAns && <XCircle size={20} color="var(--danger)" />}
-              </div>
-            </button>
-          );
+          if (multiChoice) {
+            // --- MULTIPLE CHOICE UI ---
+            const isSelected = selectedMulti.includes(opt);
+            const isWrongPick = isAnswered && isSelected && !isCorrectAns;
+
+            return (
+              <button
+                key={i}
+                className="btn btn-glass"
+                style={{
+                  justifyContent: 'flex-start',
+                  padding: '1.2rem 1.5rem',
+                  textAlign: 'left',
+                  background: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.2)' :
+                              isWrongPick ? 'rgba(239, 68, 68, 0.2)' :
+                              isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.15)' : undefined,
+                  borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
+                               isWrongPick ? 'rgba(239, 68, 68, 0.5)' :
+                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : undefined
+                }}
+                onClick={() => handleToggleMulti(opt)}
+                disabled={isAnswered}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+                    {isAnswered ? (
+                      isCorrectAns ? <CheckSquare size={20} color="var(--success)" /> :
+                      isSelected ? <Square size={20} color="var(--danger)" /> :
+                      <Square size={20} color="var(--text-muted)" style={{ opacity: 0.3 }} />
+                    ) : (
+                      isSelected ? <CheckSquare size={20} color="var(--primary)" /> :
+                      <Square size={20} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+                    )}
+                    <span>{opt}</span>
+                  </div>
+                  {isAnswered && isCorrectAns && <CheckCircle size={20} color="var(--success)" />}
+                  {isWrongPick && <XCircle size={20} color="var(--danger)" />}
+                </div>
+              </button>
+            );
+          } else {
+            // --- SINGLE CHOICE UI (original) ---
+            return (
+              <button
+                key={i}
+                className="btn btn-glass"
+                style={{
+                  justifyContent: 'flex-start',
+                  padding: '1.2rem 1.5rem',
+                  textAlign: 'left',
+                  background: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.2)' :
+                              isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.2)' : undefined,
+                  borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
+                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined
+                }}
+                onClick={() => handleSelectOption(i, opt)}
+                disabled={isAnswered}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span>{opt}</span>
+                  {isAnswered && isCorrectAns && <CheckCircle size={20} color="var(--success)" />}
+                  {isAnswered && selectedAnswer === opt && !isCorrectAns && <XCircle size={20} color="var(--danger)" />}
+                </div>
+              </button>
+            );
+          }
         })}
       </div>
+
+      {/* Submit button for multiple choice (before answering) */}
+      {multiChoice && !isAnswered && selectedMulti.length > 0 && (
+        <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+          <button
+            className="btn btn-primary"
+            style={{ padding: '0.8rem 2.5rem', fontSize: '1.05rem', fontWeight: 700 }}
+            onClick={handleSubmitMulti}
+          >
+            Submit ({selectedMulti.length}/{correctCount})
+          </button>
+        </div>
+      )}
 
       {isAnswered && (
         <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
