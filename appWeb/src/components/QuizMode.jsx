@@ -12,13 +12,44 @@ const QuizMode = ({ deck, onBack }) => {
   const [wrongCount, setWrongCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [answers, setAnswers] = useState({});
-  const [sessionId] = useState(() => crypto.randomUUID());
-  const [startedAt] = useState(() => new Date().toISOString());
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+  const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
+  const [isLoading, setIsLoading] = useState(true);
   
   const syncTimeoutRef = useRef(null);
 
   const deckId = deck?.deck_id || deck?.title || 'unknown';
   const googleId = localStorage.getItem('g_id');
+
+  // Tải session cũ từ Backend khi mở quiz
+  useEffect(() => {
+    if (!googleId || !deckId) {
+      setIsLoading(false);
+      return;
+    }
+
+    fetch(`${BACKEND_URL}/progress/quiz/${encodeURIComponent(deckId)}?google_id=${googleId}`)
+      .then(res => res.json())
+      .then(result => {
+        if (result.data && result.data.current_index < cards.length) {
+          // Có session cũ chưa hoàn thành → Resume
+          setCurrentIndex(result.data.current_index + 1); // Nhảy tới câu tiếp theo
+          setAnswers(result.data.answers || {});
+          setScore(result.data.correct_count || 0);
+          setWrongCount(result.data.wrong_count || 0);
+          setSessionId(result.data.session_id || sessionId);
+          setStartedAt(result.data.started_at || startedAt);
+          
+          // Nếu đã trả lời hết → Hiện kết quả
+          if ((result.data.current_index + 1) >= cards.length) {
+            setIsFinished(true);
+          }
+          console.log(`📚 Quiz resumed from question ${result.data.current_index + 2}`);
+        }
+      })
+      .catch(e => console.warn("Load quiz session failed:", e))
+      .finally(() => setIsLoading(false));
+  }, [googleId, deckId]);
 
   // Debounced save to backend
   const saveToBackend = useCallback((updatedData = {}) => {
@@ -43,6 +74,14 @@ const QuizMode = ({ deck, onBack }) => {
       }).catch(e => console.warn("Quiz sync error:", e));
     }, 2000);
   }, [googleId, deckId, sessionId, cards, currentIndex, answers, score, wrongCount, startedAt]);
+
+  if (isLoading) {
+    return (
+      <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center' }}>
+        <h3>⏳ Loading quiz session...</h3>
+      </div>
+    );
+  }
 
   if (!cards || cards.length === 0) {
     return (
