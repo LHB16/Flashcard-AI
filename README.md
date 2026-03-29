@@ -3,7 +3,7 @@
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![React Native](https://img.shields.io/badge/react--native-v0.83-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
-[![Version](https://img.shields.io/badge/version-1.0.4-green)](https://github.com/LHB16/Flashcard-AI)
+[![Version](https://img.shields.io/badge/version-1.0.5-green)](https://github.com/LHB16/Flashcard-AI)
 [![Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-orange?logo=google-gemini)](https://ai.google.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -39,25 +39,41 @@ Your portable study companion built with **React Native**.
 
 ---
 
-## 🌐 Web App (React)
-A convenient web interface running directly in your browser without any installation.
+## 🌐 Web App (React + Vite)
+A full-featured web interface running directly in your browser — no installation needed.
 
-- **URL (Cloudflare)**: [https://lhb16-flashcard-ai.pages.dev](https://lhb16-flashcard-ai.pages.dev)
-- **URL (Netlify)**: [https://lhb16-flashcard-ai.netlify.app](https://lhb16-flashcard-ai.netlify.app)
-- **Features**: 
-  - **Local Import**: Load existing `desk.json` or `decks.json` files directly from your device.
-  - **Cloud Sync**: Fetch and update decks via the Google Drive AppData folder.
-  - **Study Interfaces**: Basic 3D Flashcard flipping and standard Quiz mode.
-  - **Responsive Layout**: UI adapts automatically to Mobile & Desktop screens.
+- **URL**: [https://lhb16-flashcard-ai.pages.dev](https://lhb16-flashcard-ai.pages.dev)
+
+### Frontend (Cloudflare Pages)
+- **📂 Local Import**: Load `desk.json` or `decks.json` files directly from your device.
+- **☁️ Google Drive Sync**: Fetch and update decks via Google Drive AppData folder.
+- **🖐️ Swipe-to-Score**: Touch/mouse gestures and keyboard shortcuts for flashcard study.
+- **📊 Progress Bar**: Real-time visual progress tracking during study sessions.
+- **⏪ Undo (R key)**: Undo last flashcard action with a single tap or keystroke.
+- **🔄 Auto-Save**: Background debounced sync to Google Drive after every card action.
+- **📝 Quiz Mode**: Interactive quiz with score tracking and session resume from cloud.
+- **📱 Responsive**: Fully adapts to mobile and desktop screens.
+
+### Backend (Node.js on Render)
+- **🔐 Secure OAuth**: Google login via server-side OAuth 2.0 — no secrets exposed to the client.
+- **♾️ Persistent Login**: Refresh tokens stored in **Supabase** database — users stay logged in indefinitely.
+- **📊 Cloud Progress**: Study & quiz progress synced to **Supabase** for cross-device continuity.
+- **⏰ Always Online**: Google Apps Script pings the server every 10 minutes to prevent Render cold starts.
 
 ---
 
-| Desktop (.NET) | Desktop (Python) | Mobile | Web App | Core |
-|:---:|:---:|:---:|:---:|:---:|
-| C# / WPF (.NET 8) | Python 3.10+ | React Native | React + Vite | Google Gemini AI |
-| MVVM Architecture | CustomTkinter | AsyncStorage | React Hooks | JSON Database |
-| Drive API (OAuth) | Drive API (OAuth) | React Navigation | Google Drive API | batch-PDF OCR |
-| Single-file EXE | PyInstaller (EXE) | Android APK | Cloudflare / Netlify | Cloud Sync |
+## 🏗️ Architecture
+
+| Component | Tech | Hosting |
+|:---|:---|:---|
+| Desktop (.NET) | C# / WPF (.NET 8), MVVM | Local EXE |
+| Desktop (Python) | Python 3.10+, CustomTkinter | Local EXE |
+| Mobile | React Native, Expo | Android APK |
+| Web Frontend | React + Vite | Cloudflare Pages |
+| Web Backend | Node.js, Express | Render |
+| Database | PostgreSQL (Supabase) | Supabase Cloud |
+| AI Engine | Google Gemini API | Google Cloud |
+| File Storage | Google Drive AppData | Google Cloud |
 
 ---
 
@@ -65,11 +81,8 @@ A convenient web interface running directly in your browser without any installa
 
 ### 1. Desktop Setup (.NET 8)
 ```bash
-# Clone the repository
 git clone https://github.com/LHB16/Flashcard-AI.git
 cd Flashcard-AI/appDotNet/FlashcardAI
-
-# Build and Run (requires .NET 8 SDK)
 dotnet run
 ```
 
@@ -79,6 +92,40 @@ cd Flashcard-AI/appPython
 pip install -r requirements.txt
 python app.py
 ```
+
+### 2. Mobile Setup
+```bash
+cd appAndroid
+npm install
+npx expo start
+```
+*Use **Expo Go** on your Android device to scan the QR code.*
+
+### 3. Web App — Local Development
+```bash
+# Frontend
+cd appWeb
+npm install
+npm run dev        # → http://localhost:5173
+
+# Backend
+cd appWeb/appBackend
+npm install
+cp .env.example .env   # Fill in your keys
+node index.js      # → http://localhost:3000
+```
+
+### 4. Web Backend — Environment Variables
+
+| Variable | Description |
+|:---|:---|
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `GOOGLE_REDIRECT_URI` | Backend callback URL (e.g. `https://your-app.onrender.com/auth/callback`) |
+| `FRONTEND_URL` | Frontend origin for CORS |
+| `FRONTEND_CALLBACK_URL` | Frontend URL to redirect after login |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Supabase service_role key |
 
 #### 🔑 Google Drive API Configuration
 The official build now **includes embedded credentials**, so you can use the Cloud Sync feature out-of-the-box!
@@ -91,14 +138,6 @@ If you are a developer or want to use your own Google Cloud project:
 5. Download the JSON file, rename it to `credentials.json`, and place it in the project root. The app will prioritize this file if it exists.
 
 ---
-
-### 2. Mobile Setup
-```bash
-cd appAndroid
-npm install
-npx expo start
-```
-*Use **Expo Go** on your Android device to scan the QR code.*
 
 ### 📦 Build Executables
 We provide manual build scripts to process binaries for all platforms. Once built, their outputs will be automatically named `FlashcardAI-<Platform>-v<version>.<ext>`:
@@ -126,8 +165,9 @@ We provide manual build scripts to process binaries for all platforms. Once buil
 ## 🛡️ Privacy & Security
 - **Local First**: All your decks and scan results are saved locally on your device (`decks.json`).
 - **Secure Cloud Sync**: Uses the hidden Google Drive **AppData** folder, meaning the synced files cannot be tampered with or seen by users directly in standard Google Drive.
-- **Secure Keys**: Your API keys and OAuth tokens (`token.json`) are stored securely and ignored by Git. They are masked in the UI.
-- **Sensitive Files Protection**: Critical files like `credentials.json` and `token.json` are strictly excluded from the repository. Each user should use their own credentials for maximum security.
+- **Server-Side OAuth**: Web app login is handled entirely by the backend — no client secrets are ever exposed in browser code.
+- **Secure Keys**: Your API keys, OAuth tokens, and Supabase credentials are stored securely and ignored by Git.
+- **Sensitive Files Protection**: Critical files like `.env`, `credentials.json`, and `token.json` are strictly excluded from the repository.
 
 ---
 

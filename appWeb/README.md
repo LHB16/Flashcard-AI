@@ -1,16 +1,62 @@
-# React + Vite
+# Flashcard AI — Web App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend with Node.js Express backend for the Flashcard AI learning platform.
 
-Currently, two official plugins are available:
+## 🌐 Live URL
+- **Frontend**: [https://lhb16-flashcard-ai.pages.dev](https://lhb16-flashcard-ai.pages.dev) (Cloudflare Pages)
+- **Backend**: [https://flashcard-ai-bs67.onrender.com](https://flashcard-ai-bs67.onrender.com) (Render)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📂 Structure
+```
+appWeb/
+├── src/                    # React frontend source
+│   ├── App.jsx             # Main app shell & routing
+│   ├── components/         # FlashcardMode, QuizMode, FileLoader
+│   ├── services/           # driveSync.js (OAuth + Drive API)
+│   └── index.css           # Global styles (glassmorphism theme)
+├── appBackend/             # Node.js Express backend
+│   ├── index.js            # Server entry, CORS, /ping
+│   ├── routes/auth.js      # Google OAuth2 flow
+│   ├── routes/progress.js  # Flashcard & quiz progress API
+│   ├── supabaseClient.js   # Supabase DB connection
+│   └── database_setup.sql  # SQL schema for Supabase
+├── dist/                   # Production build (Cloudflare upload)
+└── .env                    # VITE_BACKEND_URL (build-time)
+```
 
-## React Compiler
+## 🚀 Local Development
+```bash
+# Frontend
+npm install
+npm run dev          # → http://localhost:5173
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# Backend
+cd appBackend
+npm install
+cp .env.example .env # Fill in credentials
+node index.js        # → http://localhost:3000
+```
 
-## Expanding the ESLint configuration
+## 🔑 Environment Variables
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Frontend (.env)
+| Variable | Value |
+|:---|:---|
+| `VITE_BACKEND_URL` | `https://flashcard-ai-bs67.onrender.com` |
+
+### Backend (.env / Render Dashboard)
+| Variable | Description |
+|:---|:---|
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `GOOGLE_REDIRECT_URI` | `https://<backend>/auth/callback` |
+| `FRONTEND_URL` | Frontend origin (CORS) |
+| `FRONTEND_CALLBACK_URL` | Frontend URL after login redirect |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Supabase service_role key |
+
+## 📊 Database (Supabase)
+Run `appBackend/database_setup.sql` in Supabase SQL Editor to create tables:
+- **users** — Google ID, email, refresh tokens
+- **progress** — Flashcard study percentage per deck
+- **quiz_sessions** — Full quiz state (answers, score, current index)
