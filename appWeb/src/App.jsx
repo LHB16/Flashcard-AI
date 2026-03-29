@@ -184,13 +184,13 @@ function App() {
   // 2. Render deck selection if multiple decks and none selected
   if (data && !selectedDeck) {
     return (
-      <main style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+        <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+          <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Select a Deck</h1>
             {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
           </div>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14}/> Synced</span>}
             <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -221,15 +221,15 @@ function App() {
 
   // 3. Render chosen deck mode options
   return (
-    <main style={{ padding: '2rem', display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: '1000px', margin: '0 auto' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    <main className="app-main" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', minHeight: '100vh', maxWidth: '1000px', margin: '0 auto' }}>
+      <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+        <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Flashcard AI</h1>
           <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', borderLeft: '1px solid var(--glass-border)', paddingLeft: '1rem' }}>
             {selectedDeck?.name || 'Unnamed Deck'} ({selectedDeck?.cards?.length || 0} cards)
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14}/> Drive Synced</span>}
           <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -245,11 +245,11 @@ function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {mode === 'home' && (
           <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-            <h2 style={{ fontSize: '2rem', marginBottom: '3rem', textAlign: 'center' }}>How would you like to study today?</h2>
+            <h2 className="study-title" style={{ fontSize: '2rem', marginBottom: '3rem', textAlign: 'center' }}>How would you like to study today?</h2>
             
-            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="mode-selection-container" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
               <div 
-                className="glass-panel glass-panel-hover" 
+                className="glass-panel glass-panel-hover mode-card" 
                 style={{ padding: '3rem 2rem', width: '300px', textAlign: 'center', cursor: 'pointer' }}
                 onClick={() => setMode('flashcard')}
               >
@@ -261,7 +261,7 @@ function App() {
               </div>
 
               <div 
-                className="glass-panel glass-panel-hover" 
+                className="glass-panel glass-panel-hover mode-card" 
                 style={{ padding: '3rem 2rem', width: '300px', textAlign: 'center', cursor: 'pointer' }}
                 onClick={() => setMode('quiz')}
               >
