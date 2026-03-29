@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import FileLoader from './components/FileLoader';
 import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 
 function App() {
@@ -10,6 +10,7 @@ function App() {
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [mode, setMode] = useState(null); // 'home', 'flashcard', 'quiz'
   const [theme, setTheme] = useState('dark');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Google Sync state
   const [userLoggedIn, setUserLoggedIn] = useState(false);
@@ -179,6 +180,9 @@ function App() {
                     <h3 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>Connected to Google Drive</h3>
                     <p style={{ color: 'var(--text-muted)' }}>Any changes from now on will be synced automatically.</p>
                   </div>
+                  <button className="btn btn-primary" onClick={handleSyncFromDrive} style={{ padding: '1.2rem', fontSize: '1.1rem', width: '100%', borderRadius: '12px' }}>
+                    ▶ Bắt Đầu (Tải / Cập nhật dữ liệu từ Cloud)
+                  </button>
                   
                   {syncMessage && (
                     <div className="animate-fade-in" style={{ padding: '1rem', borderRadius: '12px', background: syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)', color: syncMessage.type === 'error' ? 'var(--danger)' : '#60a5fa', border: `1px solid ${syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`, textAlign: 'center', fontWeight: '500' }}>
@@ -235,8 +239,19 @@ function App() {
           </div>
         </header>
 
+        <div style={{ marginBottom: '2rem', position: 'relative', maxWidth: '500px' }}>
+          <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+          <input 
+            type="text" 
+            placeholder="Search decks..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+          />
+        </div>
+
         <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-          {data.map((deck, idx) => (
+          {data.filter(deck => (deck.name || '').toLowerCase().includes(searchQuery.toLowerCase())).map((deck, idx) => (
             <div 
               key={deck.deck_id || idx} 
               className="glass-panel glass-panel-hover" 

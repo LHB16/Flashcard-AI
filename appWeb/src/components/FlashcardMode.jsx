@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 
+const globalHistoryCache = {};
+
 const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
   
@@ -9,10 +11,14 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const [known, setKnown] = useState(0);
   const [unknown, setUnknown] = useState(0);
   const [done, setDone] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => globalHistoryCache[deck?.deck_id || 'default'] || []);
   
   const touchStartX = useRef(null);
   const isAnimating = useRef(false);
+
+  useEffect(() => {
+    globalHistoryCache[deck?.deck_id || 'default'] = history;
+  }, [history, deck?.deck_id]);
 
   // Khởi tạo thẻ chưa học
   useEffect(() => {
@@ -245,7 +251,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
       {/* Card */}
       <div 
         className={`flip-card ${isFlipped ? 'flipped' : ''}`} 
-        style={{ cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', touchAction: 'none', width: '100%' }}
+        style={{ cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', touchAction: 'pan-y', width: '100%' }}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={() => { touchStartX.current = null; }}
