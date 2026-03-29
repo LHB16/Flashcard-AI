@@ -39,10 +39,11 @@ Your portable study companion built with **React Native**.
 
 ---
 
-## 🌐 Web App (React + Netlify)
+## 🌐 Web App (React)
 Try the fully functional web version instantly from your browser! No installation required.
 
-- **URL**: [https://lhb16-flashcard-ai.netlify.app](https://lhb16-flashcard-ai.netlify.app)
+- **URL (Cloudflare)**: [https://lhb16-flashcard-ai.pages.dev](https://lhb16-flashcard-ai.pages.dev)
+- **URL (Netlify)**: [https://lhb16-flashcard-ai.netlify.app](https://lhb16-flashcard-ai.netlify.app)
 - **Features**: 
   - **Direct Import**: Easily load your `decks.json` files.
   - **Cloud Sync**: Full integration with Google Drive AppData (shares decks with Desktop/Mobile).
@@ -56,7 +57,7 @@ Try the fully functional web version instantly from your browser! No installatio
 | C# / WPF (.NET 8) | Python 3.10+ | React Native | React + Vite | Google Gemini AI |
 | MVVM Architecture | CustomTkinter | AsyncStorage | React Hooks | JSON Database |
 | Drive API (OAuth) | Drive API (OAuth) | React Navigation | Google Drive API | batch-PDF OCR |
-| Single-file EXE | PyInstaller (EXE) | Android APK | Netlify Hosted | Cloud Sync |
+| Single-file EXE | PyInstaller (EXE) | Android APK | Cloudflare / Netlify | Cloud Sync |
 
 ---
 
