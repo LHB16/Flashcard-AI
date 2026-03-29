@@ -40,15 +40,15 @@ Your portable study companion built with **React Native**.
 ---
 
 ## 🌐 Web App (React)
-Try the fully functional web version instantly from your browser! No installation required.
+A convenient web interface running directly in your browser without any installation.
 
 - **URL (Cloudflare)**: [https://lhb16-flashcard-ai.pages.dev](https://lhb16-flashcard-ai.pages.dev)
 - **URL (Netlify)**: [https://lhb16-flashcard-ai.netlify.app](https://lhb16-flashcard-ai.netlify.app)
 - **Features**: 
-  - **Direct Import**: Easily load your `decks.json` files.
-  - **Cloud Sync**: Full integration with Google Drive AppData (shares decks with Desktop/Mobile).
-  - **Study Modes**: Flashcard 3D flipping & smart Quiz mode.
-  - **Responsive Design**: Beautiful UI available on both Mobile & Desktop.
+  - **Local Import**: Load existing `desk.json` or `decks.json` files directly from your device.
+  - **Cloud Sync**: Fetch and update decks via the Google Drive AppData folder.
+  - **Study Interfaces**: Basic 3D Flashcard flipping and standard Quiz mode.
+  - **Responsive Layout**: UI adapts automatically to Mobile & Desktop screens.
 
 ---
 
