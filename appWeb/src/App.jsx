@@ -181,7 +181,7 @@ function App() {
                     <p style={{ color: 'var(--text-muted)' }}>Any changes from now on will be synced automatically.</p>
                   </div>
                   <button className="btn btn-primary" onClick={handleSyncFromDrive} style={{ padding: '1.2rem', fontSize: '1.1rem', width: '100%', borderRadius: '12px' }}>
-                    ▶ Bắt Đầu (Tải / Cập nhật dữ liệu từ Cloud)
+                    ▶ Start
                   </button>
                   
                   {syncMessage && (

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 
-const globalHistoryCache = {};
-
 const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
   
@@ -11,16 +9,11 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const [known, setKnown] = useState(0);
   const [unknown, setUnknown] = useState(0);
   const [done, setDone] = useState(false);
-  const [history, setHistory] = useState(() => globalHistoryCache[deck?.deck_id || 'default'] || []);
   
   const touchStartX = useRef(null);
   const isAnimating = useRef(false);
 
-  useEffect(() => {
-    globalHistoryCache[deck?.deck_id || 'default'] = history;
-  }, [history, deck?.deck_id]);
-
-  // Khởi tạo thẻ chưa học
+  // Initialize
   useEffect(() => {
     if (!cards.length) return;
     const currentKnown = cards.filter(c => c.status === 2).length;
@@ -41,16 +34,15 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     if (index >= cards.length || isAnimating.current) return;
     
     isAnimating.current = true;
-    const currentStatus = cards[index].status || 0;
-    setHistory(prev => [...prev, { index, wasKnown, oldStatus: currentStatus }]);
     
     if (wasKnown) {
-      setKnown(k => k + 1);
       cards[index].status = 2;
     } else {
-      setUnknown(u => u + 1);
       cards[index].status = 1;
     }
+    
+    setKnown(cards.filter(c => c.status === 2).length);
+    setUnknown(cards.filter(c => c.status === 1).length);
     
     if (onDeckModified) onDeckModified();
     
@@ -72,27 +64,23 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     }, 150);
   }, [index, cards, onDeckModified]);
 
-  const undo = useCallback(() => {
-    if (history.length === 0 || isAnimating.current) return;
+  const goBackCard = useCallback(() => {
+    if (isAnimating.current) return;
     
-    const last = history[history.length - 1];
-    setHistory(prev => prev.slice(0, -1));
+    let prevIndex = index - 1;
+    if (done) prevIndex = cards.length - 1;
     
-    if (last.wasKnown) setKnown(k => k - 1);
-    else setUnknown(u => u - 1);
-    
-    cards[last.index].status = last.oldStatus;
-    if (onDeckModified) onDeckModified();
-    
-    setDone(false);
-    setFlipped(false);
-    setIndex(last.index);
-
-    isAnimating.current = true;
-    setTimeout(() => {
-      isAnimating.current = false;
-    }, 1000); // 1 giây mới cho undo hoặc đánh giá tiếp
-  }, [history, cards, onDeckModified]);
+    if (prevIndex >= 0) {
+      isAnimating.current = true;
+      setDone(false);
+      setFlipped(false);
+      setIndex(prevIndex);
+      
+      setTimeout(() => {
+        isAnimating.current = false;
+      }, 500);
+    }
+  }, [index, done, cards.length]);
 
   const restartStudy = () => {
     if (isAnimating.current) return;
@@ -101,7 +89,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     setIndex(0);
     setKnown(0);
     setUnknown(0);
-    setHistory([]);
     setDone(false);
     setFlipped(false);
   };
@@ -123,13 +110,13 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
       } else if (e.key === 'ArrowRight') {
         advanceCard(true);
       } else if (e.key === 'r' || e.key === 'R') {
-        undo();
+        goBackCard();
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [advanceCard, undo, done]);
+  }, [advanceCard, goBackCard, done]);
 
   // Trình bắt Touch vuốt
   const handlePointerDown = (e) => {
@@ -259,7 +246,10 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         <div className="flip-card-inner">
           <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>QUESTION</span>
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <div 
+              style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <h3 style={{ fontSize: '1.2rem', lineHeight: '1.5', fontWeight: 600, width: '100%', marginBottom: '1.5rem', color: 'var(--text-main)', textAlign: 'left' }}>
                 {currentCard?.question}
               </h3>
@@ -282,7 +272,10 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
           <div className="flip-card-back" style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>ANSWER</span>
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <div 
+              style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left' }}>
                 {getCorrectAnswerText(currentCard)}
               </p>
@@ -304,7 +297,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCard(false); }}>
           <span style={{ fontSize: '2rem', display: 'block' }}>❌</span>
         </button>
-        <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); undo(); }} disabled={history.length === 0} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Undo (R)">
+        <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Previous Card (R)">
           <RotateCcw size={24} />
         </button>
         <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCard(true); }}>
