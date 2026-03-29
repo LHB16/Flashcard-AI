@@ -10,8 +10,15 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const [unknown, setUnknown] = useState(0);
   const [done, setDone] = useState(false);
   
+  // Drag tilt state
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  // Swipe-out animation state: 'left' | 'right' | null
+  const [swipeOut, setSwipeOut] = useState(null);
+  
   const touchStartX = useRef(null);
   const isAnimating = useRef(false);
+  const cardRef = useRef(null);
 
   // Initialize
   useEffect(() => {
@@ -30,7 +37,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     }
   }, [deck?.deck_id, cards]);
 
-  const advanceCard = useCallback((wasKnown) => {
+  // Core advance with swipe-out animation
+  const advanceCardWithAnimation = useCallback((wasKnown) => {
     if (index >= cards.length || isAnimating.current) return;
     
     isAnimating.current = true;
@@ -46,10 +54,15 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     
     if (onDeckModified) onDeckModified();
     
-    setFlipped(false);
+    // Trigger swipe-out animation
+    setSwipeOut(wasKnown ? 'right' : 'left');
     
-    // Auto-advance and 1-second block
+    // After animation completes, advance card
     setTimeout(() => {
+      setSwipeOut(null);
+      setFlipped(false);
+      setDragX(0);
+      
       const nextIndex = index + 1;
       if (nextIndex >= cards.length) {
         setDone(true);
@@ -57,11 +70,10 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         setIndex(nextIndex);
       }
       
-      // Giữ khóa thêm 850ms nữa (Tổng cộng 1 giây)
       setTimeout(() => {
         isAnimating.current = false;
-      }, 850);
-    }, 150);
+      }, 200);
+    }, 300);
   }, [index, cards, onDeckModified]);
 
   const goBackCard = useCallback(() => {
@@ -73,7 +85,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     if (prevIndex >= 0) {
       isAnimating.current = true;
       
-      // Xóa trạng thái của thẻ trước đó (Undo thực thụ)
       const prevStatus = cards[prevIndex].status;
       if (prevStatus === 2) {
         setKnown(k => Math.max(0, k - 1));
@@ -85,6 +96,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
       setDone(false);
       setFlipped(false);
+      setDragX(0);
       setIndex(prevIndex);
       
       setTimeout(() => {
@@ -102,12 +114,13 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     setUnknown(0);
     setDone(false);
     setFlipped(false);
+    setDragX(0);
   };
 
-  // Trình bắt phím tắt
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.repeat) return; // Chống nhấn giữ đè phím (Auto-repeat)
+      if (e.repeat) return;
 
       if (done) {
         if (e.key === 'r' || e.key === 'R') restartStudy();
@@ -117,9 +130,9 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         e.preventDefault();
         setFlipped(f => !f);
       } else if (e.key === 'ArrowLeft') {
-        advanceCard(false);
+        advanceCardWithAnimation(false);
       } else if (e.key === 'ArrowRight') {
-        advanceCard(true);
+        advanceCardWithAnimation(true);
       } else if (e.key === 'r' || e.key === 'R') {
         goBackCard();
       }
@@ -127,29 +140,65 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [advanceCard, goBackCard, done]);
+  }, [advanceCardWithAnimation, goBackCard, done]);
 
-  // Trình bắt Touch vuốt
+  // Touch/pointer drag handlers
   const handlePointerDown = (e) => {
     if (isAnimating.current) return;
     touchStartX.current = e.clientX;
+    setIsDragging(true);
+    setDragX(0);
   };
 
+  const handlePointerMove = useCallback((e) => {
+    if (touchStartX.current === null || !isDragging || isAnimating.current) return;
+    const diffX = e.clientX - touchStartX.current;
+    setDragX(diffX);
+  }, [isDragging]);
+
   const handlePointerUp = (e) => {
-    if (touchStartX.current === null || isAnimating.current) return;
+    if (touchStartX.current === null || isAnimating.current) {
+      setIsDragging(false);
+      setDragX(0);
+      return;
+    }
     const diffX = e.clientX - touchStartX.current;
     
-    // Vuốt > 50px
-    if (diffX > 50) {
-      advanceCard(true); // Know
-    } else if (diffX < -50) {
-      advanceCard(false); // Unknown
+    setIsDragging(false);
+    
+    if (diffX > 80) {
+      advanceCardWithAnimation(true);
+    } else if (diffX < -80) {
+      advanceCardWithAnimation(false);
     } else if (Math.abs(diffX) < 10) {
-      // Tap lật
+      setDragX(0);
       setFlipped(!isFlipped);
+    } else {
+      // Snap back
+      setDragX(0);
     }
     touchStartX.current = null;
   };
+
+  const handlePointerCancel = () => {
+    touchStartX.current = null;
+    setIsDragging(false);
+    setDragX(0);
+  };
+
+  // PointerMove listener on window for smooth dragging
+  useEffect(() => {
+    if (isDragging) {
+      const onMove = (e) => handlePointerMove(e);
+      const onUp = (e) => handlePointerUp(e);
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      return () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+      };
+    }
+  }, [isDragging, handlePointerMove]);
 
   const getCorrectAnswerText = (card) => {
     if (card.correct_answers && card.correct_answers.length > 0) {
@@ -163,6 +212,45 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     return "—";
   };
 
+  // Compute card transform
+  const getCardTransform = () => {
+    if (swipeOut === 'left') {
+      return { transform: 'translateX(-120%) rotate(-25deg)', opacity: 0, transition: 'transform 0.3s ease-in, opacity 0.3s ease-in' };
+    }
+    if (swipeOut === 'right') {
+      return { transform: 'translateX(120%) rotate(25deg)', opacity: 0, transition: 'transform 0.3s ease-in, opacity 0.3s ease-in' };
+    }
+    if (isDragging && Math.abs(dragX) > 5) {
+      const rotation = Math.max(-20, Math.min(20, dragX * 0.15));
+      const translateX = dragX;
+      return { 
+        transform: `translateX(${translateX}px) rotate(${rotation}deg)`, 
+        opacity: 1, 
+        transition: 'none' 
+      };
+    }
+    return { transform: 'translateX(0) rotate(0deg)', opacity: 1, transition: 'transform 0.3s ease-out, opacity 0.3s ease-out' };
+  };
+
+  // Compute border glow based on drag
+  const getCardBorderStyle = () => {
+    if (swipeOut === 'right' || (isDragging && dragX > 30)) {
+      const intensity = swipeOut ? 1 : Math.min(1, (dragX - 30) / 100);
+      return {
+        borderColor: `rgba(16, 185, 129, ${0.3 + intensity * 0.7})`,
+        boxShadow: `0 0 ${20 * intensity}px rgba(16, 185, 129, ${0.2 * intensity}), var(--glass-shadow)`
+      };
+    }
+    if (swipeOut === 'left' || (isDragging && dragX < -30)) {
+      const intensity = swipeOut ? 1 : Math.min(1, (-dragX - 30) / 100);
+      return {
+        borderColor: `rgba(239, 68, 68, ${0.3 + intensity * 0.7})`,
+        boxShadow: `0 0 ${20 * intensity}px rgba(239, 68, 68, ${0.2 * intensity}), var(--glass-shadow)`
+      };
+    }
+    return {};
+  };
+
   if (!cards || cards.length === 0) {
     return (
       <div className="glass-panel animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
@@ -172,7 +260,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     );
   }
 
-  // Màn hình Results
+  // Results screen
   if (done) {
     const total = known + unknown;
     const pct = total > 0 ? Math.round((known / total) * 100) : 0;
@@ -209,9 +297,11 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   }
 
   const currentCard = cards[index];
+  const cardTransform = getCardTransform();
+  const cardBorder = getCardBorderStyle();
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto', padding: '0 0 2rem 0' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto', padding: '0 0 2rem 0', overflow: 'hidden' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '1rem', alignItems: 'center' }}>
@@ -246,16 +336,20 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         </div>
       </div>
 
-      {/* Card */}
+      {/* Card with drag tilt */}
       <div 
+        ref={cardRef}
         className={`flip-card ${isFlipped ? 'flipped' : ''}`} 
-        style={{ cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', maxHeight: '65vh', touchAction: 'pan-y', width: '100%' }}
+        style={{ 
+          cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', maxHeight: '65vh', 
+          touchAction: 'pan-y', width: '100%',
+          ...cardTransform
+        }}
         onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={() => { touchStartX.current = null; }}
+        onPointerCancel={handlePointerCancel}
       >
-        <div className="flip-card-inner">
-          <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="flip-card-inner" style={cardBorder}>
+          <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>QUESTION</span>
             <div 
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
@@ -280,7 +374,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             </p>
           </div>
 
-          <div className="flip-card-back" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="flip-card-back" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>ANSWER</span>
             <div 
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
@@ -301,15 +395,15 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         </div>
       </div>
 
-      {/* Swipe Overlay Hint Bar */}
+      {/* Action Buttons */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', width: '100%' }}>
-        <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCard(false); }}>
+        <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
           <span style={{ fontSize: '2rem', display: 'block' }}>❌</span>
         </button>
         <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Previous Card (R)">
           <RotateCcw size={24} />
         </button>
-        <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCard(true); }}>
+        <button className="btn btn-glass btn-icon" style={{flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
           <span style={{ fontSize: '2rem', display: 'block' }}>✅</span>
         </button>
       </div>
@@ -319,3 +413,4 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 };
 
 export default FlashcardMode;
+
