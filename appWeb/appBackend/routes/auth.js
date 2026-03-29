@@ -42,40 +42,42 @@ router.get('/callback', async (req, res) => {
 
     let refreshToken = tokens.refresh_token;
 
-    // Xem Supabase có Token cũ không
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('refresh_token')
-      .eq('google_id', googleId)
-      .single();
-
-    if (user && !refreshToken) {
-      refreshToken = user.refresh_token; 
-    }
-
-    if (refreshToken) {
-      // Upsert vào Supabase Database
-      const { error: upsertErr } = await supabase
+    // Lưu refresh token vào Supabase (không crash nếu lỗi DB)
+    try {
+      const { data: user } = await supabase
         .from('users')
-        .upsert({
-          google_id: googleId,
-          email: email,
-          refresh_token: refreshToken,
-          updated_at: new Date()
-        }, { onConflict: 'google_id' });
+        .select('refresh_token')
+        .eq('google_id', googleId)
+        .single();
 
-      if (upsertErr) console.error("Lỗi cập nhật token Supabase:", upsertErr);
+      if (user && !refreshToken) {
+        refreshToken = user.refresh_token; 
+      }
+
+      if (refreshToken) {
+        const { error: upsertErr } = await supabase
+          .from('users')
+          .upsert({
+            google_id: googleId,
+            email: email,
+            refresh_token: refreshToken,
+            updated_at: new Date()
+          }, { onConflict: 'google_id' });
+
+        if (upsertErr) console.error("⚠️ Supabase upsert lỗi (không ảnh hưởng login):", upsertErr);
+      }
+    } catch (dbErr) {
+      console.error("⚠️ Supabase DB error (bỏ qua):", dbErr.message);
     }
 
     const frontendCallback = process.env.FRONTEND_CALLBACK_URL || 'http://localhost:5173';
-    console.log('🔗 FRONTEND_CALLBACK_URL =', process.env.FRONTEND_CALLBACK_URL);
     console.log('🔗 Redirecting to:', frontendCallback);
     
     // Điều hướng ngược lại Frontend kèm URL params
     res.redirect(`${frontendCallback}?access_token=${tokens.access_token}&google_id=${googleId}&expiry=${tokens.expiry_date || (Date.now() + 3599000)}`);
   } catch (error) {
-    console.error('Lỗi Callback OAuth:', error);
-    res.status(500).send('Đăng nhập Server thất bại.');
+    console.error('❌ Lỗi Callback OAuth:', error.message || error);
+    res.status(500).send(`Đăng nhập thất bại: ${error.message || 'Unknown error'}`);
   }
 });
 
