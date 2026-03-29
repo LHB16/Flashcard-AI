@@ -184,13 +184,26 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     }
 
     const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStartX.current;
-    const dy = touch.clientY - touchStartY.current;
+    const duration = Date.now() - touchStartTime.current;
+    const dxAbs = Math.abs(touch.clientX - touchStartX.current);
+    const dyAbs = Math.abs(touch.clientY - touchStartY.current);
 
+    // Người dùng tối ưu chạm nhanh gọn
+    if (dxAbs < 10 && dyAbs < 10 && duration < 200) {
+      setIsDragging(false);
+      setDragX(0);
+      setFlipped(f => !f);
+      touchStartX.current = null;
+      touchStartY.current = null;
+      directionLocked.current = null;
+      return;
+    }
+
+    const dx = touch.clientX - touchStartX.current;
     setIsDragging(false);
 
-    // Priority: Tap (displacement < 15px, regardless of time)
-    if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+    // Fallback: Chạm bình thường (kể cả giữ lâu)
+    if (dxAbs < 15 && dyAbs < 15) {
       setDragX(0);
       setFlipped(f => !f);
     } else if (directionLocked.current === 'horizontal') {
@@ -214,7 +227,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const mouseDownRef = useRef(false);
 
   const handleMouseDown = (e) => {
-    if (isAnimating.current || e.button !== 0) return;
+    // Nếu là thiết bị cảm ứng, bỏ qua sự kiện chuột giả lập (simulated mouse events) để không bị lỗi "giữ mới lật"
+    if (isAnimating.current || e.button !== 0 || ('ontouchstart' in window)) return;
     e.preventDefault();
     mouseDownRef.current = true;
     touchStartX.current = e.clientX;
