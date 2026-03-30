@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, Loader2 } from 'lucide-react';
 
-const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
+const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
 
   const [index, setIndex] = useState(0);
@@ -19,6 +19,50 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
   const touchStartX = useRef(null);
   const isAnimating = useRef(false);
   const cardRef = useRef(null);
+
+  const [isSyncingCards, setIsSyncingCards] = useState(false);
+  const syncCardsTimeoutRef = useRef(null);
+
+  const triggerCardSync = useCallback(() => {
+    const googleId = localStorage.getItem('g_id');
+    const deckId = deck?.deck_id || deck?.title;
+    if (!googleId || !deckId) return;
+
+    if (syncCardsTimeoutRef.current) clearTimeout(syncCardsTimeoutRef.current);
+    setIsSyncingCards(true);
+
+    syncCardsTimeoutRef.current = setTimeout(() => {
+      // Collect cards that have valid string/number status
+      const cardsToSync = cards
+        .filter(c => c.card_id && c.status !== undefined)
+        .map(c => ({
+          deck_id: deckId,
+          card_id: c.card_id,
+          status: c.status
+        }));
+
+      if (cardsToSync.length === 0) {
+        setIsSyncingCards(false);
+        return;
+      }
+
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+      fetch(`${BACKEND_URL}/progress/cards/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          google_id: googleId,
+          cards: cardsToSync
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Card sync failed");
+        console.log("✅ Card progress bulk synced");
+      })
+      .catch(e => console.warn("Supabase Card Progress Sync issue:", e))
+      .finally(() => setIsSyncingCards(false));
+    }, 3000);
+  }, [cards, deck]);
 
   // Initialize
   useEffect(() => {
@@ -53,6 +97,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
     setUnknown(cards.filter(c => c.status === 1).length);
 
     if (onDeckModified) onDeckModified();
+    triggerCardSync();
 
     // Trigger swipe-out animation
     setSwipeOut(wasKnown ? 'right' : 'left');
@@ -93,6 +138,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
       }
       cards[prevIndex].status = 0;
       if (onDeckModified) onDeckModified();
+      triggerCardSync();
 
       setDone(false);
       setFlipped(false);
@@ -110,6 +156,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
     if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
       cards.forEach(c => c.status = 0);
       if (onDeckModified) onDeckModified();
+      triggerCardSync();
       setIndex(0);
       setKnown(0);
       setUnknown(0);
@@ -392,7 +439,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
         </button>
         <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {index + 1} / {cards.length}
-          {isDriveSyncing && <Loader2 size={16} color="var(--primary)" className="spin" />}
+          {isSyncingCards && <Loader2 size={16} color="var(--primary)" className="spin" />}
         </span>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={restartStudy} title="Reset all progress (Restart)">
           Reset

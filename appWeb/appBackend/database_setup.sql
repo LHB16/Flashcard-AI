@@ -34,3 +34,13 @@ CREATE TABLE IF NOT EXISTS quiz_sessions (
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (google_id, deck_id)
 );
+
+-- 4. Tạo bảng Card Progress lưu tiến độ từng thẻ flashcard
+CREATE TABLE IF NOT EXISTS card_progress (
+  google_id TEXT REFERENCES users(google_id) ON DELETE CASCADE,
+  deck_id TEXT NOT NULL,
+  card_id TEXT NOT NULL,
+  status INTEGER DEFAULT 0,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (google_id, deck_id, card_id)
+);

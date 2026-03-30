@@ -110,6 +110,38 @@ export const fetchDecksFromDrive = async () => {
   if (!downloadRes.ok) throw new Error("Failed to download file from Google Drive.");
   
   const jsonData = await downloadRes.json();
+
+  // Merge Supabase flashcard card_progress back into jsonData
+  if (googleId && Array.isArray(jsonData)) {
+    try {
+      await Promise.all(jsonData.map(async (deck) => {
+        const targetId = deck.deck_id || deck.title;
+        if (!targetId) return;
+
+        const progressRes = await fetch(`${BACKEND_URL}/progress/cards/${encodeURIComponent(targetId)}?google_id=${googleId}`);
+        if (progressRes.ok) {
+          const result = await progressRes.json();
+          if (result.data && result.data.length > 0) {
+            // Build a map of card_id -> status
+            const statusMap = {};
+            result.data.forEach(cp => { statusMap[cp.card_id] = cp.status; });
+            
+            // Loop through local deck cards and update status
+            if (Array.isArray(deck.cards)) {
+              deck.cards.forEach(card => {
+                if (card.card_id && statusMap[card.card_id] !== undefined) {
+                  card.status = statusMap[card.card_id];
+                }
+              });
+            }
+          }
+        }
+      }));
+    } catch (e) {
+      console.warn("Muted error: Failed to merge card progress from Supabase", e);
+    }
+  }
+
   return { fileId: file.id, data: jsonData };
 };
 

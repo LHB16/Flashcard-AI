@@ -17,7 +17,6 @@ function App() {
   const [driveFileId, setDriveFileId] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
-  const [isDriveSyncing, setIsDriveSyncing] = useState(false);
 
   // Keep a ref to always have fresh data in async callbacks
   const dataRef = useRef(data);
@@ -122,15 +121,10 @@ function App() {
     if (!userLoggedIn || !driveFileId) return;
 
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-    setIsDriveSyncing(true);
     syncTimeoutRef.current = setTimeout(async () => {
       try {
-        // Use dataRef.current to always get the latest data, not stale closure
         const freshData = dataRef.current;
         if (!freshData) return;
-
-        await uploadDecksToDrive(freshData, driveFileId);
-        console.log("✅ Drive background sync complete");
 
         if (selectedDeck) {
           const known = selectedDeck.cards.filter(c => c.status === 2).length;
@@ -342,7 +336,7 @@ function App() {
           </div>
         )}
 
-        {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} isDriveSyncing={isDriveSyncing} />}
+        {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
         {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} />}
       </div>
     </main>

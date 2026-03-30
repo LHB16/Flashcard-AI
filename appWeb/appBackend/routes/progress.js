@@ -103,5 +103,60 @@ router.get('/quiz/:deck_id', async (req, res) => {
     res.status(500).json({ error: 'Lỗi tải quiz session' });
   }
 });
+// ============ CARD PROGRESS (FLASHCARD) ============
+
+// Lưu tiến độ từng thẻ (Bulk Upsert)
+router.post('/cards/save', async (req, res) => {
+  const { google_id, cards } = req.body;
+  // cards = [{ deck_id, card_id, status }]
+
+  if (!google_id || !cards || !Array.isArray(cards) || cards.length === 0) {
+    return res.status(400).json({ error: 'Missing google_id or valid cards array' });
+  }
+
+  // Chuẩn bị payload để upsert
+  const upsertData = cards.map(c => ({
+    google_id: google_id,
+    deck_id: c.deck_id,
+    card_id: c.card_id,
+    status: c.status,
+    updated_at: new Date().toISOString()
+  }));
+
+  try {
+    const { data, error } = await supabase
+      .from('card_progress')
+      .upsert(upsertData, { onConflict: 'google_id,deck_id,card_id' });
+
+    if (error) throw error;
+    res.json({ message: 'Card progress bulk saved', count: cards.length });
+  } catch (error) {
+    console.error('Save Card Progress Error:', error);
+    res.status(500).json({ error: 'Lỗi ghi card progress' });
+  }
+});
+
+// Lấy tiến độ các thẻ của 1 deck
+router.get('/cards/:deck_id', async (req, res) => {
+  const { deck_id } = req.params;
+  const { google_id } = req.query;
+
+  if (!google_id) return res.status(400).json({ error: 'Missing google_id' });
+
+  try {
+    const { data, error } = await supabase
+      .from('card_progress')
+      .select('card_id, status')
+      .eq('google_id', google_id)
+      .eq('deck_id', deck_id);
+
+    if (error) throw error;
+    res.json({ data: data || [] }); // Return empty array if no rows
+  } catch (error) {
+    console.error('Load Card Progress Error:', error);
+    res.status(500).json({ error: 'Lỗi tải card progress' });
+  }
+});
 
 module.exports = router;
+
