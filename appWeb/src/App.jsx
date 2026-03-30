@@ -340,8 +340,15 @@ function App() {
         {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} />}
       </div>
 
-      <footer style={{ padding: '2rem 1rem', textAlign: 'center', borderTop: '1px solid var(--glass-border)', marginTop: 'auto' }}>
-        <a href="/privacy.html" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none', opacity: 0.7, transition: 'opacity 0.2s' }} onMouseOver={(e) => e.target.style.opacity = 1} onMouseOut={(e) => e.target.style.opacity = 0.7}>
+      <footer style={{
+        textAlign: 'center',
+        padding: '1rem',
+        fontSize: '0.8rem',
+        color: 'var(--text-muted)',
+        borderTop: '1px solid var(--glass-border)',
+        marginTop: 'auto'
+      }}>
+        <a href="/privacy" target="_blank" style={{ color: 'var(--text-muted)' }}>
           Privacy Policy
         </a>
       </footer>
