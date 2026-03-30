@@ -107,14 +107,16 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
 
   const restartStudy = () => {
     if (isAnimating.current) return;
-    cards.forEach(c => c.status = 0);
-    if (onDeckModified) onDeckModified();
-    setIndex(0);
-    setKnown(0);
-    setUnknown(0);
-    setDone(false);
-    setFlipped(false);
-    setDragX(0);
+    if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
+      cards.forEach(c => c.status = 0);
+      if (onDeckModified) onDeckModified();
+      setIndex(0);
+      setKnown(0);
+      setUnknown(0);
+      setDone(false);
+      setFlipped(false);
+      setDragX(0);
+    }
   };
 
   // Keyboard shortcuts

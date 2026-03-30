@@ -201,14 +201,16 @@ const QuizMode = ({ deck, onBack }) => {
   };
 
   const resetQuiz = () => {
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setSelectedMulti([]);
-    setIsAnswered(false);
-    setScore(0);
-    setWrongCount(0);
-    setIsFinished(false);
-    setAnswers({});
+    if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
+      setCurrentIndex(0);
+      setSelectedAnswer(null);
+      setSelectedMulti([]);
+      setIsAnswered(false);
+      setScore(0);
+      setWrongCount(0);
+      setIsFinished(false);
+      setAnswers({});
+    }
   };
 
   if (isFinished) {
