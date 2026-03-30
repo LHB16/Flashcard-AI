@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Loader2 } from 'lucide-react';
 
-const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
+const FlashcardMode = ({ deck, onBack, onDeckModified, isDriveSyncing }) => {
   const cards = deck?.cards || [];
 
   const [index, setIndex] = useState(0);
@@ -388,8 +388,9 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
           <ArrowLeft size={18} /> Back
         </button>
-        <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>
+        <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {index + 1} / {cards.length}
+          {isDriveSyncing && <Loader2 size={16} color="var(--primary)" className="spin" />}
         </span>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={restartStudy} title="Reset all progress (Restart)">
           Reset

@@ -17,6 +17,11 @@ function App() {
   const [driveFileId, setDriveFileId] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
+  const [isDriveSyncing, setIsDriveSyncing] = useState(false);
+
+  // Keep a ref to always have fresh data in async callbacks
+  const dataRef = useRef(data);
+  useEffect(() => { dataRef.current = data; }, [data]);
 
   // Load theme from localStorage on start
   useEffect(() => {
@@ -112,36 +117,43 @@ function App() {
   const syncTimeoutRef = useRef(null);
 
   const handleDeckModified = () => {
-    setData([...data]);
+    setData(prev => prev ? [...prev] : prev);
 
     if (!userLoggedIn || !driveFileId) return;
 
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    setIsDriveSyncing(true);
     syncTimeoutRef.current = setTimeout(async () => {
       try {
-        await uploadDecksToDrive(data, driveFileId);
-        console.log("Drive background sync complete");
+        // Use dataRef.current to always get the latest data, not stale closure
+        const freshData = dataRef.current;
+        if (!freshData) return;
+
+        await uploadDecksToDrive(freshData, driveFileId);
+        console.log("✅ Drive background sync complete");
 
         if (selectedDeck) {
           const known = selectedDeck.cards.filter(c => c.status === 2).length;
           const total = selectedDeck.cards.length;
           const percent = total > 0 ? Math.round((known / total) * 100) : 0;
           const gId = localStorage.getItem('g_id');
-          
+
           if (gId) {
             fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/progress/save`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                 google_id: gId, 
-                 deck_id: selectedDeck.deck_id || selectedDeck.title, 
-                 percent 
+              body: JSON.stringify({
+                 google_id: gId,
+                 deck_id: selectedDeck.deck_id || selectedDeck.title,
+                 percent
               })
             }).catch(e => console.warn("Supabase Progress Sync issue:", e));
           }
         }
       } catch (e) {
         console.error("Background sync failed:", e);
+      } finally {
+        setIsDriveSyncing(false);
       }
     }, 3000);
   };
@@ -330,7 +342,7 @@ function App() {
           </div>
         )}
 
-        {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
+        {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} isDriveSyncing={isDriveSyncing} />}
         {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} />}
       </div>
     </main>
