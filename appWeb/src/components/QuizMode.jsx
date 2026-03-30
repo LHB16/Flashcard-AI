@@ -236,12 +236,15 @@ const QuizMode = ({ deck, onBack }) => {
   return (
     <div className="animate-fade-in" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-        <button className="btn btn-glass" onClick={onBack}>
-          <ArrowLeft size={18} /> Go Back
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
+          <ArrowLeft size={18} /> Back
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>Question {currentIndex + 1} / {cards.length}</span>
-        </div>
+        <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>
+          Question {currentIndex + 1} / {cards.length}
+        </span>
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
+          Reset
+        </button>
       </div>
 
       {/* Progress Bar */}
