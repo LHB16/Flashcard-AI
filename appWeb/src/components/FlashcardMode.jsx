@@ -398,7 +398,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
     const pct = total > 0 ? Math.round((known / total) * 100) : 0;
 
     return (
-      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto', padding: '1rem 0' }}>
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', padding: '1rem 0' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%', marginBottom: '1.5rem' }}>
           <button className="btn btn-glass" onClick={onBack}>
             <ArrowLeft size={18} /> Select Deck
@@ -433,7 +433,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const cardBorder = getCardBorderStyle();
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '800px', margin: '0 auto', padding: '0 0 2rem 0', overflow: 'hidden' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', padding: '0 0 2rem 0', overflow: 'hidden' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '1rem', alignItems: 'center' }}>

@@ -236,7 +236,7 @@ const QuizMode = ({ deck, onBack }) => {
   }
 
   return (
-    <div className="animate-fade-in" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div className="animate-fade-in" style={{ width: '100%', margin: '0 auto', padding: '1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
           <ArrowLeft size={18} /> Back
@@ -263,7 +263,7 @@ const QuizMode = ({ deck, onBack }) => {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+      <div className="quiz-options-grid">
         {currentCard.options?.map((opt, i) => {
           const isCorrectAns = currentCard.correct_answers.some(ca => optMatchesAnswer(opt, ca));
 
