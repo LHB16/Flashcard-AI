@@ -316,6 +316,33 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
         )}
       </div>
 
+      {/* Hidden content for AI assistants and screen readers */}
+      <div
+        role="region"
+        aria-label="Quiz question and options"
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: 0,
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0,0,0,0)',
+          whiteSpace: 'nowrap',
+          border: 0
+        }}
+      >
+        <p>Question {currentIndex + 1}: {currentCard.question}</p>
+        <ul>
+          {currentCard.options?.map((opt, j) => (
+            <li key={j}>{opt}</li>
+          ))}
+        </ul>
+        {isAnswered && (
+          <p>Correct answer: {currentCard.correct_answers?.join(', ')}</p>
+        )}
+      </div>
+
       <div className="quiz-options-grid">
         {currentCard.options?.map((opt, i) => {
           const isCorrectAns = currentCard.correct_answers.some(ca => optMatchesAnswer(opt, ca));
