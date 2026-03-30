@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import FileLoader from './components/FileLoader';
 import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 
 function App() {
@@ -11,6 +11,47 @@ function App() {
   const [mode, setMode] = useState(null); // 'home', 'flashcard', 'quiz'
   const [theme, setTheme] = useState('dark');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [pinnedDecks, setPinnedDecks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch(e) { return []; }
+  });
+  const [sortOrder, setSortOrder] = useState(() => {
+    return localStorage.getItem('deck_sort_order') || 'none';
+  });
+
+  const togglePin = (deck_id, e) => {
+    e.stopPropagation();
+    if (!deck_id) return;
+    setPinnedDecks(prev => {
+      const newPinned = prev.includes(deck_id) ? prev.filter(id => id !== deck_id) : [...prev, deck_id];
+      localStorage.setItem('pinned_decks', JSON.stringify(newPinned));
+      return newPinned;
+    });
+  };
+
+  const toggleSort = () => {
+    setSortOrder(prev => {
+      const next = prev === 'none' ? 'asc' : prev === 'asc' ? 'desc' : 'none';
+      localStorage.setItem('deck_sort_order', next);
+      return next;
+    });
+  };
+
+  const processedDecks = React.useMemo(() => {
+    if (!data) return [];
+    let filtered = data.filter(deck => (deck.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    if (sortOrder === 'asc') {
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sortOrder === 'desc') {
+      filtered.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+    }
+
+    const pinned = filtered.filter(deck => deck.deck_id && pinnedDecks.includes(deck.deck_id));
+    const unpinned = filtered.filter(deck => !deck.deck_id || !pinnedDecks.includes(deck.deck_id));
+    
+    return [...pinned, ...unpinned];
+  }, [data, searchQuery, sortOrder, pinnedDecks]);
 
   // Google Sync state
   const [userLoggedIn, setUserLoggedIn] = useState(false);
@@ -258,32 +299,54 @@ function App() {
             </div>
           </header>
 
-          <div style={{ marginBottom: '2rem', position: 'relative', maxWidth: '500px' }}>
-            <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type="text"
-              placeholder="Search decks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
-            />
+          <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', maxWidth: '600px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                type="text"
+                placeholder="Search decks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+              />
+            </div>
+            <button className="btn btn-glass" onClick={toggleSort} style={{ padding: '0 1.5rem', borderRadius: '12px', minWidth: '100px', fontWeight: 'bold' }}>
+              {sortOrder === 'asc' ? 'A-Z ↓' : sortOrder === 'desc' ? 'Z-A ↑' : 'Sort'}
+            </button>
           </div>
 
           <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-            {data.filter(deck => (deck.name || '').toLowerCase().includes(searchQuery.toLowerCase())).map((deck, idx) => (
+            {processedDecks.map((deck, idx) => {
+              const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
+              return (
               <div
                 key={deck.deck_id || idx}
                 className="glass-panel glass-panel-hover"
-                style={{ padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+                style={{ padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative' }}
                 onClick={() => { setSelectedDeck(deck); setMode('home'); }}
               >
-                <BookOpen size={36} color="var(--primary)" style={{ marginBottom: '1.5rem' }} />
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
+                {deck.deck_id && (
+                  <button 
+                    onClick={(e) => togglePin(deck.deck_id, e)}
+                    style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex' }}
+                    className="btn-icon"
+                    title={isPinned ? "Unpin deck" : "Pin deck"}
+                  >
+                    {isPinned ? <Star size={24} color="#fbbf24" fill="#fbbf24" /> : <StarOff size={24} color="var(--text-muted)" />}
+                  </button>
+                )}
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <BookOpen size={36} color="var(--primary)" />
+                  {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center' }}>📌 Pinned</span>}
+                </div>
+                
+                <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: 'auto' }}>
                   Cards: <strong style={{ color: 'var(--primary)' }}>{deck.cards?.length || 0}</strong> items
                 </p>
               </div>
-            ))}
+            )})}
           </div>
           <footer style={{
             textAlign: 'center',
