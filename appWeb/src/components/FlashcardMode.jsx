@@ -280,12 +280,14 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
   const getCorrectAnswerText = (card) => {
     if (card.correct_answers && card.correct_answers.length > 0) {
-      const correctAns = card.correct_answers[0];
-      if (card.options) {
-        const optionMatched = card.options.find(opt => opt.startsWith(correctAns + ".") || opt === correctAns);
-        return optionMatched || correctAns;
-      }
-      return correctAns;
+      const results = card.correct_answers.map(correctAns => {
+        if (card.options) {
+          const optionMatched = card.options.find(opt => opt.startsWith(correctAns + ".") || opt === correctAns);
+          return optionMatched || correctAns;
+        }
+        return correctAns;
+      });
+      return results.join('\n');
     }
     return "—";
   };
@@ -459,7 +461,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             <div
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
             >
-              <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left' }}>
+              <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left', whiteSpace: 'pre-line' }}>
                 {getCorrectAnswerText(currentCard)}
               </p>
               {currentCard?.notes && (
