@@ -307,7 +307,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
         <div style={{ width: `${((currentIndex + 1) / cards.length) * 100}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease-out' }}></div>
       </div>
 
-      <div className="glass-panel" style={{ padding: '2.5rem', marginBottom: '2rem', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div className="glass-panel" aria-describedby="leo-ai-context" style={{ padding: '2.5rem', marginBottom: '2rem', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <h3 style={{ fontSize: '1.4rem', lineHeight: '1.6', fontWeight: 500 }}>{currentCard.question}</h3>
         {multiChoice && (
           <p style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.8rem', opacity: 0.9 }}>
@@ -318,8 +318,9 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
 
       {/* Hidden content for AI assistants and screen readers */}
       <div
+        id="leo-ai-context"
         role="region"
-        aria-label="Quiz question and options"
+        aria-label="Quiz context"
         style={{
           position: 'absolute',
           width: '1px',
@@ -328,17 +329,12 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           margin: '-1px',
           overflow: 'hidden',
           clip: 'rect(0,0,0,0)',
-          whiteSpace: 'nowrap',
+          whiteSpace: 'normal',
           border: 0
         }}
       >
-        <p>Question {currentIndex + 1} of {cards.length}: {currentCard.question}</p>
-        <p>Options:</p>
-        <ul>
-          {currentCard.options?.map((opt, i) => (
-            <li key={i}>{opt}</li>
-          ))}
-        </ul>
+        <p>Current Question ({currentIndex + 1} of {cards.length}): {currentCard.question}</p>
+        <p>The available options are: {currentCard.options?.map((opt, i) => `${String.fromCharCode(65 + i)}) ${opt}`).join(' | ')}</p>
         {isAnswered && (
           <p>Correct answer(s): {
             currentCard.options?.filter(opt =>
