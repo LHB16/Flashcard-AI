@@ -346,9 +346,26 @@ function App() {
                 </div>
                 
                 <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: 'auto' }}>
-                  Cards: <strong style={{ color: 'var(--primary)' }}>{deck.cards?.length || 0}</strong> items
-                </p>
+                {deck.cards && (
+                  <div style={{ marginTop: 'auto' }}>
+                    <div style={{ width: '100%', height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+                      <div 
+                        style={{ 
+                          width: `${(deck.cards.filter(c => c.status === 2).length / deck.cards.length) * 100}%`, 
+                          height: '100%', 
+                          background: 'var(--success)', 
+                          transition: 'width 0.3s ease' 
+                        }}
+                      ></div>
+                    </div>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Progress:</span>
+                      <strong style={{ color: 'var(--primary)' }}>
+                        {deck.cards.filter(c => c.status === 2).length} / {deck.cards.length}
+                      </strong>
+                    </p>
+                  </div>
+                )}
               </div>
             )})}
           </div>
@@ -428,7 +445,7 @@ function App() {
           )}
 
           {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
-          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} />}
+          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
         </div>
 
         <footer style={{

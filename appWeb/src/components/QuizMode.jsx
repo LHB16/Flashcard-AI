@@ -3,7 +3,7 @@ import { ArrowLeft, CheckCircle, XCircle, Square, CheckSquare } from 'lucide-rea
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-const QuizMode = ({ deck, onBack }) => {
+const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -17,7 +17,51 @@ const QuizMode = ({ deck, onBack }) => {
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [isLoading, setIsLoading] = useState(true);
 
+  const [isSyncingCards, setIsSyncingCards] = useState(false);
+  const syncCardsTimeoutRef = useRef(null);
   const syncTimeoutRef = useRef(null);
+
+  const triggerCardSync = useCallback(() => {
+    const googleId = localStorage.getItem('g_id');
+    const deckId = deck?.deck_id || deck?.title;
+    if (!googleId || !deckId) return;
+
+    if (syncCardsTimeoutRef.current) clearTimeout(syncCardsTimeoutRef.current);
+    setIsSyncingCards(true);
+
+    syncCardsTimeoutRef.current = setTimeout(() => {
+      const cardsMap = {};
+      let hasValidCards = false;
+
+      cards.forEach(c => {
+        if (c.card_id && c.status !== undefined) {
+          cardsMap[c.card_id] = c.status;
+          hasValidCards = true;
+        }
+      });
+
+      if (!hasValidCards) {
+        setIsSyncingCards(false);
+        return;
+      }
+
+      fetch(`${BACKEND_URL}/progress/cards/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          google_id: googleId,
+          deck_id: deckId,
+          cards_map: cardsMap
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Card sync failed");
+        console.log("✅ Quiz card progress synced");
+      })
+      .catch(e => console.warn("Supabase Card Progress Sync issue:", e))
+      .finally(() => setIsSyncingCards(false));
+    }, 2000);
+  }, [deck?.deck_id, cards]);
 
   const deckId = deck?.deck_id || deck?.title || 'unknown';
   const googleId = localStorage.getItem('g_id');
@@ -132,6 +176,10 @@ const QuizMode = ({ deck, onBack }) => {
     if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
+      // Mark card as learned
+      currentCard.status = 2;
+      if (onDeckModified) onDeckModified();
+      triggerCardSync();
     } else {
       newWrong = wrongCount + 1;
       setWrongCount(newWrong);
@@ -175,6 +223,10 @@ const QuizMode = ({ deck, onBack }) => {
     if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
+      // Mark card as learned
+      currentCard.status = 2;
+      if (onDeckModified) onDeckModified();
+      triggerCardSync();
     } else {
       newWrong = wrongCount + 1;
       setWrongCount(newWrong);
@@ -241,8 +293,9 @@ const QuizMode = ({ deck, onBack }) => {
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
           <ArrowLeft size={18} /> Back
         </button>
-        <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>
+        <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           Question {currentIndex + 1} / {cards.length}
+          {isSyncingCards && <span style={{ fontSize: '0.7rem', color: 'var(--primary)' }}>(syncing...)</span>}
         </span>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
           Reset
