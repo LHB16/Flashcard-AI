@@ -332,14 +332,19 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           border: 0
         }}
       >
-        <p>Question {currentIndex + 1}: {currentCard.question}</p>
+        <p>Question {currentIndex + 1} of {cards.length}: {currentCard.question}</p>
+        <p>Options:</p>
         <ul>
-          {currentCard.options?.map((opt, j) => (
-            <li key={j}>{opt}</li>
+          {currentCard.options?.map((opt, i) => (
+            <li key={i}>{opt}</li>
           ))}
         </ul>
         {isAnswered && (
-          <p>Correct answer: {currentCard.correct_answers?.join(', ')}</p>
+          <p>Correct answer(s): {
+            currentCard.options?.filter(opt =>
+              currentCard.correct_answers?.some(ca => optMatchesAnswer(opt, ca))
+            ).join(' | ')
+          }</p>
         )}
       </div>
 
