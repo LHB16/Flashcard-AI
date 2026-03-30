@@ -121,10 +121,8 @@ export const fetchDecksFromDrive = async () => {
         const progressRes = await fetch(`${BACKEND_URL}/progress/cards/${encodeURIComponent(targetId)}?google_id=${googleId}`);
         if (progressRes.ok) {
           const result = await progressRes.json();
-          if (result.data && result.data.length > 0) {
-            // Build a map of card_id -> status
-            const statusMap = {};
-            result.data.forEach(cp => { statusMap[cp.card_id] = cp.status; });
+          if (result.data && typeof result.data === 'object' && Object.keys(result.data).length > 0) {
+            const statusMap = result.data;
             
             // Loop through local deck cards and update status
             if (Array.isArray(deck.cards)) {

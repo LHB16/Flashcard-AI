@@ -103,40 +103,33 @@ router.get('/quiz/:deck_id', async (req, res) => {
     res.status(500).json({ error: 'Lỗi tải quiz session' });
   }
 });
-// ============ CARD PROGRESS (FLASHCARD) ============
+// ============ DECK PROGRESS (JSONB) ============
 
-// Lưu tiến độ từng thẻ (Bulk Upsert)
+// Lưu tiến độ tất cả thẻ của 1 deck (JSONB merge qua RPC)
 router.post('/cards/save', async (req, res) => {
-  const { google_id, cards } = req.body;
-  // cards = [{ deck_id, card_id, status }]
+  const { google_id, deck_id, cards_map } = req.body;
+  // cards_map = { "uuid1": 1, "uuid2": 2 }
 
-  if (!google_id || !cards || !Array.isArray(cards) || cards.length === 0) {
-    return res.status(400).json({ error: 'Missing google_id or valid cards array' });
+  if (!google_id || !deck_id || !cards_map || typeof cards_map !== 'object') {
+    return res.status(400).json({ error: 'Missing parameters or invalid cards_map' });
   }
 
-  // Chuẩn bị payload để upsert
-  const upsertData = cards.map(c => ({
-    google_id: google_id,
-    deck_id: c.deck_id,
-    card_id: c.card_id,
-    status: c.status,
-    updated_at: new Date().toISOString()
-  }));
-
   try {
-    const { data, error } = await supabase
-      .from('card_progress')
-      .upsert(upsertData, { onConflict: 'google_id,deck_id,card_id' });
+    const { data, error } = await supabase.rpc('merge_deck_progress', {
+      p_google_id: google_id,
+      p_deck_id: deck_id,
+      p_cards_status: cards_map
+    });
 
     if (error) throw error;
-    res.json({ message: 'Card progress bulk saved', count: cards.length });
+    res.json({ message: 'Deck progress merged successfully' });
   } catch (error) {
-    console.error('Save Card Progress Error:', error);
-    res.status(500).json({ error: 'Lỗi ghi card progress' });
+    console.error('Merge Deck Progress Error:', error);
+    res.status(500).json({ error: 'Lỗi ghi deck progress jsonb' });
   }
 });
 
-// Lấy tiến độ các thẻ của 1 deck
+// Lấy tiến độ thẻ của 1 deck
 router.get('/cards/:deck_id', async (req, res) => {
   const { deck_id } = req.params;
   const { google_id } = req.query;
@@ -145,18 +138,18 @@ router.get('/cards/:deck_id', async (req, res) => {
 
   try {
     const { data, error } = await supabase
-      .from('card_progress')
-      .select('card_id, status')
+      .from('deck_progress')
+      .select('cards_status')
       .eq('google_id', google_id)
-      .eq('deck_id', deck_id);
+      .eq('deck_id', deck_id)
+      .single();
 
-    if (error) throw error;
-    res.json({ data: data || [] }); // Return empty array if no rows
+    if (error && error.code !== 'PGRST116') throw error; // ignore no rows
+    res.json({ data: data ? data.cards_status : {} });
   } catch (error) {
-    console.error('Load Card Progress Error:', error);
-    res.status(500).json({ error: 'Lỗi tải card progress' });
+    console.error('Load Deck Progress Error:', error);
+    res.status(500).json({ error: 'Lỗi tải deck progress jsonb' });
   }
 });
 
 module.exports = router;
-

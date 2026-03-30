@@ -33,15 +33,17 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
     syncCardsTimeoutRef.current = setTimeout(() => {
       // Collect cards that have valid string/number status
-      const cardsToSync = cards
-        .filter(c => c.card_id && c.status !== undefined)
-        .map(c => ({
-          deck_id: deckId,
-          card_id: c.card_id,
-          status: c.status
-        }));
+      const cardsMap = {};
+      let hasValidCards = false;
 
-      if (cardsToSync.length === 0) {
+      cards.forEach(c => {
+        if (c.card_id && c.status !== undefined) {
+          cardsMap[c.card_id] = c.status;
+          hasValidCards = true;
+        }
+      });
+
+      if (!hasValidCards) {
         setIsSyncingCards(false);
         return;
       }
@@ -52,7 +54,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           google_id: googleId,
-          cards: cardsToSync
+          deck_id: deckId,
+          cards_map: cardsMap
         })
       })
       .then(res => {

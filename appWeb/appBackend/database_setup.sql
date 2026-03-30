@@ -35,12 +35,26 @@ CREATE TABLE IF NOT EXISTS quiz_sessions (
   PRIMARY KEY (google_id, deck_id)
 );
 
--- 4. Tạo bảng Card Progress lưu tiến độ từng thẻ flashcard
-CREATE TABLE IF NOT EXISTS card_progress (
+-- 4. Tạo bảng Deck Progress lưu tiến độ tất cả thẻ của 1 bộ bài bằng JSONB
+DROP TABLE IF EXISTS card_progress;
+
+CREATE TABLE IF NOT EXISTS deck_progress (
   google_id TEXT REFERENCES users(google_id) ON DELETE CASCADE,
   deck_id TEXT NOT NULL,
-  card_id TEXT NOT NULL,
-  status INTEGER DEFAULT 0,
+  cards_status JSONB DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  PRIMARY KEY (google_id, deck_id, card_id)
+  PRIMARY KEY (google_id, deck_id)
 );
+
+-- 5. Tạo Function (Stored Procedure) để tự động NỐI (Merge) JSONB thẻ học
+CREATE OR REPLACE FUNCTION merge_deck_progress(p_google_id TEXT, p_deck_id TEXT, p_cards_status JSONB)
+RETURNS void AS $$
+BEGIN
+  INSERT INTO deck_progress (google_id, deck_id, cards_status)
+  VALUES (p_google_id, p_deck_id, p_cards_status)
+  ON CONFLICT (google_id, deck_id)
+  DO UPDATE SET 
+    cards_status = deck_progress.cards_status || EXCLUDED.cards_status,
+    updated_at = NOW();
+END;
+$$ LANGUAGE plpgsql;
