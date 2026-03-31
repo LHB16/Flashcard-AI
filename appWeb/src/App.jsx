@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import FileLoader from './components/FileLoader';
 import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 
 function App() {
@@ -11,6 +11,7 @@ function App() {
   const [mode, setMode] = useState(null); // 'home', 'flashcard', 'quiz'
   const [theme, setTheme] = useState('dark');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
   const [pinnedDecks, setPinnedDecks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch(e) { return []; }
@@ -83,6 +84,16 @@ function App() {
         setIsSyncing(false);
       }
     );
+    // Tự động thu gọn header khi cuộn xuống
+    const handleScroll = () => {
+      if (window.scrollY > 80) {
+        setIsHeaderCollapsed(true);
+      } else if (window.scrollY < 10) {
+        setIsHeaderCollapsed(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const toggleTheme = () => {
@@ -291,35 +302,105 @@ function App() {
     return (
       <>
         {isSyncing && <div className="top-progress-bar"></div>}
-        <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-          <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-            <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Select a Deck</h1>
-              {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
-            </div>
-            <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14} /> Synced {displayName && `(${displayName})`}</span>}
-              <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-              <button className="btn btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={resetAll}>Go back</button>
-            </div>
-          </header>
+        <main className="app-main" style={{ padding: '1rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+          {/* Collapsible Container */}
+          <div style={{
+            position: 'sticky',
+            top: '0',
+            zIndex: 100,
+            background: 'var(--bg-main)',
+            paddingTop: '1rem',
+            marginBottom: '1.5rem',
+            borderBottom: isHeaderCollapsed ? '1px solid var(--glass-border)' : 'none',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}>
+            <header className="app-header" style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: isHeaderCollapsed ? '0.5rem' : '3rem', 
+              padding: isHeaderCollapsed ? '0.5rem 1rem' : '1rem 2rem', 
+              background: 'var(--glass-bg)', 
+              backdropFilter: 'blur(10px)', 
+              borderRadius: '16px', 
+              border: '1px solid var(--glass-border)',
+              maxHeight: isHeaderCollapsed ? '60px' : '200px',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              overflow: 'hidden'
+            }}>
+              <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <h1 className="text-gradient" style={{ 
+                  fontSize: isHeaderCollapsed ? '1.1rem' : '1.5rem', 
+                  margin: 0,
+                  transition: 'fontSize 0.4s'
+                }}>
+                  {isHeaderCollapsed ? 'Flashcard AI' : 'Select a Deck'}
+                </h1>
+                {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
+              </div>
+              <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                {userLoggedIn && !isHeaderCollapsed && (
+                  <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Cloud size={14} /> Synced {displayName && `(${displayName})`}
+                  </span>
+                )}
+                <button className="btn btn-glass btn-icon" onClick={toggleTheme} style={{ width: isHeaderCollapsed ? '32px' : '40px', height: isHeaderCollapsed ? '32px' : '40px' }}>
+                  {theme === 'dark' ? <Sun size={isHeaderCollapsed ? 14 : 18} /> : <Moon size={isHeaderCollapsed ? 14 : 18} />}
+                </button>
+                {!isHeaderCollapsed && (
+                  <button className="btn btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={resetAll}>Go back</button>
+                )}
+              </div>
+            </header>
 
-          <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', maxWidth: '600px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-              <input
-                type="text"
-                placeholder="Search decks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
-              />
+            <div style={{ 
+              marginBottom: '1rem', 
+              display: 'flex', 
+              gap: '1rem', 
+              maxWidth: '600px',
+              maxHeight: isHeaderCollapsed ? '0' : '100px',
+              opacity: isHeaderCollapsed ? 0 : 1,
+              pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
+              overflow: 'hidden',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  placeholder="Search decks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+                />
+              </div>
+              <button className="btn btn-glass" onClick={toggleSort} style={{ padding: '0 1.5rem', borderRadius: '12px', minWidth: '100px', fontWeight: 'bold' }}>
+                {sortOrder === 'asc' ? 'A-Z ↓' : sortOrder === 'desc' ? 'Z-A ↑' : 'Sort'}
+              </button>
             </div>
-            <button className="btn btn-glass" onClick={toggleSort} style={{ padding: '0 1.5rem', borderRadius: '12px', minWidth: '100px', fontWeight: 'bold' }}>
-              {sortOrder === 'asc' ? 'A-Z ↓' : sortOrder === 'desc' ? 'Z-A ↑' : 'Sort'}
-            </button>
+
+            {/* Toggle Button Container */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+              <button 
+                onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                className="btn-glass"
+                style={{
+                  width: '36px',
+                  height: '24px',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid var(--glass-border)',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  background: 'var(--glass-bg)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+              >
+                {isHeaderCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+              </button>
+            </div>
           </div>
 
           <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
@@ -394,25 +475,76 @@ function App() {
     <>
       {isSyncing && <div className="top-progress-bar"></div>}
       <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-        <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', padding: '1rem 2rem', background: 'var(--glass-bg)', backdropFilter: 'blur(10px)', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+        <header className="app-header" style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: isHeaderCollapsed ? '1rem' : '2rem', 
+          padding: isHeaderCollapsed ? '0.5rem 1rem' : '1rem 2rem', 
+          background: 'var(--glass-bg)', 
+          backdropFilter: 'blur(10px)', 
+          borderRadius: '16px', 
+          border: '1px solid var(--glass-border)',
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          maxHeight: isHeaderCollapsed ? '60px' : '150px',
+          overflow: 'hidden',
+          position: 'sticky',
+          top: '1rem',
+          zIndex: 100
+        }}>
           <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Flashcard AI</h1>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', borderLeft: '1px solid var(--glass-border)', paddingLeft: '1rem' }}>
-              {selectedDeck?.name || 'Unnamed Deck'} ({selectedDeck?.cards?.length || 0} cards)
-            </span>
+            <h1 className="text-gradient" style={{ 
+              fontSize: isHeaderCollapsed ? '1.1rem' : '1.5rem', 
+              margin: 0,
+              transition: 'fontSize 0.4s'
+            }}>
+              Flashcard AI
+            </h1>
+            {!isHeaderCollapsed && (
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', borderLeft: '1px solid var(--glass-border)', paddingLeft: '1rem' }}>
+                {selectedDeck?.name || 'Unnamed Deck'} ({selectedDeck?.cards?.length || 0} cards)
+              </span>
+            )}
           </div>
           <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}</span>}
-            <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {userLoggedIn && !isHeaderCollapsed && (
+              <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
+              </span>
+            )}
+            <button className="btn btn-glass btn-icon" onClick={toggleTheme} style={{ width: isHeaderCollapsed ? '32px' : '40px', height: isHeaderCollapsed ? '32px' : '40px' }}>
+              {theme === 'dark' ? <Sun size={isHeaderCollapsed ? 14 : 18} /> : <Moon size={isHeaderCollapsed ? 14 : 18} />}
             </button>
-            {data && data.length > 1 && (
+            {data && data.length > 1 && !isHeaderCollapsed && (
               <button className="btn btn-glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => { setSelectedDeck(null); setMode(null); }}>
                 Switch Deck
               </button>
             )}
           </div>
         </header>
+
+        {/* Floating Toggle Tab for mode selection screen */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '-0.5rem', marginBottom: '1.5rem', position: 'relative', zIndex: 99 }}>
+          <button 
+            onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+            className="btn-glass"
+            style={{
+              width: '36px',
+              height: '24px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid var(--glass-border)',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              background: 'var(--glass-bg)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            }}
+          >
+            {isHeaderCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          </button>
+        </div>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {mode === 'home' && (
