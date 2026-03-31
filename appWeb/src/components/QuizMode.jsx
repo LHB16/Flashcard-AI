@@ -18,6 +18,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [focusedIdx, setFocusedIdx] = useState(-1);
 
+  const currentCard = cards[currentIndex];
   const syncTimeoutRef = useRef(null);
 
   const deckId = deck?.deck_id || deck?.title || 'unknown';
@@ -127,7 +128,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
+      if (!currentCard || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
       
       const options = currentCard?.options || [];
       const showSubmit = multiChoice && !isAnswered && selectedMulti.length > 0;
@@ -348,7 +349,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     );
   }
 
-  const currentCard = cards[currentIndex];
   const multiChoice = isMultiChoice(currentCard);
   const correctCount = currentCard?.correct_answers?.length || 1;
   const progressPct = cards.length > 0 ? Math.round((answeredCount / cards.length) * 100) : 0;
