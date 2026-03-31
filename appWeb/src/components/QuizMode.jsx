@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle, XCircle, Square, CheckSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2 } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -122,8 +122,14 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     setCurrentIndex(prev => prev < cards.length - 1 ? prev + 1 : 0);
   };
 
+  const goToFirstUnanswered = () => {
+    const idx = cards.findIndex((_, i) => !answers[i]);
+    if (idx !== -1) setCurrentIndex(idx);
+  };
+
   // ============ ANSWER HANDLERS ============
   const answeredCount = Object.keys(answers).length;
+  const firstUnansweredIdx = cards.findIndex((_, i) => !answers[i]);
 
   const checkFinished = (newAnswers) => {
     if (Object.keys(newAnswers).length >= cards.length) {
@@ -299,9 +305,16 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           </button>
         </div>
 
-        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
-          Reset
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {firstUnansweredIdx !== -1 && (
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }} onClick={goToFirstUnanswered} title={`Go to question ${firstUnansweredIdx + 1}`}>
+              <SkipForward size={16} /> #{firstUnansweredIdx + 1}
+            </button>
+          )}
+          <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
+            Reset
+          </button>
+        </div>
       </div>
 
       {/* Progress Bar — based on answered count */}
