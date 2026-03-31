@@ -16,6 +16,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [isLoading, setIsLoading] = useState(true);
+  const [focusedIdx, setFocusedIdx] = useState(-1);
 
   const syncTimeoutRef = useRef(null);
 
@@ -87,6 +88,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       setSelectedAnswer(null);
       setSelectedMulti([]);
     }
+    setFocusedIdx(-1);
   }, [currentIndex, answers]);
 
   // Debounced save to backend
@@ -125,14 +127,34 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Don't trigger if user is typing in some input layer (though likely none here)
       if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
-      if (e.key === 'ArrowLeft') goLeft();
-      if (e.key === 'ArrowRight') goRight();
+      
+      const options = currentCard?.options || [];
+      const showSubmit = multiChoice && !isAnswered && selectedMulti.length > 0;
+      const totalFocusable = options.length + (showSubmit ? 1 : 0);
+
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        setFocusedIdx(prev => (prev + 1) % totalFocusable);
+      } else if (e.key === ' ' || e.key === 'Spacebar') {
+        if (focusedIdx >= 0 && focusedIdx < options.length) {
+          e.preventDefault();
+          const opt = options[focusedIdx];
+          if (multiChoice) handleToggleMulti(opt);
+          else handleSelectOption(focusedIdx, opt);
+        } else if (focusedIdx === options.length && showSubmit) {
+          e.preventDefault();
+          handleSubmitMulti();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        goLeft();
+      } else if (e.key === 'ArrowRight') {
+        goRight();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goLeft, goRight]);
+  }, [goLeft, goRight, focusedIdx, currentCard, multiChoice, isAnswered, selectedMulti, handleToggleMulti, handleSelectOption, handleSubmitMulti]);
 
   // Touch Swipe Navigation — using refs to avoid stale closures
   const containerRef = useRef(null);
@@ -531,10 +553,12 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                   textAlign: 'left',
                   background: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.2)' :
                               isWrongPick ? 'rgba(239, 68, 68, 0.2)' :
-                              isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.15)' : undefined,
+                              isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.15)' : 
+                              focusedIdx === i ? 'rgba(139, 92, 246, 0.08)' : undefined,
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
                                isWrongPick ? 'rgba(239, 68, 68, 0.5)' :
-                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : undefined
+                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : 
+                               focusedIdx === i ? 'rgba(139, 92, 246, 0.4)' : undefined
                 }}
                 onClick={() => handleToggleMulti(opt)}
                 disabled={isAnswered}
@@ -553,6 +577,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                   </div>
                   {isAnswered && isCorrectAns && <CheckCircle size={20} color="var(--success)" />}
                   {isWrongPick && <XCircle size={20} color="var(--danger)" />}
+                  {focusedIdx === i && <span style={{ fontSize: '1.2rem', marginLeft: '8px', animation: 'bounce-x 0.8s infinite' }}>👈</span>}
                 </div>
               </button>
             );
@@ -567,9 +592,11 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                   padding: '1.2rem 1.5rem',
                   textAlign: 'left',
                   background: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.2)' :
-                              isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.2)' : undefined,
+                              isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.2)' : 
+                              focusedIdx === i ? 'rgba(139, 92, 246, 0.08)' : undefined,
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
-                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined
+                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : 
+                               focusedIdx === i ? 'rgba(139, 92, 246, 0.4)' : undefined
                 }}
                 onClick={() => handleSelectOption(i, opt)}
                 disabled={isAnswered}
@@ -578,6 +605,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                   <span>{opt}</span>
                   {isAnswered && isCorrectAns && <CheckCircle size={20} color="var(--success)" />}
                   {isAnswered && selectedAnswer === opt && !isCorrectAns && <XCircle size={20} color="var(--danger)" />}
+                  {focusedIdx === i && <span style={{ fontSize: '1.2rem', marginLeft: '8px', animation: 'bounce-x 0.8s infinite' }}>👈</span>}
                 </div>
               </button>
             );
@@ -590,10 +618,18 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
         <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
           <button
             className="btn btn-primary"
-            style={{ padding: '0.8rem 2.5rem', fontSize: '1.05rem', fontWeight: 700 }}
+            style={{ 
+              padding: '0.8rem 2.5rem', 
+              fontSize: '1.05rem', 
+              fontWeight: 700,
+              boxShadow: focusedIdx === currentCard.options.length ? '0 0 15px var(--primary)' : 'none',
+              transform: focusedIdx === currentCard.options.length ? 'scale(1.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
             onClick={handleSubmitMulti}
           >
             Submit ({selectedMulti.length}/{correctCount})
+            {focusedIdx === currentCard.options.length && <span style={{ fontSize: '1.2rem', marginLeft: '8px', animation: 'bounce-x 0.8s infinite' }}>👈</span>}
           </button>
         </div>
       )}
