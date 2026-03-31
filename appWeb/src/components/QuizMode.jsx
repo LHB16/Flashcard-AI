@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, CheckCircle, XCircle, Square, CheckSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle, XCircle, Square, CheckSquare, Loader2 } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [farthestIndex, setFarthestIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [selectedMulti, setSelectedMulti] = useState([]);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -84,7 +83,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     return card?.question_type === 'multiple_choice' && card?.correct_answers?.length > 1;
   };
 
-  // Tải session cũ từ Backend khi mở quiz
+  // Load saved session from Backend
   useEffect(() => {
     if (!googleId || !deckId) {
       setIsLoading(false);
@@ -94,37 +93,38 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     fetch(`${BACKEND_URL}/progress/quiz/${encodeURIComponent(deckId)}?google_id=${googleId}`)
       .then(res => res.json())
       .then(result => {
-        if (result.data && result.data.current_index < cards.length) {
-          const loadedIndex = result.data.current_index + 1;
-          setCurrentIndex(loadedIndex);
-          setFarthestIndex(loadedIndex);
-          setAnswers(result.data.answers || {});
+        if (result.data) {
+          const loadedAnswers = result.data.answers || {};
+          const loadedIndex = result.data.current_index ?? 0;
+          setCurrentIndex(loadedIndex < cards.length ? loadedIndex : 0);
+          setAnswers(loadedAnswers);
           setScore(result.data.correct_count || 0);
           setWrongCount(result.data.wrong_count || 0);
           setSessionId(result.data.session_id || sessionId);
           setStartedAt(result.data.started_at || startedAt);
 
-          if (loadedIndex >= cards.length) {
+          // Check if all questions already answered
+          if (Object.keys(loadedAnswers).length >= cards.length) {
             setIsFinished(true);
           }
-          console.log(`📚 Quiz resumed from question ${loadedIndex + 1}`);
+          console.log(`📚 Quiz resumed at question ${loadedIndex + 1}, ${Object.keys(loadedAnswers).length}/${cards.length} answered`);
         }
       })
       .catch(e => console.warn("Load quiz session failed:", e))
       .finally(() => setIsLoading(false));
   }, [googleId, deckId]);
 
-  // Update UI choices when viewing past questions or returning to current
+  // Restore UI state when navigating between questions
   useEffect(() => {
-    const historicalAnswer = answers[currentIndex];
-    if (historicalAnswer) {
-      setIsAnswered(historicalAnswer.correct !== undefined);
-      if (Array.isArray(historicalAnswer.selected)) {
-         setSelectedMulti(historicalAnswer.selected);
-         setSelectedAnswer(null);
+    const savedAnswer = answers[currentIndex];
+    if (savedAnswer) {
+      setIsAnswered(true);
+      if (Array.isArray(savedAnswer.selected)) {
+        setSelectedMulti(savedAnswer.selected);
+        setSelectedAnswer(null);
       } else {
-         setSelectedAnswer(historicalAnswer.selected);
-         setSelectedMulti([]);
+        setSelectedAnswer(savedAnswer.selected);
+        setSelectedMulti([]);
       }
     } else {
       setIsAnswered(false);
@@ -157,28 +157,25 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     }, 2000);
   }, [googleId, deckId, sessionId, cards, currentIndex, answers, score, wrongCount, startedAt]);
 
-  if (isLoading) {
-    return (
-      <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center' }}>
-        <h3>⏳ Loading quiz session...</h3>
-      </div>
-    );
-  }
+  // ============ NAVIGATION ============
+  const goLeft = () => {
+    setCurrentIndex(prev => prev > 0 ? prev - 1 : cards.length - 1);
+  };
 
-  if (!cards || cards.length === 0) {
-    return (
-      <div className="glass-panel animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
-        <h3>This deck has no cards!</h3>
-        <button className="btn btn-glass" onClick={onBack} style={{ marginTop: '1rem' }}>Go Back</button>
-      </div>
-    );
-  }
+  const goRight = () => {
+    setCurrentIndex(prev => prev < cards.length - 1 ? prev + 1 : 0);
+  };
 
-  const currentCard = cards[currentIndex];
-  const multiChoice = isMultiChoice(currentCard);
-  const correctCount = currentCard?.correct_answers?.length || 1;
+  // ============ ANSWER HANDLERS ============
+  const answeredCount = Object.keys(answers).length;
 
-  // --- Single choice handler (original logic) ---
+  const checkFinished = (newAnswers) => {
+    if (Object.keys(newAnswers).length >= cards.length) {
+      setTimeout(() => setIsFinished(true), 800);
+    }
+  };
+
+  // --- Single choice handler ---
   const handleSelectOption = (index, opt) => {
     if (isAnswered) return;
 
@@ -198,7 +195,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
-      // Mark card as learned
       currentCard.status = 2;
       if (onDeckModified) onDeckModified();
       triggerCardSync();
@@ -213,6 +209,8 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       wrong_count: newWrong,
       current_index: currentIndex
     });
+
+    checkFinished(newAnswers);
   };
 
   // --- Multiple choice: toggle selection ---
@@ -245,7 +243,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
-      // Mark card as learned
       currentCard.status = 2;
       if (onDeckModified) onDeckModified();
       triggerCardSync();
@@ -260,43 +257,14 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       wrong_count: newWrong,
       current_index: currentIndex
     });
+
+    checkFinished(newAnswers);
   };
 
-  const handleNext = () => {
-    if (currentIndex < cards.length - 1) {
-      const nextIdx = currentIndex + 1;
-      setCurrentIndex(nextIdx);
-      if (nextIdx > farthestIndex) setFarthestIndex(nextIdx);
-    } else {
-      setIsFinished(true);
-    }
-  };
-
-  const isReviewing = currentIndex < farthestIndex;
-
-  const handleReviewPrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-    }
-  };
-
-  const handleReviewNext = () => {
-    if (isReviewing) {
-      setCurrentIndex(farthestIndex);
-    } else if (!isAnswered) {
-      // Bỏ qua (Skip)
-      const nextIdx = currentIndex + 1;
-      if (nextIdx > farthestIndex) setFarthestIndex(nextIdx);
-      setCurrentIndex(nextIdx);
-      saveToBackend({ current_index: currentIndex }); 
-      if (nextIdx >= cards.length) setIsFinished(true);
-    }
-  };
-
+  // ============ RESET ============
   const resetQuiz = () => {
     if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
       setCurrentIndex(0);
-      setFarthestIndex(0);
       setSelectedAnswer(null);
       setSelectedMulti([]);
       setIsAnswered(false);
@@ -306,6 +274,29 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       setAnswers({});
     }
   };
+
+  // ============ RENDER ============
+  if (isLoading) {
+    return (
+      <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center' }}>
+        <h3>⏳ Loading quiz session...</h3>
+      </div>
+    );
+  }
+
+  if (!cards || cards.length === 0) {
+    return (
+      <div className="glass-panel animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
+        <h3>This deck has no cards!</h3>
+        <button className="btn btn-glass" onClick={onBack} style={{ marginTop: '1rem' }}>Go Back</button>
+      </div>
+    );
+  }
+
+  const currentCard = cards[currentIndex];
+  const multiChoice = isMultiChoice(currentCard);
+  const correctCount = currentCard?.correct_answers?.length || 1;
+  const progressPct = cards.length > 0 ? Math.round((answeredCount / cards.length) * 100) : 0;
 
   if (isFinished) {
     const pct = cards.length > 0 ? Math.round((score / cards.length) * 100) : 0;
@@ -332,45 +323,37 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   return (
     <div className="animate-fade-in" style={{ width: '100%', margin: '0 auto', padding: '1rem' }}>
       {/* Top Header Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', alignItems: 'center' }}>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
           <ArrowLeft size={18} /> Back
         </button>
         
-        <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {currentIndex + 1} / {cards.length}
-          {isSyncingCards && <Loader2 size={16} color="var(--primary)" className="spin" />}
-        </span>
-        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goLeft} title="Previous question">
+            <ChevronLeft size={20} />
+          </button>
+          
+          <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: '80px', justifyContent: 'center' }}>
+            {currentIndex + 1} / {cards.length}
+            {isSyncingCards && <Loader2 size={14} color="var(--primary)" className="spin" />}
+          </span>
+          
+          <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goRight} title="Next question">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
           Reset
         </button>
       </div>
 
-      {/* Navigation Row */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {currentIndex > 0 && (
-          <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewPrev} title="Review previous">
-            ←
-          </button>
-        )}
-
-        {(!isAnswered && !isReviewing) && (
-          <button className="btn btn-glass" style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Skip question">
-            Skip →
-          </button>
-        )}
-
-        {isReviewing && (
-          <button className="btn btn-glass" style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Return to current question">
-            Return ⤏
-          </button>
-        )}
+      {/* Progress Bar — based on answered count */}
+      <div style={{ width: '100%', height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.4rem' }}>
+        <div style={{ width: `${progressPct}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease-out' }}></div>
       </div>
-
-      {/* Progress Bar */}
-      <div style={{ width: '100%', height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '2rem' }}>
-        <div style={{ width: `${((currentIndex + 1) / cards.length) * 100}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease-out' }}></div>
+      <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+        {answeredCount} / {cards.length} answered ({progressPct}%)
       </div>
 
       <div className="glass-panel" aria-describedby="leo-ai-context" style={{ padding: '2.5rem', marginBottom: '2rem', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -432,8 +415,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.15)' : undefined,
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
                                isWrongPick ? 'rgba(239, 68, 68, 0.5)' :
-                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : undefined,
-                  opacity: (isReviewing && isAnswered) ? 0.8 : 1
+                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : undefined
                 }}
                 onClick={() => handleToggleMulti(opt)}
                 disabled={isAnswered}
@@ -456,7 +438,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
               </button>
             );
           } else {
-            // --- SINGLE CHOICE UI (original) ---
+            // --- SINGLE CHOICE UI ---
             return (
               <button
                 key={i}
@@ -468,8 +450,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                   background: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.2)' :
                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.2)' : undefined,
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
-                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined,
-                  opacity: (isReviewing && isAnswered) ? 0.8 : 1
+                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined
                 }}
                 onClick={() => handleSelectOption(i, opt)}
                 disabled={isAnswered}
@@ -494,14 +475,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
             onClick={handleSubmitMulti}
           >
             Submit ({selectedMulti.length}/{correctCount})
-          </button>
-        </div>
-      )}
-
-      {isAnswered && (
-        <div className="animate-fade-in" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
-          <button className="btn btn-primary" onClick={handleNext}>
-            {currentIndex === cards.length - 1 ? 'Finish' : 'Next Question'}
           </button>
         </div>
       )}
