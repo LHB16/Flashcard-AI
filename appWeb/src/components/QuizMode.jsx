@@ -134,59 +134,68 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [goLeft, goRight]);
 
-  // Touch Swipe Navigation
+  // Touch Swipe Navigation — using refs to avoid stale closures
   const containerRef = useRef(null);
-  const [touchInfo, setTouchInfo] = useState({ active: false, startX: 0, startY: 0, currentX: 0, currentY: 0 });
+  const touchRef = useRef({ active: false, startX: 0, startY: 0, currentX: 0, currentY: 0, lockedDirection: null });
+  const [swipeRender, setSwipeRender] = useState(0); // trigger re-render for indicator
 
   const handleTouchStart = useCallback((e) => {
-    setTouchInfo({
+    const t = e.touches[0];
+    touchRef.current = {
       active: true,
-      startX: e.touches[0].clientX,
-      startY: e.touches[0].clientY,
-      currentX: e.touches[0].clientX,
-      currentY: e.touches[0].clientY,
-    });
+      startX: t.clientX,
+      startY: t.clientY,
+      currentX: t.clientX,
+      currentY: t.clientY,
+      lockedDirection: null, // not locked yet
+    };
+    setSwipeRender(v => v + 1);
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    setTouchInfo(prev => {
-      if (!prev.active) return prev;
-      
-      const diffX = prev.currentX - prev.startX;
-      const diffY = prev.currentY - prev.startY;
-      
-      // Threshold to trigger swipe (60px)
-      if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX > 0) goLeft();  // Swipe Right -> Previous
-        else goRight();           // Swipe Left -> Next
+    const info = touchRef.current;
+    if (!info.active) return;
+
+    const diffX = info.currentX - info.startX;
+
+    // Only trigger if direction was locked (meaning user swiped far enough at least once)
+    if (info.lockedDirection) {
+      // Check current distance still exceeds threshold in the locked direction
+      const lockRight = info.lockedDirection === 'right';
+      if ((lockRight && diffX > 60) || (!lockRight && diffX < -60)) {
+        if (lockRight) goLeft();   // Swiped right -> go to previous
+        else goRight();            // Swiped left -> go to next
       }
-      
-      return { active: false, startX: 0, startY: 0, currentX: 0, currentY: 0 };
-    });
+    }
+
+    touchRef.current = { active: false, startX: 0, startY: 0, currentX: 0, currentY: 0, lockedDirection: null };
+    setSwipeRender(v => v + 1);
   }, [goLeft, goRight]);
 
   // Use a passive: false event listener to prevent vertical scrolling while swiping horizontally
   useEffect(() => {
     const handleTouchMoveNative = (e) => {
-      setTouchInfo(prev => {
-        if (!prev.active) return prev;
-        
-        const currentX = e.touches[0].clientX;
-        const currentY = e.touches[0].clientY;
-        const dx = Math.abs(currentX - prev.startX);
-        const dy = Math.abs(currentY - prev.startY);
-        
-        // If we are mostly swiping horizontally, prevent default vertical scrolling
-        if (dx > dy && dx > 10) {
-          if (e.cancelable) e.preventDefault();
-        }
-        
-        return {
-          ...prev,
-          currentX,
-          currentY,
-        };
-      });
+      const info = touchRef.current;
+      if (!info.active) return;
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const dx = Math.abs(currentX - info.startX);
+      const dy = Math.abs(currentY - info.startY);
+
+      // If we are mostly swiping horizontally, prevent default vertical scrolling
+      if (dx > dy && dx > 10) {
+        if (e.cancelable) e.preventDefault();
+      }
+
+      // Lock direction on first significant horizontal move (>= 20px)
+      if (!info.lockedDirection && dx > 20 && dx > dy) {
+        info.lockedDirection = (currentX - info.startX) > 0 ? 'right' : 'left';
+      }
+
+      info.currentX = currentX;
+      info.currentY = currentY;
+      setSwipeRender(v => v + 1); // trigger re-render for UI
     };
 
     const el = containerRef.current;
@@ -370,31 +379,35 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       onTouchCancel={handleTouchEnd}
     >
       {/* Fixed Swipe Indicator */}
-      {touchInfo.active && Math.abs(touchInfo.currentX - touchInfo.startX) > 20 && (() => {
-        const isSwipingRight = touchInfo.currentX - touchInfo.startX > 0;
+      {(() => {
+        const info = touchRef.current;
+        if (!info.active || !info.lockedDirection) return null;
+        const diffX = Math.abs(info.currentX - info.startX);
+        const isRight = info.lockedDirection === 'right';
+        const activated = diffX > 60;
         return (
           <div style={{
             position: 'fixed',
             top: '50%',
-            left: isSwipingRight ? '1.5rem' : 'auto',
-            right: !isSwipingRight ? '1.5rem' : 'auto',
+            left: isRight ? '1.5rem' : 'auto',
+            right: !isRight ? '1.5rem' : 'auto',
             width: '64px',
             height: '64px',
             borderRadius: '50%',
-            background: Math.abs(touchInfo.currentX - touchInfo.startX) > 60 ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.5)',
+            background: activated ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)',
             color: 'white',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transform: 'translateY(-50%)',
             zIndex: 9999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-            transition: 'background 0.2s',
+            boxShadow: activated ? '0 8px 32px rgba(139, 92, 246, 0.5)' : '0 4px 16px rgba(0,0,0,0.3)',
+            transition: 'background 0.15s, box-shadow 0.15s',
             pointerEvents: 'none'
           }}>
-            {isSwipingRight 
-              ? <ChevronLeft size={36} /> // Swiping Right shows Left Chevron (Previous)
-              : <ChevronRight size={36} /> // Swiping Left shows Right Chevron (Next)
+            {isRight
+              ? <ChevronLeft size={36} />
+              : <ChevronRight size={36} />
             }
           </div>
         );
