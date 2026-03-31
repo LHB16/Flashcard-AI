@@ -524,7 +524,7 @@ function App() {
                 transition: 'all 0.4s'
               }}
             >
-              {isHeaderCollapsed ? <ChevronDown size size={18} /> : <ChevronUp size={18} />}
+              {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
             </button>
           </div>
         </div>
