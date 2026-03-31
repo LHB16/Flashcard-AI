@@ -356,17 +356,17 @@ function App() {
                     style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                   />
                 </div>
-                <button className="btn btn-glass" onClick={toggleSort} style={{ padding: '0 1.5rem', borderRadius: '12px', minWidth: '100px', fontWeight: 'bold' }}>
+                <button className="btn btn-glass" onClick={toggleSort} style={{ padding: '0 1.5rem', borderRadius: '12px', minWidth: '110px', height: '100%', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {sortOrder === 'asc' ? 'A-Z ↓' : sortOrder === 'desc' ? 'Z-A ↑' : 'Sort'}
                 </button>
               </div>
             </div>
 
-            {/* Toggle Button as a Tab - Centered and Dynamic In/Out position */}
+            {/* Toggle Button as a Tab - Rectangular with 4 rounded corners and higher transparency */}
             <div style={{ 
               display: 'flex', 
               justifyContent: 'center', 
-              marginTop: isHeaderCollapsed ? '0' : '-44px',
+              marginTop: isHeaderCollapsed ? '0' : '-32px',
               zIndex: 102,
               position: 'relative',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -375,20 +375,18 @@ function App() {
                 onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
                 className="btn-glass"
                 style={{
-                  width: '48px',
+                  width: '52px',
                   height: '24px',
-                  borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '12px 12px 0 0',
+                  borderRadius: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: '1px solid var(--glass-border)',
-                  borderTop: isHeaderCollapsed ? 'none' : '1px solid var(--glass-border)',
-                  borderBottom: isHeaderCollapsed ? '1px solid var(--glass-border)' : 'none',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
-                  background: 'var(--glass-bg)',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: isHeaderCollapsed ? '0 4px 10px rgba(0,0,0,0.2)' : 'none',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: isHeaderCollapsed ? '0 4px 15px rgba(0,0,0,0.1)' : 'none',
                   transition: 'all 0.4s'
                 }}
               >
@@ -523,7 +521,7 @@ function App() {
           <div style={{ 
             display: 'flex', 
             justifyContent: 'center', 
-            marginTop: isHeaderCollapsed ? '0' : '-44px',
+            marginTop: isHeaderCollapsed ? '0' : '-32px',
             zIndex: 102,
             position: 'relative',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -532,20 +530,18 @@ function App() {
               onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
               className="btn-glass"
               style={{
-                width: '48px',
+                width: '52px',
                 height: '24px',
-                borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '12px 12px 0 0',
+                borderRadius: '12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid var(--glass-border)',
-                borderTop: isHeaderCollapsed ? 'none' : '1px solid var(--glass-border)',
-                borderBottom: isHeaderCollapsed ? '1px solid var(--glass-border)' : 'none',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 color: 'var(--text-muted)',
                 cursor: 'pointer',
-                background: 'var(--glass-bg)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: isHeaderCollapsed ? '0 4px 10px rgba(0,0,0,0.2)' : 'none',
+                background: 'rgba(255, 255, 255, 0.03)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: isHeaderCollapsed ? '0 4px 15px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.4s'
               }}
             >
