@@ -4,6 +4,7 @@ import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
 import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
+import Footer from './components/Footer';
 
 function App() {
   const [data, setData] = useState(null);
@@ -278,18 +279,7 @@ function App() {
               </>
             )}
           </div>
-          <footer style={{
-            textAlign: 'center',
-            padding: '1rem',
-            fontSize: '0.8rem',
-            color: 'var(--text-muted)',
-            borderTop: '1px solid var(--glass-border)',
-            marginTop: 'auto'
-          }}>
-            <a href="/privacy" target="_blank" style={{ color: 'var(--text-muted)' }}>
-              Privacy Policy
-            </a>
-          </footer>
+          <Footer />
         </main>
       </>
     );
@@ -445,18 +435,7 @@ function App() {
               </div>
             )})}
           </div>
-          <footer style={{
-            textAlign: 'center',
-            padding: '1rem',
-            fontSize: '0.8rem',
-            color: 'var(--text-muted)',
-            borderTop: '1px solid var(--glass-border)',
-            marginTop: 'auto'
-          }}>
-            <a href="/privacy" target="_blank" style={{ color: 'var(--text-muted)' }}>
-              Privacy Policy
-            </a>
-          </footer>
+          <Footer />
         </main>
       </>
     )
@@ -545,7 +524,7 @@ function App() {
                 transition: 'all 0.4s'
               }}
             >
-              {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+              {isHeaderCollapsed ? <ChevronDown size size={18} /> : <ChevronUp size={18} />}
             </button>
           </div>
         </div>
@@ -587,18 +566,7 @@ function App() {
           {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
         </div>
 
-        <footer style={{
-          textAlign: 'center',
-          padding: '1rem',
-          fontSize: '0.8rem',
-          color: 'var(--text-muted)',
-          borderTop: '1px solid var(--glass-border)',
-          marginTop: 'auto'
-        }}>
-          <a href="/privacy" target="_blank" style={{ color: 'var(--text-muted)' }}>
-            Privacy Policy
-          </a>
-        </footer>
+        <Footer />
       </main>
     </>
   );
