@@ -335,7 +335,7 @@ function App() {
                   <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Select a Deck</h1>
                   {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
                 </div>
-                <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginRight: '2.5rem' }}>
+                <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   {userLoggedIn && (
                     <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Cloud size={14} /> Synced {displayName && `(${displayName})`}
@@ -347,30 +347,30 @@ function App() {
                   <button className="btn btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={resetAll}>Go back</button>
                 </div>
 
-                {/* Toggle Button as a Tab integrated into Header */}
+                {/* Toggle Button as a Tab integrated into Bottom Right of Header */}
                 <button 
                   onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
                   className="btn-glass"
                   style={{
                     position: 'absolute',
-                    right: '-1px',
-                    top: isHeaderCollapsed ? '0' : '-1px',
-                    width: '40px',
-                    height: '32px',
-                    borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '0 16px 0 12px',
+                    right: '2rem',
+                    bottom: '-28px',
+                    width: '44px',
+                    height: '28px',
+                    borderRadius: '0 0 12px 12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     border: '1px solid var(--glass-border)',
                     borderTop: 'none',
-                    borderRight: 'none',
                     color: 'var(--text-muted)',
                     cursor: 'pointer',
                     background: 'var(--glass-bg)',
                     backdropFilter: 'blur(10px)',
                     zIndex: 102,
                     pointerEvents: 'auto',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                    transition: 'all 0.4s'
                   }}
                 >
                   {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
@@ -493,7 +493,7 @@ function App() {
                 {selectedDeck?.name || 'Unnamed Deck'} ({selectedDeck?.cards?.length || 0} cards)
               </span>
             </div>
-            <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginRight: '2.5rem' }}>
+            <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               {userLoggedIn && (
                 <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
@@ -509,30 +509,30 @@ function App() {
               )}
             </div>
 
-            {/* Toggle Button as a Tab integrated into Header */}
+            {/* Toggle Button as a Tab integrated into Bottom Right of Header */}
             <button 
               onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
               className="btn-glass"
               style={{
                 position: 'absolute',
-                right: '-1px',
-                top: isHeaderCollapsed ? '0' : '-1px',
-                width: '40px',
-                height: '32px',
-                borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '0 16px 0 12px',
+                right: '2rem',
+                bottom: '-28px',
+                width: '44px',
+                height: '28px',
+                borderRadius: '0 0 12px 12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '1px solid var(--glass-border)',
                 borderTop: 'none',
-                borderRight: 'none',
                 color: 'var(--text-muted)',
                 cursor: 'pointer',
                 background: 'var(--glass-bg)',
                 backdropFilter: 'blur(10px)',
                 zIndex: 102,
                 pointerEvents: 'auto',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                transition: 'all 0.4s'
               }}
             >
               {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
