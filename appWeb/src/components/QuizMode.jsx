@@ -430,10 +430,10 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
                                isWrongPick ? 'rgba(239, 68, 68, 0.5)' :
                                isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : undefined,
-                  opacity: isReviewing ? 0.8 : 1
+                  opacity: (isReviewing && isAnswered) ? 0.8 : 1
                 }}
                 onClick={() => handleToggleMulti(opt)}
-                disabled={isAnswered || isReviewing}
+                disabled={isAnswered}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
@@ -466,10 +466,10 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.2)' : undefined,
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
                                isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined,
-                  opacity: isReviewing ? 0.8 : 1
+                  opacity: (isReviewing && isAnswered) ? 0.8 : 1
                 }}
                 onClick={() => handleSelectOption(i, opt)}
-                disabled={isAnswered || isReviewing}
+                disabled={isAnswered}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <span>{opt}</span>
