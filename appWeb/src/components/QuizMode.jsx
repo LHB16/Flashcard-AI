@@ -288,7 +288,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       const nextIdx = currentIndex + 1;
       if (nextIdx > farthestIndex) setFarthestIndex(nextIdx);
       setCurrentIndex(nextIdx);
-      saveToBackend({ current_index: nextIdx }); 
+      saveToBackend({ current_index: currentIndex }); 
       if (nextIdx >= cards.length) setIsFinished(true);
     }
   };
@@ -344,20 +344,19 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           )}
 
           {(!isAnswered && !isReviewing) && (
-            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Skip question">
-              →
+            <button className="btn btn-glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Skip question">
+              Skip →
             </button>
           )}
 
           {isReviewing && (
-            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Return to current question">
-              →
+            <button className="btn btn-glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Return to current question">
+              Return ⤏
             </button>
           )}
         </div>
         <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {currentIndex + 1} / {cards.length}
-          {isReviewing && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--warning)', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '12px' }}>Review Mode</span>}
           {isSyncingCards && <Loader2 size={16} color="var(--primary)" className="spin" />}
         </span>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
