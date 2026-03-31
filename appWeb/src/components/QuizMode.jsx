@@ -136,7 +136,10 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       const showSubmit = multiChoice && !isAnswered && selectedMulti.length > 0;
       const totalFocusable = options.length + (showSubmit ? 1 : 0);
 
-      if (e.key === 'Tab') {
+      if (e.key === 'Tab' && e.shiftKey) {
+        e.preventDefault();
+        setFocusedIdx(prev => prev <= 0 ? totalFocusable - 1 : prev - 1);
+      } else if (e.key === 'Tab') {
         e.preventDefault();
         setFocusedIdx(prev => (prev + 1) % totalFocusable);
       } else if (e.key === ' ' || e.key === 'Spacebar') {
@@ -149,6 +152,9 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           e.preventDefault();
           keyHandlersRef.current.handleSubmitMulti?.();
         }
+      } else if (e.key === 'Control') {
+        e.preventDefault();
+        keyHandlersRef.current.goToFirstUnanswered?.();
       } else if (e.key === 'ArrowLeft') {
         goLeft();
       } else if (e.key === 'ArrowRight') {
@@ -313,7 +319,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   };
 
   // Keep ref updated with latest handlers for keyboard useEffect
-  keyHandlersRef.current = { handleToggleMulti, handleSelectOption, handleSubmitMulti };
+  keyHandlersRef.current = { handleToggleMulti, handleSelectOption, handleSubmitMulti, goToFirstUnanswered };
 
   // ============ RESET ============
   const resetQuiz = () => {
