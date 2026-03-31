@@ -17,7 +17,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [isLoading, setIsLoading] = useState(true);
 
-
+  const syncTimeoutRef = useRef(null);
 
   const deckId = deck?.deck_id || deck?.title || 'unknown';
   const googleId = localStorage.getItem('g_id');
