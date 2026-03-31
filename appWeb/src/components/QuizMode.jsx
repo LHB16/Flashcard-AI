@@ -331,37 +331,41 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
 
   return (
     <div className="animate-fade-in" style={{ width: '100%', margin: '0 auto', padding: '1rem' }}>
+      {/* Top Header Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
-            <ArrowLeft size={18} /> Back
-          </button>
-          
-          {currentIndex > 0 && (
-            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewPrev} title="Review previous">
-              ←
-            </button>
-          )}
-
-          {(!isAnswered && !isReviewing) && (
-            <button className="btn btn-glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Skip question">
-              Skip →
-            </button>
-          )}
-
-          {isReviewing && (
-            <button className="btn btn-glass" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Return to current question">
-              Return ⤏
-            </button>
-          )}
-        </div>
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
+          <ArrowLeft size={18} /> Back
+        </button>
+        
         <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {currentIndex + 1} / {cards.length}
           {isSyncingCards && <Loader2 size={16} color="var(--primary)" className="spin" />}
         </span>
+        
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
           Reset
         </button>
+      </div>
+
+      {/* Navigation Row */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        {currentIndex > 0 && (
+          <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewPrev} title="Review previous">
+            ←
+          </button>
+        )}
+
+        {(!isAnswered && !isReviewing) && (
+          <button className="btn btn-glass" style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Skip question">
+            Skip →
+          </button>
+        )}
+
+        {isReviewing && (
+          <button className="btn btn-glass" style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Return to current question">
+            Return ⤏
+          </button>
+        )}
       </div>
 
       {/* Progress Bar */}
