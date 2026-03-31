@@ -6,8 +6,9 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [farthestIndex, setFarthestIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [selectedMulti, setSelectedMulti] = useState([]); // For multiple_choice
+  const [selectedMulti, setSelectedMulti] = useState([]);
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
@@ -94,22 +95,43 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       .then(res => res.json())
       .then(result => {
         if (result.data && result.data.current_index < cards.length) {
-          setCurrentIndex(result.data.current_index + 1);
+          const loadedIndex = result.data.current_index + 1;
+          setCurrentIndex(loadedIndex);
+          setFarthestIndex(loadedIndex);
           setAnswers(result.data.answers || {});
           setScore(result.data.correct_count || 0);
           setWrongCount(result.data.wrong_count || 0);
           setSessionId(result.data.session_id || sessionId);
           setStartedAt(result.data.started_at || startedAt);
 
-          if ((result.data.current_index + 1) >= cards.length) {
+          if (loadedIndex >= cards.length) {
             setIsFinished(true);
           }
-          console.log(`📚 Quiz resumed from question ${result.data.current_index + 2}`);
+          console.log(`📚 Quiz resumed from question ${loadedIndex + 1}`);
         }
       })
       .catch(e => console.warn("Load quiz session failed:", e))
       .finally(() => setIsLoading(false));
   }, [googleId, deckId]);
+
+  // Update UI choices when viewing past questions or returning to current
+  useEffect(() => {
+    const historicalAnswer = answers[currentIndex];
+    if (historicalAnswer) {
+      setIsAnswered(historicalAnswer.correct !== undefined);
+      if (Array.isArray(historicalAnswer.selected)) {
+         setSelectedMulti(historicalAnswer.selected);
+         setSelectedAnswer(null);
+      } else {
+         setSelectedAnswer(historicalAnswer.selected);
+         setSelectedMulti([]);
+      }
+    } else {
+      setIsAnswered(false);
+      setSelectedAnswer(null);
+      setSelectedMulti([]);
+    }
+  }, [currentIndex, answers]);
 
   // Debounced save to backend
   const saveToBackend = useCallback((updatedData = {}) => {
@@ -244,17 +266,37 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     if (currentIndex < cards.length - 1) {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
-      setSelectedAnswer(null);
-      setSelectedMulti([]);
-      setIsAnswered(false);
+      if (nextIdx > farthestIndex) setFarthestIndex(nextIdx);
     } else {
       setIsFinished(true);
+    }
+  };
+
+  const isReviewing = currentIndex < farthestIndex;
+
+  const handleReviewPrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(prev => prev - 1);
+    }
+  };
+
+  const handleReviewNext = () => {
+    if (isReviewing) {
+      setCurrentIndex(farthestIndex);
+    } else if (!isAnswered) {
+      // Bỏ qua (Skip)
+      const nextIdx = currentIndex + 1;
+      if (nextIdx > farthestIndex) setFarthestIndex(nextIdx);
+      setCurrentIndex(nextIdx);
+      saveToBackend({ current_index: nextIdx }); 
+      if (nextIdx >= cards.length) setIsFinished(true);
     }
   };
 
   const resetQuiz = () => {
     if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
       setCurrentIndex(0);
+      setFarthestIndex(0);
       setSelectedAnswer(null);
       setSelectedMulti([]);
       setIsAnswered(false);
@@ -290,11 +332,32 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   return (
     <div className="animate-fade-in" style={{ width: '100%', margin: '0 auto', padding: '1rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
-          <ArrowLeft size={18} /> Back
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
+            <ArrowLeft size={18} /> Back
+          </button>
+          
+          {currentIndex > 0 && (
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewPrev} title="Review previous">
+              ←
+            </button>
+          )}
+
+          {(!isAnswered && !isReviewing) && (
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Skip question">
+              →
+            </button>
+          )}
+
+          {isReviewing && (
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', fontWeight: 'bold' }} onClick={handleReviewNext} title="Return to current question">
+              →
+            </button>
+          )}
+        </div>
         <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {currentIndex + 1} / {cards.length}
+          {isReviewing && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'var(--warning)', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '12px' }}>Review Mode</span>}
           {isSyncingCards && <Loader2 size={16} color="var(--primary)" className="spin" />}
         </span>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
@@ -366,10 +429,11 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.15)' : undefined,
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
                                isWrongPick ? 'rgba(239, 68, 68, 0.5)' :
-                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : undefined
+                               isSelected && !isAnswered ? 'rgba(139, 92, 246, 0.5)' : undefined,
+                  opacity: isReviewing ? 0.8 : 1
                 }}
                 onClick={() => handleToggleMulti(opt)}
-                disabled={isAnswered}
+                disabled={isAnswered || isReviewing}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
@@ -401,10 +465,11 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
                   background: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.2)' :
                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.2)' : undefined,
                   borderColor: isAnswered && isCorrectAns ? 'rgba(16, 185, 129, 0.5)' :
-                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined
+                               isAnswered && selectedAnswer === opt ? 'rgba(239, 68, 68, 0.5)' : undefined,
+                  opacity: isReviewing ? 0.8 : 1
                 }}
                 onClick={() => handleSelectOption(i, opt)}
-                disabled={isAnswered}
+                disabled={isAnswered || isReviewing}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <span>{opt}</span>
