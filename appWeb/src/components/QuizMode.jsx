@@ -417,12 +417,19 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       })()}
 
       {/* Top Header Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', alignItems: 'center' }}>
-        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr auto 1fr', 
+        width: '100%', 
+        marginBottom: '0.8rem', 
+        alignItems: 'center', 
+        gap: '0.8rem' 
+      }}>
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', justifySelf: 'start' }} onClick={onBack}>
           <ArrowLeft size={18} /> Back
         </button>
         
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', justifySelf: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
             <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goLeft} title="Previous question">
               <ChevronLeft size={20} />
@@ -455,7 +462,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           )}
         </div>
 
-        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', justifySelf: 'end' }} onClick={resetQuiz} title="Reset all progress (Restart)">
           Reset
         </button>
       </div>
