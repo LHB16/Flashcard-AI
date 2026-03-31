@@ -362,31 +362,33 @@ function App() {
               </div>
             </div>
 
-            {/* Toggle Button as a Tab - Outside the collapsible content to remain visible */}
+            {/* Toggle Button as a Tab - Centered and Dynamic In/Out position */}
             <div style={{ 
               display: 'flex', 
-              justifyContent: 'flex-end', 
-              paddingRight: '2rem',
-              marginTop: isHeaderCollapsed ? '0' : '-0.5rem',
-              transition: 'all 0.4s'
+              justifyContent: 'center', 
+              marginTop: isHeaderCollapsed ? '0' : '-44px',
+              zIndex: 102,
+              position: 'relative',
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
               <button 
                 onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
                 className="btn-glass"
                 style={{
-                  width: '44px',
-                  height: '28px',
-                  borderRadius: '0 0 12px 12px',
+                  width: '48px',
+                  height: '24px',
+                  borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '12px 12px 0 0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   border: '1px solid var(--glass-border)',
-                  borderTop: 'none',
+                  borderTop: isHeaderCollapsed ? 'none' : '1px solid var(--glass-border)',
+                  borderBottom: isHeaderCollapsed ? '1px solid var(--glass-border)' : 'none',
                   color: 'var(--text-muted)',
                   cursor: 'pointer',
                   background: 'var(--glass-bg)',
                   backdropFilter: 'blur(10px)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                  boxShadow: isHeaderCollapsed ? '0 4px 10px rgba(0,0,0,0.2)' : 'none',
                   transition: 'all 0.4s'
                 }}
               >
@@ -517,31 +519,33 @@ function App() {
             </header>
           </div>
 
-          {/* Toggle Button as a Tab - Outside to remain visible */}
+          {/* Toggle Button as a Tab - Centered and Dynamic In/Out position */}
           <div style={{ 
             display: 'flex', 
-            justifyContent: 'flex-end', 
-            paddingRight: '2rem',
-            marginTop: isHeaderCollapsed ? '0' : '-0.5rem',
-            transition: 'all 0.4s'
+            justifyContent: 'center', 
+            marginTop: isHeaderCollapsed ? '0' : '-44px',
+            zIndex: 102,
+            position: 'relative',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
           }}>
             <button 
               onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
               className="btn-glass"
               style={{
-                width: '44px',
-                height: '28px',
-                borderRadius: '0 0 12px 12px',
+                width: '48px',
+                height: '24px',
+                borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '12px 12px 0 0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '1px solid var(--glass-border)',
-                borderTop: 'none',
+                borderTop: isHeaderCollapsed ? 'none' : '1px solid var(--glass-border)',
+                borderBottom: isHeaderCollapsed ? '1px solid var(--glass-border)' : 'none',
                 color: 'var(--text-muted)',
                 cursor: 'pointer',
                 background: 'var(--glass-bg)',
                 backdropFilter: 'blur(10px)',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                boxShadow: isHeaderCollapsed ? '0 4px 10px rgba(0,0,0,0.2)' : 'none',
                 transition: 'all 0.4s'
               }}
             >
