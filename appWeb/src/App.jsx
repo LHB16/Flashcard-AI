@@ -309,61 +309,33 @@ function App() {
             background: 'var(--bg-main)',
             paddingTop: isHeaderCollapsed ? '0' : '1rem',
             marginBottom: isHeaderCollapsed ? '0.5rem' : '1.5rem',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+            transition: 'all 0.4s'
           }}>
-            {/* Toggle Button as a Tab at Top Right */}
-            <div style={{ 
-              position: 'absolute', 
-              right: '1rem', 
-              top: isHeaderCollapsed ? '0' : '-10px',
-              zIndex: 101,
-              transition: 'all 0.4s'
-            }}>
-              <button 
-                onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
-                className="btn-glass"
-                style={{
-                  width: '40px',
-                  height: '30px',
-                  borderRadius: '0 0 12px 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid var(--glass-border)',
-                  borderTop: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  background: 'var(--glass-bg)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                }}
-              >
-                {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-              </button>
-            </div>
-
             <div style={{
               maxHeight: isHeaderCollapsed ? '0' : '400px',
               opacity: isHeaderCollapsed ? 0 : 1,
-              overflow: 'hidden',
+              overflow: isHeaderCollapsed ? 'visible' : 'hidden',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-              pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
+              pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
+              position: 'relative'
             }}>
               <header className="app-header" style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
                 alignItems: 'center', 
-                marginBottom: '2rem', 
+                marginBottom: '1.5rem', 
                 padding: '1rem 2rem', 
                 background: 'var(--glass-bg)', 
                 backdropFilter: 'blur(10px)', 
                 borderRadius: '16px', 
-                border: '1px solid var(--glass-border)'
+                border: '1px solid var(--glass-border)',
+                position: 'relative'
               }}>
                 <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Select a Deck</h1>
                   {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
                 </div>
-                <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginRight: '2.5rem' }}>
                   {userLoggedIn && (
                     <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Cloud size={14} /> Synced {displayName && `(${displayName})`}
@@ -374,9 +346,38 @@ function App() {
                   </button>
                   <button className="btn btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={resetAll}>Go back</button>
                 </div>
+
+                {/* Toggle Button as a Tab integrated into Header */}
+                <button 
+                  onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                  className="btn-glass"
+                  style={{
+                    position: 'absolute',
+                    right: '-1px',
+                    top: isHeaderCollapsed ? '0' : '-1px',
+                    width: '40px',
+                    height: '32px',
+                    borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '0 16px 0 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid var(--glass-border)',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    background: 'var(--glass-bg)',
+                    backdropFilter: 'blur(10px)',
+                    zIndex: 102,
+                    pointerEvents: 'auto',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                </button>
               </header>
 
-              <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', maxWidth: '600px' }}>
+              <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px' }}>
                 <div style={{ position: 'relative', flex: 1 }}>
                   <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
                   <input
@@ -466,42 +467,13 @@ function App() {
     <>
       {isSyncing && <div className="top-progress-bar"></div>}
       <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-        {/* Toggle Button as a Tab at Top Right */}
-        <div style={{ 
-          position: 'absolute', 
-          right: '1rem', 
-          top: isHeaderCollapsed ? '0' : '-10px',
-          zIndex: 101,
-          transition: 'all 0.4s'
-        }}>
-          <button 
-            onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
-            className="btn-glass"
-            style={{
-              width: '40px',
-              height: '30px',
-              borderRadius: '0 0 12px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid var(--glass-border)',
-              borderTop: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              background: 'var(--glass-bg)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-            }}
-          >
-            {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-          </button>
-        </div>
-
         <div style={{
-          maxHeight: isHeaderCollapsed ? '0' : '200px',
+          maxHeight: isHeaderCollapsed ? '0' : '300px',
           opacity: isHeaderCollapsed ? 0 : 1,
-          overflow: 'hidden',
+          overflow: isHeaderCollapsed ? 'visible' : 'hidden',
           transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
+          pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
+          position: 'relative'
         }}>
           <header className="app-header" style={{ 
             display: 'flex', 
@@ -521,7 +493,7 @@ function App() {
                 {selectedDeck?.name || 'Unnamed Deck'} ({selectedDeck?.cards?.length || 0} cards)
               </span>
             </div>
-            <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginRight: '2.5rem' }}>
               {userLoggedIn && (
                 <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
@@ -536,6 +508,35 @@ function App() {
                 </button>
               )}
             </div>
+
+            {/* Toggle Button as a Tab integrated into Header */}
+            <button 
+              onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+              className="btn-glass"
+              style={{
+                position: 'absolute',
+                right: '-1px',
+                top: isHeaderCollapsed ? '0' : '-1px',
+                width: '40px',
+                height: '32px',
+                borderRadius: isHeaderCollapsed ? '0 0 12px 12px' : '0 16px 0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid var(--glass-border)',
+                borderTop: 'none',
+                borderRight: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                background: 'var(--glass-bg)',
+                backdropFilter: 'blur(10px)',
+                zIndex: 102,
+                pointerEvents: 'auto',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }}
+            >
+              {isHeaderCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+            </button>
           </header>
         </div>
 
