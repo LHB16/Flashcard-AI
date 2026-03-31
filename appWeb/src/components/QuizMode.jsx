@@ -17,51 +17,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isSyncingCards, setIsSyncingCards] = useState(false);
-  const syncCardsTimeoutRef = useRef(null);
-  const syncTimeoutRef = useRef(null);
 
-  const triggerCardSync = useCallback(() => {
-    const googleId = localStorage.getItem('g_id');
-    const deckId = deck?.deck_id || deck?.title;
-    if (!googleId || !deckId) return;
-
-    if (syncCardsTimeoutRef.current) clearTimeout(syncCardsTimeoutRef.current);
-    setIsSyncingCards(true);
-
-    syncCardsTimeoutRef.current = setTimeout(() => {
-      const cardsMap = {};
-      let hasValidCards = false;
-
-      cards.forEach(c => {
-        if (c.card_id && c.status !== undefined) {
-          cardsMap[c.card_id] = c.status;
-          hasValidCards = true;
-        }
-      });
-
-      if (!hasValidCards) {
-        setIsSyncingCards(false);
-        return;
-      }
-
-      fetch(`${BACKEND_URL}/progress/cards/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          google_id: googleId,
-          deck_id: deckId,
-          cards_map: cardsMap
-        })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Card sync failed");
-        console.log("✅ Quiz card progress synced");
-      })
-      .catch(e => console.warn("Supabase Card Progress Sync issue:", e))
-      .finally(() => setIsSyncingCards(false));
-    }, 2000);
-  }, [deck?.deck_id, cards]);
 
   const deckId = deck?.deck_id || deck?.title || 'unknown';
   const googleId = localStorage.getItem('g_id');
@@ -195,9 +151,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
-      currentCard.status = 2;
-      if (onDeckModified) onDeckModified();
-      triggerCardSync();
     } else {
       newWrong = wrongCount + 1;
       setWrongCount(newWrong);
@@ -243,9 +196,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
-      currentCard.status = 2;
-      if (onDeckModified) onDeckModified();
-      triggerCardSync();
     } else {
       newWrong = wrongCount + 1;
       setWrongCount(newWrong);
@@ -335,7 +285,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           
           <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: '80px', justifyContent: 'center' }}>
             {currentIndex + 1} / {cards.length}
-            {isSyncingCards && <Loader2 size={14} color="var(--primary)" className="spin" />}
           </span>
           
           <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goRight} title="Next question">
