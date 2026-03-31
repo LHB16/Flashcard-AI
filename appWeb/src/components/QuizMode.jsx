@@ -19,6 +19,8 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const [focusedIdx, setFocusedIdx] = useState(-1);
 
   const currentCard = cards[currentIndex];
+  const multiChoice = isMultiChoice(currentCard);
+  const keyHandlersRef = useRef({});
   const syncTimeoutRef = useRef(null);
 
   const deckId = deck?.deck_id || deck?.title || 'unknown';
@@ -141,11 +143,11 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
         if (focusedIdx >= 0 && focusedIdx < options.length) {
           e.preventDefault();
           const opt = options[focusedIdx];
-          if (multiChoice) handleToggleMulti(opt);
-          else handleSelectOption(focusedIdx, opt);
+          if (multiChoice) keyHandlersRef.current.handleToggleMulti?.(opt);
+          else keyHandlersRef.current.handleSelectOption?.(focusedIdx, opt);
         } else if (focusedIdx === options.length && showSubmit) {
           e.preventDefault();
-          handleSubmitMulti();
+          keyHandlersRef.current.handleSubmitMulti?.();
         }
       } else if (e.key === 'ArrowLeft') {
         goLeft();
@@ -155,7 +157,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goLeft, goRight, focusedIdx, currentCard, multiChoice, isAnswered, selectedMulti, handleToggleMulti, handleSelectOption, handleSubmitMulti]);
+  }, [goLeft, goRight, focusedIdx, currentCard, multiChoice, isAnswered, selectedMulti]);
 
   // Touch Swipe Navigation — using refs to avoid stale closures
   const containerRef = useRef(null);
@@ -310,6 +312,9 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     checkFinished(newAnswers);
   };
 
+  // Keep ref updated with latest handlers for keyboard useEffect
+  keyHandlersRef.current = { handleToggleMulti, handleSelectOption, handleSubmitMulti };
+
   // ============ RESET ============
   const resetQuiz = () => {
     if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
@@ -349,7 +354,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     );
   }
 
-  const multiChoice = isMultiChoice(currentCard);
+
   const correctCount = currentCard?.correct_answers?.length || 1;
   const progressPct = cards.length > 0 ? Math.round((answeredCount / cards.length) * 100) : 0;
 
