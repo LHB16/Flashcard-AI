@@ -291,30 +291,42 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           <ArrowLeft size={18} /> Back
         </button>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goLeft} title="Previous question">
-            <ChevronLeft size={20} />
-          </button>
-          
-          <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: '80px', justifyContent: 'center' }}>
-            {currentIndex + 1} / {cards.length}
-          </span>
-          
-          <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goRight} title="Next question">
-            <ChevronRight size={20} />
-          </button>
-        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goLeft} title="Previous question">
+              <ChevronLeft size={20} />
+            </button>
+            
+            <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: '80px', justifyContent: 'center' }}>
+              {currentIndex + 1} / {cards.length}
+            </span>
+            
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goRight} title="Next question">
+              <ChevronRight size={20} />
+            </button>
+          </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {firstUnansweredIdx !== -1 && (
-            <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }} onClick={goToFirstUnanswered} title={`Go to question ${firstUnansweredIdx + 1}`}>
-              <SkipForward size={16} /> #{firstUnansweredIdx + 1}
+            <button className="btn btn-glass btn-icon" style={{ 
+              padding: '0.2rem 0.6rem', 
+              borderRadius: '6px', 
+              background: 'rgba(139, 92, 246, 0.1)', 
+              color: 'var(--primary)', 
+              fontSize: '0.75rem', 
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              border: '1px solid rgba(139, 92, 246, 0.2)'
+            }} onClick={goToFirstUnanswered} title={`Go to question ${firstUnansweredIdx + 1}`}>
+              <SkipForward size={14} /> Jump to #{firstUnansweredIdx + 1}
             </button>
           )}
-          <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
-            Reset
-          </button>
         </div>
+
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
+          Reset
+        </button>
       </div>
 
       {/* Progress Bar — based on answered count */}
