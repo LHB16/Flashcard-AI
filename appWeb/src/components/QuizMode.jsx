@@ -135,9 +135,10 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   }, [goLeft, goRight]);
 
   // Touch Swipe Navigation
+  const containerRef = useRef(null);
   const [touchInfo, setTouchInfo] = useState({ active: false, startX: 0, startY: 0, currentX: 0, currentY: 0 });
 
-  const handleTouchStart = (e) => {
+  const handleTouchStart = useCallback((e) => {
     setTouchInfo({
       active: true,
       startX: e.touches[0].clientX,
@@ -145,31 +146,57 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       currentX: e.touches[0].clientX,
       currentY: e.touches[0].clientY,
     });
-  };
+  }, []);
 
-  const handleTouchMove = (e) => {
-    if (!touchInfo.active) return;
-    setTouchInfo(prev => ({
-      ...prev,
-      currentX: e.touches[0].clientX,
-      currentY: e.touches[0].clientY,
-    }));
-  };
+  const handleTouchEnd = useCallback(() => {
+    setTouchInfo(prev => {
+      if (!prev.active) return prev;
+      
+      const diffX = prev.currentX - prev.startX;
+      const diffY = prev.currentY - prev.startY;
+      
+      // Threshold to trigger swipe (60px)
+      if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 0) goLeft();  // Swipe Right -> Previous
+        else goRight();           // Swipe Left -> Next
+      }
+      
+      return { active: false, startX: 0, startY: 0, currentX: 0, currentY: 0 };
+    });
+  }, [goLeft, goRight]);
 
-  const handleTouchEnd = () => {
-    if (!touchInfo.active) return;
-    
-    const diffX = touchInfo.currentX - touchInfo.startX;
-    const diffY = touchInfo.currentY - touchInfo.startY;
-    
-    // Threshold to trigger swipe (60px)
-    if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY)) {
-      if (diffX > 0) goLeft();  // Swipe Right -> Previous
-      else goRight();           // Swipe Left -> Next
+  // Use a passive: false event listener to prevent vertical scrolling while swiping horizontally
+  useEffect(() => {
+    const handleTouchMoveNative = (e) => {
+      setTouchInfo(prev => {
+        if (!prev.active) return prev;
+        
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const dx = Math.abs(currentX - prev.startX);
+        const dy = Math.abs(currentY - prev.startY);
+        
+        // If we are mostly swiping horizontally, prevent default vertical scrolling
+        if (dx > dy && dx > 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+        
+        return {
+          ...prev,
+          currentX,
+          currentY,
+        };
+      });
+    };
+
+    const el = containerRef.current;
+    if (el) {
+      el.addEventListener('touchmove', handleTouchMoveNative, { passive: false });
     }
-    
-    setTouchInfo({ active: false, startX: 0, startY: 0, currentX: 0, currentY: 0 });
-  };
+    return () => {
+      if (el) el.removeEventListener('touchmove', handleTouchMoveNative);
+    };
+  }, []);
 
 
   const goToFirstUnanswered = () => {
@@ -335,38 +362,43 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
 
   return (
     <div 
+      ref={containerRef}
       className="animate-fade-in" 
       style={{ width: '100%', margin: '0 auto', padding: '1rem', position: 'relative' }}
       onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
     >
-      {/* Swipe Indicator */}
-      {touchInfo.active && Math.abs(touchInfo.currentX - touchInfo.startX) > 20 && (
-        <div style={{
-          position: 'fixed',
-          left: touchInfo.currentX,
-          top: touchInfo.currentY - 60, // Above the finger
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          background: Math.abs(touchInfo.currentX - touchInfo.startX) > 60 ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)',
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-          boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-          transition: 'background 0.2s',
-          pointerEvents: 'none'
-        }}>
-          {touchInfo.currentX - touchInfo.startX > 0 
-            ? <ArrowLeft size={28} /> // Swiping Right shows Left Arrow indicating "Going Back"
-            : <ChevronRight size={28} /> // Swiping Left shows Right indicating "Going Next"
-          }
-        </div>
-      )}
+      {/* Fixed Swipe Indicator */}
+      {touchInfo.active && Math.abs(touchInfo.currentX - touchInfo.startX) > 20 && (() => {
+        const isSwipingRight = touchInfo.currentX - touchInfo.startX > 0;
+        return (
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: isSwipingRight ? '1.5rem' : 'auto',
+            right: !isSwipingRight ? '1.5rem' : 'auto',
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            background: Math.abs(touchInfo.currentX - touchInfo.startX) > 60 ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.5)',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: 'translateY(-50%)',
+            zIndex: 9999,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            transition: 'background 0.2s',
+            pointerEvents: 'none'
+          }}>
+            {isSwipingRight 
+              ? <ChevronLeft size={36} /> // Swiping Right shows Left Chevron (Previous)
+              : <ChevronRight size={36} /> // Swiping Left shows Right Chevron (Next)
+            }
+          </div>
+        );
+      })()}
 
       {/* Top Header Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', alignItems: 'center' }}>
