@@ -356,7 +356,7 @@ function App() {
                     style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                   />
                 </div>
-                <button className="btn btn-glass" onClick={toggleSort} style={{ padding: '0 1.5rem', borderRadius: '12px', minWidth: '110px', height: '100%', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button className="btn btn-glass" onClick={toggleSort} style={{ flex: 1, borderRadius: '12px', height: '100%', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {sortOrder === 'asc' ? 'A-Z ↓' : sortOrder === 'desc' ? 'Z-A ↑' : 'Sort'}
                 </button>
               </div>
