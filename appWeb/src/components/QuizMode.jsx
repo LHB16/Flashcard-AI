@@ -222,6 +222,13 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       setWrongCount(0);
       setIsFinished(false);
       setAnswers({});
+
+      saveToBackend({
+        current_index: 0,
+        answers: {},
+        correct_count: 0,
+        wrong_count: 0
+      });
     }
   };
 
