@@ -371,30 +371,48 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
         const isRight = info.lockedDirection === 'right';
         const activated = diffX > 60;
         return (
-          <div style={{
-            position: 'fixed',
-            top: '50%',
-            left: isRight ? '1.5rem' : 'auto',
-            right: !isRight ? '1.5rem' : 'auto',
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            background: activated ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: 'translateY(-50%)',
-            zIndex: 9999,
-            boxShadow: activated ? '0 8px 32px rgba(139, 92, 246, 0.5)' : '0 4px 16px rgba(0,0,0,0.3)',
-            transition: 'background 0.15s, box-shadow 0.15s',
-            pointerEvents: 'none'
-          }}>
-            {isRight
-              ? <ChevronLeft size={36} />
-              : <ChevronRight size={36} />
-            }
-          </div>
+          <>
+            {/* Starting point indicator (Blurry circle) */}
+            <div style={{
+              position: 'fixed',
+              left: info.startX,
+              top: info.startY,
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'rgba(139, 92, 246, 0.2)',
+              filter: 'blur(8px)',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 9998,
+              pointerEvents: 'none'
+            }} />
+            
+            {/* Main indicator at the edge */}
+            <div style={{
+              position: 'fixed',
+              top: '50%',
+              left: isRight ? '1.5rem' : 'auto',
+              right: !isRight ? '1.5rem' : 'auto',
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: activated ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: 'translateY(-50%)',
+              zIndex: 9999,
+              boxShadow: activated ? '0 8px 32px rgba(139, 92, 246, 0.5)' : '0 4px 16px rgba(0,0,0,0.3)',
+              transition: 'background 0.15s, box-shadow 0.15s',
+              pointerEvents: 'none'
+            }}>
+              {isRight
+                ? <ChevronLeft size={36} />
+                : <ChevronRight size={36} />
+              }
+            </div>
+          </>
         );
       })()}
 
