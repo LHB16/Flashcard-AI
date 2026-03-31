@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import FileLoader from './components/FileLoader';
 import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
 import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 import Footer from './components/Footer';
@@ -559,11 +560,22 @@ function App() {
                   <p style={{ color: 'var(--text-muted)' }}>Assess your progress rapidly with an intelligent multiple-choice testing system.</p>
                 </div>
               </div>
+
+              <div style={{ marginTop: '3rem', textAlign: 'center' }}>
+                <button
+                  className="btn btn-glass"
+                  onClick={() => setMode('shortcuts')}
+                  style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  ⌨️ Keyboard Shortcuts Guide
+                </button>
+              </div>
             </div>
           )}
 
           {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
           {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
+          {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
         </div>
       </main>
     </>

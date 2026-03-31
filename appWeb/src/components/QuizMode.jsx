@@ -152,7 +152,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           e.preventDefault();
           keyHandlersRef.current.handleSubmitMulti?.();
         }
-      } else if (e.key === 'Control') {
+      } else if (e.key === '\\') {
         e.preventDefault();
         keyHandlersRef.current.goToFirstUnanswered?.();
       } else if (e.key === 'ArrowLeft') {
