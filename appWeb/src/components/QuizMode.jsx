@@ -172,39 +172,23 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     setSwipeRender(v => v + 1);
   }, [goLeft, goRight]);
 
-  // Use a passive: false event listener to prevent vertical scrolling while swiping horizontally
-  useEffect(() => {
-    const handleTouchMoveNative = (e) => {
-      const info = touchRef.current;
-      if (!info.active) return;
+  const handleTouchMove = useCallback((e) => {
+    const info = touchRef.current;
+    if (!info.active) return;
 
-      const currentX = e.touches[0].clientX;
-      const currentY = e.touches[0].clientY;
-      const dx = Math.abs(currentX - info.startX);
-      const dy = Math.abs(currentY - info.startY);
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const dx = Math.abs(currentX - info.startX);
+    const dy = Math.abs(currentY - info.startY);
 
-      // If we are mostly swiping horizontally, prevent default vertical scrolling
-      if (dx > dy && dx > 10) {
-        if (e.cancelable) e.preventDefault();
-      }
-
-      // Lock direction on first significant horizontal move (>= 20px)
-      if (!info.lockedDirection && dx > 20 && dx > dy) {
-        info.lockedDirection = (currentX - info.startX) > 0 ? 'right' : 'left';
-      }
-
-      info.currentX = currentX;
-      info.currentY = currentY;
-      setSwipeRender(v => v + 1); // trigger re-render for UI
-    };
-
-    const el = containerRef.current;
-    if (el) {
-      el.addEventListener('touchmove', handleTouchMoveNative, { passive: false });
+    // Lock direction on first significant horizontal move (>= 20px)
+    if (!info.lockedDirection && dx > 20 && dx > dy) {
+      info.lockedDirection = (currentX - info.startX) > 0 ? 'right' : 'left';
     }
-    return () => {
-      if (el) el.removeEventListener('touchmove', handleTouchMoveNative);
-    };
+
+    info.currentX = currentX;
+    info.currentY = currentY;
+    setSwipeRender(v => v + 1);
   }, []);
 
 
@@ -373,8 +357,9 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     <div 
       ref={containerRef}
       className="animate-fade-in" 
-      style={{ width: '100%', margin: '0 auto', padding: '1rem', position: 'relative' }}
+      style={{ width: '100%', margin: '0 auto', padding: '1rem', position: 'relative', touchAction: 'pan-y' }}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
