@@ -19,7 +19,7 @@ Flashcard AI is a local-first study-material pipeline that converts folders of e
 - Packaging: .NET publish (single-file EXE), PyInstaller, Expo EAS (APK)
 
 ## Current State
-- Functional, feature-rich desktop app (.NET 8 with modular WPF architecture): background scanning, API key rotation, deck management, study/quiz modes, dedup, export, and Google Drive Sync.
-- Functional Android companion app with robust JSON deck import, flashcard and quiz modes, progress persistence, and OTA APK update check.
-- Full-featured Web App with swipe-based flashcard study, interactive quiz, backend OAuth, Supabase session persistence, and Google Drive bidirectional sync.
-- Architecture separates UI logic, service layer, domain models, and backend API cleanly across all platforms.
+- Functional, feature-rich desktop app (Python & .NET 8 versions): background scanning, API key rotation, deck management, study/quiz modes, dedup, export, and Google Drive Sync.
+- Functional Android companion app with robust JSON deck import, flashcard and quiz modes, progress persistence, and OTA APK update check. UI recently restructured for enhanced mobile navigation.
+- Full-featured Web App with swipe-based flashcard study, circular navigation QuizMode (wrap-around & jump to first unanswered), backend OAuth with email display, Supabase session persistence, and Google Drive bidirectional sync.
+- Architecture ensures high isolation between Flashcard and Quiz progress to prevent data desync across platforms.

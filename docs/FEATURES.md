@@ -21,14 +21,16 @@
 - 3D card flip animations
 - Quiz and study session resume
 - Google Drive AppData Smart Merge sync
+- Restructured UI for better mobile navigation
 
 ### Web App
 - **Flashcard Mode**: Swipe gestures, keyboard shortcuts (Space/Up/Down to flip, Left/Right to score, R to undo)
-- **Quiz Mode**: Interactive multiple-choice with live score tracking
+- **Quiz Mode**: Circular navigation (currentIndex -1 / +1) with wrap-around, jump to first unanswered, and answered-count based progress bar
 - **Rate Limiting**: 1-second cooldown per card action to prevent rapid-click state desync
 - **Google Drive Sync**: Bidirectional sync with debounced background auto-save (3s delay)
-- **Backend OAuth**: Server-side Google login with persistent refresh tokens in Supabase
+- **Backend OAuth**: Server-side Google login with persistent refresh tokens in Supabase and email display
 - **Session Resume**: Both flashcard and quiz sessions auto-resume from Supabase on page load
+- **Progress Isolation**: Flashcard progress and quiz sessions are handled independently to preserve data integrity
 - **Cloud Progress**: Study percentage and quiz sessions synced to PostgreSQL for cross-device access
 - **Responsive Design**: Glassmorphism UI with dark/light theme, fully mobile-optimized
 

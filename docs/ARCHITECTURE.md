@@ -64,9 +64,10 @@
 ## Data Contracts
 - `Flashcard.status`: `0` unseen, `1` learning/wrong, `2` mastered/correct
 - `Flashcard.question_type`: `single_choice` or `multiple_choice`
-- `QuizSession`: per-deck progress (`question_order`, `current_index`, score, answers)
+- `QuizSession`: circular navigation (`currentIndex -1 / +1`) with wrap-around support.
+- `QuizSession.answers`: JSONB mapping of `question_index` to `{ selected: ..., correct: boolean }`.
 
 ## Database Schema (Supabase)
-- `users`: `google_id` (unique), `email`, `refresh_token`, `created_at`, `updated_at`
+- `users`: `google_id` (unique), `email`, `last_login`, `refresh_token`, `created_at`, `updated_at`
 - `progress`: `google_id`, `deck_id`, `percent`, `last_studied` (unique per user-deck)
-- `quiz_sessions`: `google_id`, `deck_id`, `session_id`, `question_order` (JSONB), `current_index`, `answers` (JSONB), `correct_count`, `wrong_count`, timestamps
+- `quiz_sessions`: `google_id`, `deck_id`, `session_id`, `question_order` (JSONB), `current_index`, `answers` (JSONB), `correct_count`, `wrong_count`, `started_at`, `updated_at`

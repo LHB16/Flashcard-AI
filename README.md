@@ -34,30 +34,28 @@ Your portable study companion built with **React Native**.
 - **🖐️ Gesture Control**: Smooth **Swipe-to-Score** mechanics (Swipe Right for Known, Left for Unknown).
 - **🔀 3D Flip Anim**: High-performance 3D card animations for a premium feel.
 - **🔄 Session Resume**: Automatically detects and resumes your last study or quiz session.
-- **📜 Smart Scrolling**: Fully supports extra-long text in both questions and answers with zero touch conflicts.
-- **🌐 English UI**: The app interface is fully localized in English (v1.0.2).
+- **📱 New Navigation**: Restructured UI for smoother and more intuitive mobile navigation.
+- **📜 Smart Scrolling**: Fully supports extra-long text in both questions and answers.
 
 ---
 
 ## 🌐 Web App (React + Vite)
 A full-featured web interface running directly in your browser — no installation needed.
 
-- **URL**: [https://lhb16-flashcard-ai.pages.dev](https://lhb16-flashcard-ai.pages.dev)
-
 ### Frontend (Cloudflare Pages)
 - **📂 Local Import**: Load `desk.json` or `decks.json` files directly from your device.
 - **☁️ Google Drive Sync**: Fetch and update decks via Google Drive AppData folder.
 - **🖐️ Swipe-to-Score**: Touch/mouse gestures and keyboard shortcuts for flashcard study.
-- **📊 Progress Bar**: Real-time visual progress tracking during study sessions.
+- **📊 Progress Tracking**: Answered-count based progress bar for both Study and Quiz modes.
 - **⏪ Undo (R key)**: Undo last flashcard action with a single tap or keystroke.
 - **🔄 Auto-Save**: Background debounced sync to Google Drive after every card action.
-- **📝 Quiz Mode**: Interactive quiz with score tracking and session resume from cloud.
+- **📝 New Quiz Mode**: Circular navigation (`-1 / +1`) with wrap-around and **Smart Jump** to the first unanswered question.
 - **📱 Responsive**: Fully adapts to mobile and desktop screens.
 
 ### Backend (Node.js on Render)
-- **🔐 Secure OAuth**: Google login via server-side OAuth 2.0 — no secrets exposed to the client.
+- **🔐 Secure OAuth**: Google login via server-side OAuth 2.0 with backend email display.
 - **♾️ Persistent Login**: Refresh tokens stored in **Supabase** database — users stay logged in indefinitely.
-- **📊 Cloud Progress**: Study & quiz progress synced to **Supabase** for cross-device continuity.
+- **📊 Cloud Progress**: Study & quiz progress synced to **Supabase** with high-isolation per mode.
 - **⏰ Always Online**: Google Apps Script pings the server every 10 minutes to prevent Render cold starts.
 
 ---
