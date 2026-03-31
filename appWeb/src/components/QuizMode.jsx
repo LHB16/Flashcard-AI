@@ -19,7 +19,7 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
   const [focusedIdx, setFocusedIdx] = useState(-1);
 
   const currentCard = cards[currentIndex];
-  const multiChoice = isMultiChoice(currentCard);
+  const multiChoice = currentCard?.question_type === 'multiple_choice' && currentCard?.correct_answers?.length > 1;
   const keyHandlersRef = useRef({});
   const syncTimeoutRef = useRef(null);
 
