@@ -74,7 +74,7 @@ router.get('/callback', async (req, res) => {
     console.log('🔗 Redirecting to:', frontendCallback);
     
     // Điều hướng ngược lại Frontend kèm URL params
-    res.redirect(`${frontendCallback}?access_token=${tokens.access_token}&google_id=${googleId}&expiry=${tokens.expiry_date || (Date.now() + 3599000)}`);
+    res.redirect(`${frontendCallback}?access_token=${tokens.access_token}&google_id=${googleId}&expiry=${tokens.expiry_date || (Date.now() + 3599000)}&email=${encodeURIComponent(email)}`);
   } catch (error) {
     console.error('❌ Lỗi Callback OAuth:', error.message || error);
     res.status(500).send(`Đăng nhập thất bại: ${error.message || 'Unknown error'}`);

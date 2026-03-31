@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, CheckCircle, XCircle, Square, CheckSquare } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Square, CheckSquare, Loader2 } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -294,8 +294,8 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
           <ArrowLeft size={18} /> Back
         </button>
         <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          Question {currentIndex + 1} / {cards.length}
-          {isSyncingCards && <span style={{ fontSize: '0.7rem', color: 'var(--primary)' }}>(syncing...)</span>}
+          {currentIndex + 1} / {cards.length}
+          {isSyncingCards && <Loader2 size={16} color="var(--primary)" className="spin" />}
         </span>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }} onClick={resetQuiz} title="Reset all progress (Restart)">
           Reset

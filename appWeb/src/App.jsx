@@ -59,6 +59,9 @@ function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
 
+  const userEmail = localStorage.getItem('g_email') || '';
+  const displayName = userEmail ? userEmail.split('@')[0] : '';
+
   // Keep a ref to always have fresh data in async callbacks
   const dataRef = useRef(data);
   useEffect(() => { dataRef.current = data; }, [data]);
@@ -295,7 +298,7 @@ function App() {
               {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
             </div>
             <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14} /> Synced</span>}
+              {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14} /> Synced {displayName && `(${displayName})`}</span>}
               <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </button>
@@ -399,7 +402,7 @@ function App() {
             </span>
           </div>
           <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14} /> Drive Synced</span>}
+            {userLoggedIn && <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}</span>}
             <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>

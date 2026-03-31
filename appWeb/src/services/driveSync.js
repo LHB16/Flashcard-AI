@@ -9,6 +9,7 @@ export const initGoogleIdentity = async (onSuccess, onError) => {
   const tokenFromUrl = urlParams.get('access_token');
   const googleIdFromUrl = urlParams.get('google_id');
   const expiryFromUrl = urlParams.get('expiry');
+  const emailFromUrl = urlParams.get('email');
 
   if (tokenFromUrl && googleIdFromUrl) {
     accessToken = tokenFromUrl;
@@ -16,6 +17,9 @@ export const initGoogleIdentity = async (onSuccess, onError) => {
     localStorage.setItem('g_token', tokenFromUrl);
     localStorage.setItem('g_id', googleIdFromUrl);
     localStorage.setItem('g_expiry', expiryFromUrl);
+    if (emailFromUrl) {
+      localStorage.setItem('g_email', emailFromUrl);
+    }
     
     // Dọn dẹp URL cho gọn gàng, tránh lộ token ra thanh địa chỉ
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -84,6 +88,7 @@ export const logoutGoogle = () => {
   localStorage.removeItem('g_token');
   localStorage.removeItem('g_id');
   localStorage.removeItem('g_expiry');
+  localStorage.removeItem('g_email');
 };
 
 export const fetchDecksFromDrive = async () => {
