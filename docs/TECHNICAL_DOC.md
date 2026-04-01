@@ -591,18 +591,58 @@ User selects folder → filterImageFiles() → setImageFiles()
 | :--- | :--- | :--- |
 | `VITE_BACKEND_URL` | `https://flashcard-ai-bs67.onrender.com` | Backend URL for all API calls |
 
-### 4.10 Web Performance & UX Optimization
+### 4.10 Performance & UX Optimization (Core Web Vitals)
 
-The web application is optimized for **Core Web Vitals (CWV)** to ensure a smooth, professional user experience on both desktop and mobile.
+The web application is engineered for high performance, focusing on **Core Web Vitals (CWV)** to ensure a professional, zero-jank user experience on both desktop and mobile platforms.
 
-#### ⚡ Largest Contentful Paint (LCP)
-- **Strategic Font Loading**: The `Inter` font is preloaded via `<link rel="preconnect">` and `<link rel="stylesheet">` in `index.html` to ensure the brand typography is discovered and rendered as early as possible.
-- **Resource Priority**: Critical assets are prioritized to reduce the "render-blocking" phase of the initial load.
+#### Optimization Matrix
 
-#### 🧩 Cumulative Layout Shift (CLS)
-- **Skeleton Loading Screens**: Instead of blank spaces or full-screen spinners, the app uses shimmering placeholders (`Skeleton.jsx`) that mimic the final UI structure. This preserves the layout's vertical space during async calls.
-- **Stable Container Heights**: Key layout wrappers like `.home-container` and `.home-column` utilize `min-height` and fixed aspect ratios to prevent the page from "jumping" when Google Drive data or AI scan results arrive.
-- **Predictive Transitions**: Transitions between "Syncing" and "Active" states are managed through a unified structure to keep the user's focus stable.
+| Metric | Mitigation Strategy | Implementation |
+| :--- | :--- | :--- |
+| **LCP** (Largest Contentful Paint) | Strategic Font Preloading | `<link rel="preconnect">` and `<link rel="stylesheet">` in `index.html`. |
+| **CLS** (Cumulative Layout Shift) | Predictive Skeleton Placeholders | Shimmering `Skeleton.jsx` components mirroring real UI structure. |
+| **FID** (First Input Delay) | Priority Management | Critical CSS variables and `font-display: swap` in `index.css`. |
+| **Stability** | Layout Anchors | `min-height` and fixed aspect ratios for dynamic containers. |
+
+#### Layout Stability Logic (CLS Prevention)
+
+Layout shift is mitigated by maintaining a consistent component structure during asynchronous operations (Google Drive sync, AI Scans). 
+
+```
+[Component Entry]
+│
+├── Render Structure (App-Main > Home-Container)
+│   ├── Column A: UserState/SyncState
+│   │   ├── IF (loading) → <HomeSkeleton /> (Fixed Height)
+│   │   └── IF (ready)   → <ActionPanel /> (Dynamic Content)
+│   │
+│   └── Column B: FileLoader/AIResult
+│       ├── IF (loading) → <Skeleton height="200px" />
+│       └── IF (ready)   → <FileLoader />
+│
+└── [Result] → No structural collapse during state transitions.
+```
+
+#### `Skeleton.jsx` Interface
+
+A reusable component that provides shimmering placeholders for nearly all UI elements.
+
+| Property | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `width` | `string` | `"100%"` | Width of the placeholder container. |
+| `height` | `string` | `"20px"` | Height of the placeholder container. |
+| `borderRadius` | `string` | `"8px"` | Corner radius for shape matching. |
+| `className` | `string` | `""` | Additional CSS classes for custom styling. |
+
+**Animation System:** Uses a high-performance CSS `@keyframes shimmer` (linear gradient shift) to provide visual feedback without CPU-heavy operations.
+
+#### Resource Priority Strategy
+
+To achieve sub-1.5s LCP targets, resource discovery is moved as early as possible in the document lifecycle.
+
+1.  **Font Preconnect**: `index.html` initiates a handshake with Google Fonts infrastructure (`fonts.gstatic.com`) immediately.
+2.  **CSS Decoupling**: Removed `@import` from `index.css` to eliminate the "import-chain" load delay, replacing it with a parallelized `<link>` tag in the `<head>`.
+3.  **Container Anchoring**: Strategic `min-height: 480px` (HomeContainer) and `380px` (HomeColumn) in `index.css` ensure that the "above-the-fold" coordinates remain stable throughout the entire paint cycle.
 
 ---
 
