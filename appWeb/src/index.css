@@ -40,6 +40,7 @@
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
   
+  --card-bg: #ffffff;
   --card-gradient-1: rgba(255, 255, 255, 0.9);
   --card-gradient-2: rgba(248, 250, 252, 0.95);
   

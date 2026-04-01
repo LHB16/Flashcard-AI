@@ -359,7 +359,9 @@ function App() {
               opacity: isHeaderCollapsed ? 0 : 1,
               overflow: isHeaderCollapsed ? 'hidden' : 'visible',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-              pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
+              pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
+              position: 'relative',
+              zIndex: 105
             }}>
               <header className="app-header" style={{ 
                 display: 'flex', 
@@ -538,7 +540,9 @@ function App() {
             opacity: isHeaderCollapsed ? 0 : 1,
             overflow: isHeaderCollapsed ? 'hidden' : 'visible',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
+            pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
+            position: 'relative',
+            zIndex: 105
           }}>
             <header className="app-header" style={{ 
               display: 'flex', 
