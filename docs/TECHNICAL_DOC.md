@@ -673,18 +673,18 @@ appDotNet/
 ### 5.2 MVVM Architecture
 
 ```
-┌─────────────┐    binds    ┌──────────────┐    uses    ┌───────────────┐
-│  View (.xaml│◄────────────│  ViewModel   │───────────►│  Services     │
-│  + code-bd) │             │  (Properties │            │  (AuthService │
-│             │  commands   │   Commands   │            │  GeminiService│
-│             │◄────────────│   State)     │            │  SyncService  │
-└─────────────┘             └──────────────┘            │  StorageService│
-                                   │                    └───────────────┘
+┌──────────────┐    binds    ┌──────────────┐    uses    ┌──────────────────┐
+│  View (.xaml │◄────────────│  ViewModel   │───────────►│  Services        │
+│  + code-bd)  │             │  (Properties │            │  (AuthService    │
+│              │  commands   │   Commands   │            │  GeminiService   │
+│              │◄────────────│   State)     │            │  SyncService     │
+└──────────────┘             └──────────────┘            │  StorageService  │ 
+                                   │                     └──────────────────┘
                               INotifyPropertyChanged          │
-                                                       ┌──────▼──────────┐
-                                                       │  Models         │
-                                                       │  Deck, Flashcard│
-                                                       └─────────────────┘
+                                                        ┌──────▼────────────┐
+                                                        │  Models           │
+                                                        │  Deck, Flashcard  │
+                                                        └───────────────────┘
 ```
 
 ### 5.3 StorageService.cs — File Management
