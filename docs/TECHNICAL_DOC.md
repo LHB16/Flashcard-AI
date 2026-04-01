@@ -1,15 +1,20 @@
 # Flashcard AI — Technical Documentation
 
-This document provides a comprehensive technical overview of the Flashcard AI project, a multi-platform ecosystem for creating, managing, and studying flashcards using Artificial Intelligence.
+> **Version:** 2.0 | **Last Updated:** 2026-04-01 | **Status:** Complete
+
+A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
+
+---
 
 ## Table of Contents
+
 1. [Project Overview](#1-project-overview)
 2. [Architecture Overview](#2-architecture-overview)
 3. [Data Structures](#3-data-structures)
-4. [appWeb (React + Express)](#4-appweb-react--express)
-5. [appDotNet (WPF + MVVM)](#5-appdotnet-wpf--mvvm)
-6. [appPython (Legacy Desktop)](#6-apppython-legacy-desktop)
-7. [appAndroid (React Native)](#7-appandroid-react-native)
+4. [appWeb — React + Express](#4-appweb--react--express)
+5. [appDotNet — C# WPF Desktop](#5-appdotnet--c-wpf-desktop)
+6. [appPython — Legacy Python Desktop](#6-apppython--legacy-python-desktop)
+7. [appAndroid — React Native Mobile](#7-appandroid--react-native-mobile)
 8. [Shared Infrastructure](#8-shared-infrastructure)
 9. [Development Guide](#9-development-guide)
 10. [Deployment Guide](#10-deployment-guide)
@@ -19,213 +24,1218 @@ This document provides a comprehensive technical overview of the Flashcard AI pr
 ## 1. Project Overview
 
 ### Goal
-Flashcard AI aims to streamline the creation of high-quality flashcards from physical or digital exams using Google Gemini's vision capabilities. It ensures a seamless study experience across Web, Desktop, and Mobile through a unified sync engine.
+
+Flashcard AI converts physical or digital exam images into study-ready multiple-choice flashcard decks using Google Gemini's vision AI. It provides a seamless study experience (Flashcard mode + Quiz mode) across Web, Desktop, and Mobile through a unified Google Drive sync layer.
 
 ### Tech Stack Summary
-| Platform | Technology | Primary Role |
-| :--- | :--- | :--- |
-| **Web** | React, Vite, Express, Supabase | Central Hub / AI Scanning / Cloud Sync |
-| **Desktop (.NET)** | C# WPF, .NET 8, MVVM | Native Performance / Smart Sync |
-| **Mobile** | React Native, Expo | Portable Study Experience / Offline-First |
-| **Legacy Desktop** | Python, CustomTkinter | Original Prototype / Research |
 
-### Platform Matrix
+| Platform | Language / Framework | Deployment | Key Libraries |
+| :--- | :--- | :--- | :--- |
+| **appWeb** | React 18, Vite, Express.js | Cloudflare Pages + Render.com | lucide-react, uuid, pdf-lib |
+| **appDotNet** | C# 12, .NET 8, WPF | Single-file EXE | Google.Apis.Drive.v3, PdfSharpCore |
+| **appPython** | Python 3.10, CustomTkinter | PyInstaller EXE | google-genai, Pillow, PyMuPDF |
+| **appAndroid** | React Native 0.76, Expo 52 | APK Release | @react-navigation, AsyncStorage |
+
+### Platform Feature Matrix
+
 | Feature | Web | .NET | Python | Android |
 | :--- | :---: | :---: | :---: | :---: |
-| UI Study (Flashcard/Quiz) | ✅ | ✅ | ❌ (Legacy) | ✅ |
-| AI Scanning (Gemini) | ✅ | ✅ | ✅ | ❌ |
-| Google Drive Sync | ✅ | ✅ | ✅ | ❌ (Local) |
-| Multi-device Progress | ✅ | ✅ | ❌ | ❌ |
+| Flashcard Study Mode | ✅ | ✅ | ❌ | ✅ |
+| Quiz Mode | ✅ | ✅ | ❌ | ✅ |
+| AI Scan (Gemini) | ✅ | ✅ | ✅ | ❌ |
+| Google Drive Sync | ✅ | ✅ | ✅ | ✅ (read-only) |
+| Multi-API Key Pool | ✅ | ✅ | ✅ | ❌ |
+| Duplicate Detection | ✅ | ✅ | ✅ | ❌ |
+| Cloud Progress Sync | ✅ (Supabase) | ❌ | ❌ | ❌ |
+| Export (Quizlet/TXT) | ✅ | ✅ | ✅ | ❌ |
+| Offline-First | ❌ | ✅ | ✅ | ✅ |
 
 ---
 
 ## 2. Architecture Overview
 
-### System Architecture Diagram
-```ascii
-      +-------------------------------------------------+
-      |                 Google Cloud                    |
-      |   (OAuth 2.0 / Drive API / Gemini AI API)       |
-      +----------^------------------^-------------------+
-                 |                  |
-        [OAuth / Drive Sync]   [Gemini API Proxy]
-                 |                  |
-      +----------v------------------v-------------------+
-      |               appWeb (Render / CF)              |
-      |   [React Frontend] <-> [Express Backend]        |
-      +----------^------------------^----------^--------+
-                 |                  |          |
-          [Sync Progress]    [Sync Decks]     [Auth]
-                 |                  |          |
-      +----------v---------+ +------v----------v------+
-      |    appAndroid      | |       appDotNet        |
-      |  (React Native)    | |       (C# WPF)         |
-      +--------------------+ +------------------------+
+### Full System Diagram
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    GOOGLE CLOUD                         │
+│  ┌──────────────────┐    ┌────────────────────────────┐ │
+│  │  Google OAuth 2.0│    │  Gemini AI API             │ │
+│  │  + Drive API     │    │  (generativelanguage.apis) │ │
+│  └────────┬─────────┘    └───────────────┬────────────┘ │
+└───────────┼──────────────────────────────┼──────────────┘
+            │ OAuth + Drive Data           │ PDF + Prompt
+            ▼                              ▼
+┌──────────────────────────────────────────────────────────┐
+│                    RENDER.COM (Backend)                  │
+│  Express.js Server                                       │
+│  ┌─────────────┐ ┌───────────────┐ ┌──────────────────┐ │
+│  │ /auth       │ │ /progress     │ │ /scan            │ │
+│  │ OAuth Flow  │ │ CRUD Supabase │ │ Gemini Proxy     │ │
+│  └──────┬──────┘ └───────┬───────┘ └────────┬─────────┘ │
+└─────────┼────────────────┼──────────────────┼───────────┘
+          │                │                  │
+          │           ┌────▼──────┐           │ (Gemini response)
+          │           │ SUPABASE  │           │
+          │           │ users     │           │
+          │           │ deck_prog │           │
+          │           │ quiz_sess │           │
+          │           └───────────┘           │
+          │                                   │
+┌─────────▼─────────────────────────────────────────────────┐
+│               CLOUDFLARE PAGES (Frontend)                  │
+│  React App (Vite Build)                                    │
+│  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌───────────────┐  │
+│  │ AIScan  │ │FlashCard │ │ QuizMode │ │  DeckManager  │  │
+│  └─────────┘ └──────────┘ └──────────┘ └───────────────┘  │
+└───────────────────────────────────────────────────────────┘
+          │ Same Google Drive AppDataFolder
+          ▼
+┌──────────────────────────────────────────┐
+│         DESKTOP & MOBILE CLIENTS        │
+│  ┌────────────────┐  ┌──────────────┐   │
+│  │ appDotNet WPF  │  │ appPython    │   │
+│  │ (Windows EXE)  │  │ (Win/Mac EXE)│   │
+│  └────────────────┘  └──────────────┘   │
+│  ┌─────────────────────────────────────┐ │
+│  │ appAndroid (React Native APK)       │ │
+│  └─────────────────────────────────────┘ │
+└──────────────────────────────────────────┘
 ```
 
-### Data Flow
-1. **Scanning**: User uploads images/PDF in **Web** or **Desktop**. The app splits them into batches, rotates through Gemini API keys, and generates a `decks.json` format.
-2. **Syncing**: Apps authenticate with Google. `decks.json` is stored in the **hidden AppDataFolder** on Google Drive.
-3. **Progress**: **appWeb** sends fine-grained card progress to **Supabase**. **appDotNet** merges local and remote deck updates using the **Smart Merge** algorithm.
+### Key Design Principles
+
+1. **Google Drive AppDataFolder as the source of truth** — `decks.json` and `config.json` are stored in the hidden AppDataFolder, invisible to the user but accessible by any authorized app.
+2. **Supabase for fine-grained progress** — Card-level `status` is synced to Supabase via a JSONB merge function, enabling cross-device flashcard resume.
+3. **Gemini API key never exposed in the browser** — The frontend sends the API key in an `x-gemini-key` HTTP header to the Express backend, which proxies it to Google. The key is never visible in DevTools network tab from the user's origin.
 
 ---
 
 ## 3. Data Structures
 
-### decks.json
-The primary interchange format.
+### 3.1 `decks.json` — The Universal Format
+
+This JSON array is the single shared format used by ALL four platforms.
+
 ```json
 [
   {
-    "deck_id": "uuid-v4",
+    "deck_id": "550e8400-e29b-41d4-a716-446655440000",
     "name": "History 101",
+    "created_at": "2026-03-01T08:00:00Z",
     "updated_at": "2026-04-01T10:00:00Z",
+    "description": "Scanned 80 cards via AI Scan",
+    "source_folder": "history_exams/",
     "cards": [
       {
-        "card_id": "uuid-v4",
-        "question": "Who was the first president?",
-        "options": ["A. Washington", "B. Jefferson"],
+        "card_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+        "question": "Who was the first President of the United States?",
+        "options": [
+          "A. George Washington",
+          "B. Thomas Jefferson",
+          "C. John Adams",
+          "D. Benjamin Franklin"
+        ],
         "correct_answers": ["A"],
         "question_type": "single_choice",
+        "notes": "",
         "status": 0,
-        "notes": "..."
+        "image_path": null
       }
     ]
   }
 ]
 ```
-- `status`: 0 (New), 1 (Unknown/Orange), 2 (Known/Green).
 
-### Supabase Schema
-| Table | Description | Key Fields |
+**Field Reference:**
+
+| Field | Type | Description |
 | :--- | :--- | :--- |
-| `users` | OAuth credentials | `google_id`, `refresh_token`, `email` |
-| `deck_progress` | Per-deck card status | `google_id`, `deck_id`, `cards_status` (JSONB) |
-| `quiz_sessions` | Active quiz state | `deck_id`, `current_index`, `answers` (JSONB) |
+| `deck_id` | `string` (UUID v4) | Unique deck identifier. Used as the primary key for sync. |
+| `name` | `string` | Display name of the deck. |
+| `updated_at` | `string` (ISO 8601) | Timestamp used by the Smart Merge algorithm to determine which version is newer. |
+| `card_id` | `string` (UUID v4) | Unique card identifier. Used by Supabase for card-level progress. |
+| `question` | `string` | The question stem (no numbering prefix). |
+| `options` | `string[]` | Answer options with letter prefix, e.g. `"A. text"`. |
+| `correct_answers` | `string[]` | Either letter format `["A"]` or full-text format `["A. text"]`. |
+| `question_type` | `"single_choice"` \| `"multiple_choice"` | Determines selection behavior in Quiz mode. |
+| `status` | `0` \| `1` \| `2` | `0` = New/Unseen, `1` = Unknown (orange), `2` = Known (green). |
+| `notes` | `string` | AI-generated note, e.g. `"⚠ Answer inferred by AI"`. |
+| `image_path` | `string` \| `null` | Local path to original image (Desktop apps only). |
 
----
+### 3.2 `config.json` — API Key Store
 
-## 4. appWeb (React + Express)
+Stored in Google Drive AppDataFolder so keys sync across devices. **Keys are never stored in `localStorage`.**
 
-### Component Hierarchy
-- `App.jsx` (Container, Theme, Pinned state)
-    - `Header` (Title, Search, Sort, Sync status)
-        - `NotificationBell` (System alerts & Guide)
-    - `FileLoader` (decks.json import/export)
-    - `AIScan` (Gemini orchestration UI)
-    - `DeckManager` (List, Delete, Pin decks)
-    - `FlashcardMode` (Study swipe interface)
-    - `QuizMode` (Timed/Un-timed question engine)
-
-### AI Scan Flow (Worker Pool + Binary Split)
-1. **Batching**: Images are merged into 50-page PDFs.
-2. **Worker Pool**: Each API key starts a "worker" (up to N concurrent operations).
-3. **Binary Split**: If a PDF batch fails after 3 retries, it is split into two smaller PDFs to isolate corrupt/unreadable images.
-4. **Prompting**: Uses `PDF_BATCH_PROMPT` to extract multiple questions per PDF.
-
-### API Endpoints (Backend)
-| Method | Path | Role |
-| :--- | :--- | :--- |
-| `GET` | `/auth/google` | Starts Google OAuth flow |
-| `POST` | `/auth/refresh` | Rotates Access Token using Refresh Token |
-| `POST` | `/scan/process` | Proxies PDF to Gemini API |
-| `POST` | `/progress/sync` | Merges card status into Supabase |
-
----
-
-## 5. appDotNet (WPF + MVVM)
-
-### MVVM Pattern
-- **Models**: `Deck`, `Flashcard`, `Settings`.
-- **ViewModels**: `MainViewModel` (UI binding), `GeminiViewModel` (Scan state), `SyncViewModel` (Auth/Drive).
-- **Services**: `SyncService`, `GeminiService`, `StorageService`.
-
-### Smart Merge Algorithm
-Used to merge local `decks.json` with Google Drive version.
-```csharp
-// Pseudocode
-foreach (remoteDeck in Drive) {
-    if (localExists(remoteDeck.id)) {
-        if (remoteDeck.updated_at > localDeck.updated_at) {
-            updateLocal(remoteDeck); // Preservation of local ImagePath
-        }
-    } else {
-        addNewLocal(remoteDeck);
-    }
+```json
+{
+  "api_keys": [
+    "AIzaxxx...key1",
+    "AIzaxxx...key2"
+  ],
+  "batch_size": 30,
+  "updated_at": "2026-04-01T08:00:00Z"
 }
-uploadMergedResult();
 ```
 
+### 3.3 `quiz_sessions.json` — Quiz Resume State
+
+Keyed by `deck_id`.
+
+```json
+{
+  "550e8400-e29b-41d4-a716-446655440000": {
+    "session_id": "sess-uuid",
+    "question_order": [5, 12, 3, 8, ...],
+    "current_index": 7,
+    "answers": {
+      "card_id_1": [0, 2],
+      "card_id_2": [1]
+    },
+    "correct_count": 5,
+    "wrong_count": 2,
+    "started_at": "2026-04-01T09:00:00Z",
+    "updated_at": "2026-04-01T09:15:00Z"
+  }
+}
+```
+
+### 3.4 Supabase Database Schema
+
+**Table: `users`**
+
+```sql
+CREATE TABLE users (
+  id           UUID  DEFAULT gen_random_uuid() PRIMARY KEY,
+  google_id    TEXT  UNIQUE NOT NULL,
+  email        TEXT  NOT NULL,
+  refresh_token TEXT,                          -- Google Refresh Token (long-lived)
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Table: `deck_progress`** — JSONB for efficient card-level status sync
+
+```sql
+CREATE TABLE deck_progress (
+  google_id    TEXT  REFERENCES users(google_id) ON DELETE CASCADE,
+  deck_id      TEXT  NOT NULL,
+  cards_status JSONB DEFAULT '{}'::jsonb,      -- { "card_id": 1, "card_id2": 2 }
+  updated_at   TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (google_id, deck_id)
+);
+```
+
+**Table: `quiz_sessions`** — Full quiz state per user per deck
+
+```sql
+CREATE TABLE quiz_sessions (
+  google_id       TEXT REFERENCES users(google_id) ON DELETE CASCADE,
+  deck_id         TEXT NOT NULL,
+  session_id      TEXT,
+  question_order  JSONB,
+  current_index   INTEGER DEFAULT 0,
+  answers         JSONB DEFAULT '{}',
+  correct_count   INTEGER DEFAULT 0,
+  wrong_count     INTEGER DEFAULT 0,
+  started_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (google_id, deck_id)
+);
+```
+
+**Stored Procedure: `merge_deck_progress`** — JSONB merge for card status
+
+```sql
+CREATE OR REPLACE FUNCTION merge_deck_progress(
+  p_google_id TEXT, p_deck_id TEXT, p_cards_status JSONB
+) RETURNS void AS $$
+BEGIN
+  INSERT INTO deck_progress (google_id, deck_id, cards_status)
+  VALUES (p_google_id, p_deck_id, p_cards_status)
+  ON CONFLICT (google_id, deck_id)
+  DO UPDATE SET
+    cards_status = deck_progress.cards_status || EXCLUDED.cards_status,
+    updated_at = NOW();
+END;
+$$ LANGUAGE plpgsql;
+```
+
+> The `||` operator merges two JSONB objects, with the right side winning on key conflicts. This means newer card statuses are always applied correctly without overwriting unrelated cards.
+
 ---
 
-## 6. appPython (Legacy Desktop)
+## 4. appWeb — React + Express
 
-### Worker Pool Pattern
-Implemented in `gemini_service.py` using `threading.Thread` and `queue.Queue`.
-1. Initialize a `Queue` with all image paths.
-2. Spawn N threads based on the number of API keys.
-3. Each thread pulls a task, selects its assigned key, and processes the image.
-4. Implements **Round-Robin key rotation** to stay within Rate limits (8 RPM per key).
+### 4.1 Project Structure
+
+```
+appWeb/
+├── src/
+│   ├── App.jsx                  # Root component. State, routing, layout.
+│   ├── index.css                # Global design system (CSS vars, components)
+│   ├── main.jsx                 # React entry point
+│   ├── components/
+│   │   ├── AIScan.jsx           # AI Scan orchestration UI
+│   │   ├── ApiKeyChip.jsx       # API key display chip component
+│   │   ├── DeckManager.jsx      # Card viewer + duplicate checker
+│   │   ├── FileLoader.jsx       # Import/Export decks.json
+│   │   ├── FlashcardMode.jsx    # Swipe-to-score flashcard study
+│   │   ├── Footer.jsx           # Footer with links
+│   │   ├── KeyboardShortcuts.jsx# Keyboard shortcut overlay
+│   │   ├── NotificationBell.jsx # Notification dropdown
+│   │   └── QuizMode.jsx         # Multiple-choice quiz engine
+│   └── services/
+│       ├── configService.js     # config.json CRUD on Drive
+│       ├── dedupService.js      # N-gram + Jaccard duplicate detection
+│       ├── driveSync.js         # OAuth token management + Drive API
+│       ├── geminiService.js     # PDF batch worker pool orchestrator
+│       └── pdfService.js        # Browser-side image-to-PDF conversion
+├── public/
+│   └── guide.html               # Static user guide page
+└── appBackend/
+    ├── index.js                 # Express server entry point
+    ├── supabaseClient.js        # Supabase client singleton
+    ├── database_setup.sql       # Full Supabase schema
+    └── routes/
+        ├── auth.js              # Google OAuth flow + token refresh
+        ├── progress.js          # Supabase progress CRUD
+        └── scan.js              # Gemini API proxy + JSON recovery
+```
+
+### 4.2 App.jsx — Component State
+
+**Global State (`App.jsx`)**
+
+| State Variable | Type | Description |
+| :--- | :--- | :--- |
+| `data` | `Deck[]` \| `null` | All loaded decks |
+| `selectedDeck` | `Deck` \| `null` | Currently open deck |
+| `mode` | `'flashcard'` \| `'quiz'` \| `null` | Current study mode |
+| `theme` | `'dark'` \| `'light'` | Current UI theme, persisted in `localStorage` |
+| `isHeaderCollapsed` | `boolean` | Collapsible header state (auto-collapses on scroll > 80px) |
+| `activeTab` | `'decks'` \| `'scan'` | Deck selection tab (My Decks vs AI Scan) |
+| `pinnedDecks` | `string[]` | Array of `deck_id` values, persisted in `localStorage` |
+| `sortOrder` | `'none'` \| `'asc'` \| `'desc'` | Deck list sort state, persisted in `localStorage` |
+| `userLoggedIn` | `boolean` | Whether Google session is active |
+| `driveFileId` | `string` \| `null` | Drive file ID of `decks.json` for update calls |
+| `isSyncing` | `boolean` | Shows top progress bar during sync |
+
+**App Rendering Logic (Waterfall):**
+
+```
+App.jsx renders:
+  1. If !data → Login Screen (FileLoader) + Header with Google Sign-in
+  2. If data && !selectedDeck → Deck Selection (DeckList + AIScan tab)
+  3. If selectedDeck && !mode → DeckDetailView (or DeckManager if manage=true)
+  4. If mode === 'flashcard' → FlashcardMode
+  5. If mode === 'quiz' → QuizMode
+```
+
+### 4.3 Component Reference
+
+#### `AIScan.jsx`
+
+- **Props:** `userLoggedIn: boolean`, `onScanComplete: (deck: Deck) => void`
+- **State Phases:** `idle → scanning → done | cancelled`
+- **Key Logic:**
+  1. Load `config.json` from Drive on mount (API keys, batch_size)
+  2. User selects a folder → images filtered (jpg/png/webp/bmp)
+  3. On "Start AI Scan": validate all keys in parallel → generate PDFs → process via Worker Pool
+  4. On complete: call `onScanComplete(newDeck)` which triggers Drive upload
+
+#### `DeckManager.jsx`
+
+- **Props:** `deck: Deck`, `onBack: () => void`, `onDeckModified: () => void`
+- **Tabs:** `"view"` (paginated card list) | `"dedup"` (duplicate detection)
+- **Duplicate Detection Algorithm:**
+  1. Normalize question text (lowercase, collapse whitespace)
+  2. Build 3-gram shingles for each card
+  3. Build inverted index: shingle → card indices
+  4. Jaccard pre-filter (threshold - 0.15) to get candidate pairs
+  5. Full LCS-based similarity on candidates
+  6. Combined score: `qRatio * 0.6 + ansRatio * 0.4`
+  7. Auto-select "B" cards for exact (≥99%) matches
+
+#### `FlashcardMode.jsx`
+
+- Renders cards sequentially with swipe/keyboard/button navigation
+- Tracks `known` / `unknown` counts, saves card progress to Supabase
+- Cards color-coded: green (status=2), orange (status=1), grey (status=0)
+
+#### `QuizMode.jsx`
+
+- Randomized question order with session persistence (resume on reload)
+- Supports `single_choice` and `multiple_choice` types
+- Detects letter-format `["A"]` vs full-text-format answers
+- Answers auto-saved to Supabase `quiz_sessions` table after each question
+
+#### `NotificationBell.jsx`
+
+- Fixed notification list with unread badge count
+- Read state persisted in `localStorage`
+- Dropdown z-index: **`9999`** to always appear above all UI elements
+- `overscroll-behavior: contain` prevents background page scroll
+
+### 4.4 Services
+
+#### `driveSync.js` — Token Management
+
+```javascript
+// Token flow:
+// 1. Check URL params for access_token (fresh OAuth redirect from backend)
+// 2. Store token + expiry in localStorage
+// 3. Before expiry (2-min buffer), auto-refresh via POST /auth/refresh
+// 4. On 401 from Drive API, call logoutGoogle() to clear state
+
+export async function getValidToken() {
+  // Returns valid access_token, refreshing silently if needed
+}
+
+export async function fetchDecksFromDrive() {
+  // Returns: { fileId, data } — merges Supabase card_progress into data
+}
+
+export async function uploadDecksToDrive(jsonData, existingFileId) {
+  // PATCH if existingFileId, POST if new — multipart upload
+}
+```
+
+#### `configService.js` — API Key Storage
+
+- Stores `config.json` in Drive AppDataFolder (never in localStorage)
+- Functions: `loadConfigFromDrive()`, `saveConfigToDrive(config, fileId)`
+- Default config: `{ api_keys: [], batch_size: 30, updated_at: '' }`
+
+#### `geminiService.js` — Worker Pool Orchestrator
+
+**Flow:**
+
+```
+processBatches(pdfBatches, pageCounts, apiKeys, callbacks, signal, imageBatches)
+│
+├── Create queue of { batchIndex, retries } for each PDF batch
+├── Spawn N workers (one per API key) — all start simultaneously
+│
+│   [Each Worker Loop]
+│   ├── Pull task from shared queue
+│   ├── Call sendBatch(pdf, key, ...) → POST /scan/process
+│   ├── On success: store result, update progress, sleep 2s
+│   ├── On failure (retries < 2): re-queue with retries+1
+│   │   ├── If 429: sleep 15s before re-queue
+│   │   └── Otherwise: sleep 5s
+│   └── On permanent failure (retries=2 AND pageCount > 1):
+│       ── BINARY SPLIT: divide images in half, create 2 sub-PDFs
+│       ── Add sub-batches to queue with retries=0
+│
+└── await Promise.all(workers) → collect and flatten all results
+```
+
+**Binary Split Logic:**
+
+```javascript
+// If a batch permanently fails with >1 image:
+const mid = Math.ceil(imgs.length / 2);
+const halfA = imgs.slice(0, mid);
+const halfB = imgs.slice(mid);
+// Both halves are re-queued independently, isolating the problematic image
+```
+
+#### `dedupService.js` — Duplicate Detection
+
+- Algorithm: N-gram Shingling (3-gram) → Jaccard pre-filter → LCS-based similarity
+- Combined score: `question_ratio * 0.6 + answer_ratio * 0.4`
+- Default threshold: `0.85`
+- Optimized with `Uint16Array` and inverted index for large decks (500+ cards)
+
+### 4.5 Backend API Reference (Express.js)
+
+**Base URL:** `https://flashcard-ai-bs67.onrender.com`
+
+**`/ping`**
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| GET | `/ping` | Keep-alive endpoint pinged by Google Apps Script |
+
+**`/auth` routes**
+
+| Method | Path | Request | Response | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/auth/google` | — | `302 Redirect` to Google OAuth | Starts OAuth flow. Scopes: drive.appdata, drive.file, email |
+| GET | `/auth/callback` | Query: `code` | `302 Redirect` to frontend with tokens | Exchanges code for tokens, upserts user to Supabase |
+| POST | `/auth/refresh` | Body: `{ google_id }` | `{ access_token, expiry }` | Refreshes token using stored refresh_token from Supabase |
+
+**`/scan` routes**
+
+| Method | Path | Header | Request Body | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/scan/validate` | `x-gemini-key` | — | `{ valid: bool, msg: string }` |
+| POST | `/scan/process` | `x-gemini-key` | `{ pdf_base64, batch_index, total_batches, page_count, model_index }` | `{ cards[], batch_index, model_used, parse_error }` |
+
+> The `/scan/process` endpoint uses a 4-layer JSON recovery strategy:
+> 1. Direct `JSON.parse()`
+> 2. Regex extract `[...array...]`
+> 3. Auto-fix (trailing commas, missing brackets)
+> 4. Partial object extraction (regex on individual `{...}` objects)
+
+**`/progress` routes**
+
+| Method | Path | Request | Response |
+| :--- | :--- | :--- | :--- |
+| POST | `/progress/save` | `{ google_id, deck_id, percent }` | `{ message }` |
+| GET | `/progress` | Query: `google_id` | `{ data: [...] }` |
+| POST | `/progress/quiz/save` | `{ google_id, deck_id, session_id, question_order, current_index, answers, ... }` | `{ message }` |
+| GET | `/progress/quiz/:deck_id` | Query: `google_id` | `{ data: session \| null }` |
+| POST | `/progress/cards/save` | `{ google_id, deck_id, cards_map }` | `{ message }` — calls `merge_deck_progress()` RPC |
+| GET | `/progress/cards/:deck_id` | Query: `google_id` | `{ data: { card_id: status, ... } }` |
+
+### 4.6 Google OAuth Flow (Step-by-Step)
+
+```
+User clicks "Sign in with Google"
+  │
+  ▼
+Frontend: window.location = /auth/google
+  │
+  ▼
+Backend (auth.js): oauth2Client.generateAuthUrl()
+  → Scopes: drive.appdata, drive.file, userinfo.email
+  │
+  ▼
+Google Consent Screen
+  │
+  ▼
+Google redirects to: /auth/callback?code=...
+  │
+  ▼
+Backend (auth.js):
+  1. oauth2Client.getToken(code) → { tokens }
+  2. googleapis.oauth2.userinfo.get() → { email, googleId }
+  3. Supabase UPSERT: users(google_id, email, refresh_token)
+  4. Redirect to FRONTEND_CALLBACK_URL?access_token=...&google_id=...&expiry=...&email=...
+  │
+  ▼
+Frontend (driveSync.js: initGoogleIdentity):
+  1. Parse URL params → save to localStorage (g_token, g_id, g_expiry, g_email)
+  2. Clean URL with history.replaceState()
+  3. Call handleSyncFromDrive() → fetch decks from Drive
+```
+
+### 4.7 Drive Sync Flow (Step-by-Step)
+
+```
+handleSyncFromDrive():
+  │
+  ├─ fetchDecksFromDrive()
+  │   ├── getValidToken() → check expiry, refresh if needed
+  │   ├── GET /drive/v3/files?spaces=appDataFolder&q=name='decks.json'
+  │   ├── GET /drive/v3/files/{id}?alt=media → download JSON
+  │   └── Merge Supabase card_progress into each deck's cards
+  │
+  ├─ setData(mergedDecks)
+  │   └── Merge: Drive data is source of truth, local card statuses applied on top
+  │
+  └─ After any deck mutation:
+      uploadDecksToDrive(newData, fileId)
+        ├── PATCH if fileId exists (update)
+        └── POST if new (create in appDataFolder)
+```
+
+### 4.8 AI Scan Flow (Step-by-Step)
+
+```
+User selects folder → filterImageFiles() → setImageFiles()
+  │
+  ▼
+"Start AI Scan" button
+  │
+  ├── Phase 0: Validate API Keys
+  │   └── validateKeysParallel(keys) → parallel GET /scan/validate
+  │       Returns only alive keys
+  │
+  ├── Phase 1: Generate PDFs
+  │   └── For each batch of images: imagesToPdf(files) → base64 PDF string
+  │       (Uses pdf-lib in browser, no server needed)
+  │
+  ├── Phase 2: Worker Pool (geminiService.processBatches)
+  │   ├── N workers (one per alive API key) pull from shared queue
+  │   ├── Each worker: POST /scan/process → backend proxies to Gemini
+  │   ├── On failure: retry up to 2 times (with 429 backoff)
+  │   └── On permanent failure + >1 image: Binary Split re-queue
+  │
+  └── Phase 3: Save
+      └── "Save Deck & Sync" → onScanComplete(newDeck) → uploadDecksToDrive()
+```
+
+### 4.9 Environment Variables
+
+**Backend (`appBackend/.env`)**
+
+| Variable | Example Value | Purpose |
+| :--- | :--- | :--- |
+| `GOOGLE_CLIENT_ID` | `900559...apps.googleusercontent.com` | OAuth2 client ID from Google Cloud |
+| `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | OAuth2 client secret |
+| `GOOGLE_REDIRECT_URI` | `.../auth/callback` | Must match exactly what's registered in Google Cloud |
+| `FRONTEND_URL` | `https://lhb16-flashcard-ai.pages.dev` | CORS origin whitelist |
+| `FRONTEND_CALLBACK_URL` | same as above | Where backend redirects after OAuth |
+| `SUPABASE_URL` | `https://xxx.supabase.co` | Supabase project URL |
+| `SUPABASE_KEY` | `sb_publishable_...` | Supabase anon/publishable key |
+| `PORT` | `3000` | Express server port (Render overrides this) |
+
+**Frontend (`appWeb/.env`)**
+
+| Variable | Example Value | Purpose |
+| :--- | :--- | :--- |
+| `VITE_BACKEND_URL` | `https://flashcard-ai-bs67.onrender.com` | Backend URL for all API calls |
 
 ---
 
-## 7. appAndroid (React Native)
+## 5. appDotNet — C# WPF Desktop
 
-### Gesture System (FlashcardScreen.js)
-Uses Expo's `Animated` and `PanResponder`.
-- **Swipe Horizontal**: Map `dx` to `rotate` and `translateX`.
-    - `dx > threshold`: Mark as Known (status 2).
-    - `dx < -threshold`: Mark as Unknown (status 1).
-- **Y-Axis lock**: Swipe is only captured if `abs(dx) > abs(dy) * 1.5`, allowing the user to scroll long question text vertically.
+### 5.1 Project Structure
 
-### 3D Flip Animation
-Uses `interpolate` on an `Animated.Value`.
-- **Front Side**: Rotates from `0deg` to `180deg`.
-- **Back Side**: Rotates from `180deg` to `360deg`.
-- `backfaceVisibility: 'hidden'` is used to toggle visibility at the 90-degree midpoint.
+```
+appDotNet/
+├── build_exe.bat                # Build script → single-file EXE
+└── FlashcardAI/
+    ├── App.xaml / App.xaml.cs   # Application entry + global resources
+    ├── MainWindow.xaml/.cs      # Shell window with navigation frame
+    ├── GlobalUsings.cs          # Global using statements
+    ├── Models/                  # Deck, Flashcard, Settings, QuizSession
+    ├── Services/
+    │   ├── AuthService.cs       # Google OAuth + credential management
+    │   ├── DedupService.cs      # Duplicate detection (port of Python)
+    │   ├── ExportService.cs     # Quizlet/TXT export
+    │   ├── GeminiService.cs     # REST API + round-robin + parallel
+    │   ├── StorageService.cs    # JSON file read/write
+    │   ├── SyncService.cs       # Drive sync + Smart Merge algorithm
+    │   └── VideoService.cs      # Video frame extraction (for future use)
+    ├── Views/                   # XAML UI Pages
+    └── Converters/              # IValueConverter implementations
+```
+
+### 5.2 MVVM Architecture
+
+```
+┌─────────────┐    binds    ┌──────────────┐    uses    ┌───────────────┐
+│  View (.xaml│◄────────────│  ViewModel   │───────────►│  Services     │
+│  + code-bd) │             │  (Properties │            │  (AuthService │
+│             │  commands   │   Commands   │            │  GeminiService│
+│             │◄────────────│   State)     │            │  SyncService  │
+└─────────────┘             └──────────────┘            │  StorageService│
+                                   │                    └───────────────┘
+                              INotifyPropertyChanged          │
+                                                       ┌──────▼──────────┐
+                                                       │  Models         │
+                                                       │  Deck, Flashcard│
+                                                       └─────────────────┘
+```
+
+### 5.3 StorageService.cs — File Management
+
+All data stored as JSON files next to the EXE:
+
+| File | Description |
+| :--- | :--- |
+| `decks.json` | All decks (universal format) |
+| `settings.json` | API keys, theme, export format |
+| `quiz_sessions.json` | Quiz resume state per deck |
+
+Key methods:
+
+```csharp
+StorageService.LoadDecks()         // → List<Deck>
+StorageService.SaveDecks(decks)    // Bumps updated_at on all decks
+StorageService.SaveDecksRaw(decks) // Does NOT bump updated_at (used by sync)
+StorageService.LoadQuizSessions()  // → Dictionary<string, QuizSession>
+StorageService.SaveQuizSession(session)
+StorageService.DeleteQuizSession(deckId)
+```
+
+### 5.4 SyncService.cs — Smart Merge Algorithm
+
+The Smart Merge resolves conflicts between local and remote (Google Drive) versions of `decks.json` using `updated_at` timestamps.
+
+**Pseudocode:**
+
+```
+SyncDecksAsync():
+  IF no internet → return (false, "No connection")
+
+  remoteDecks = download decks.json from Drive (or [] if not found)
+  localDecks  = StorageService.LoadDecks()
+  merged = {}
+
+  FOR each remoteDeck in remoteDecks:
+    IF localDecks contains remoteDeck.deck_id:
+      IF remoteDeck.updated_at > localDeck.updated_at:
+        // Remote is newer → use remote, but PRESERVE local ImagePath values
+        FOR each localCard WHERE localCard.ImagePath != null:
+          remoteCard.ImagePath = localCard.ImagePath
+        merged[deck_id] = remoteDeck
+      ELSE:
+        // Local is newer or equal → keep local
+        merged[deck_id] = localDeck
+    ELSE:
+      // Deck only exists remotely → add it locally
+      merged[deck_id] = Deck.FromDict(remoteDeck)
+
+  FOR each localDeck NOT in merged:
+    // Deck only exists locally → keep it
+    merged[deck_id] = localDeck
+
+  StorageService.SaveDecksRaw(merged.Values)  // No updated_at bump
+  UploadJson("decks.json", fileId, merged.Values)
+```
+
+> **Why `SaveDecksRaw`?** After merging, we write the merged result without bumping `updated_at`. If we bumped it, the next sync would think local is always newer, breaking the two-way sync.
+
+### 5.5 GeminiService.cs — Key Features
+
+- **Round-robin rotation:** Thread-safe `GetNextKey()` with `lock(_lock)` wrapping `_keyIndex`
+- **Model fallback list:** `gemini-2.5-flash` → `gemini-2.5-flash-lite` → ... (6 models)
+- **Parallel processing:** `ProcessImagesParallel()` splits images into N packs, one `Task.Run()` per key
+- **Error handling by category:**
+  - `429` / `quota` → `InterruptibleDelay(60 * (attempt+1))` up to 120s
+  - `404` / `not found` → advance `modelIdx` to next fallback
+  - `500` / `503` → `InterruptibleDelay(5s)`
+- **PdfSharpCore** for image-to-PDF conversion (no Python dependency)
+- **5-minute timeout:** `HttpClient.Timeout = TimeSpan.FromMinutes(5)`
+
+### 5.6 Build Instructions
+
+```bat
+# build_exe.bat
+dotnet publish FlashcardAI/FlashcardAI.csproj ^
+  -c Release ^
+  -r win-x64 ^
+  --self-contained true ^
+  -p:PublishSingleFile=true ^
+  -p:IncludeNativeLibrariesForSelfExtract=true
+```
+
+**Output:** `FlashcardAI/bin/Release/net8.0-windows/win-x64/publish/FlashcardAI.exe`
+
+**Requirements:** .NET 8 SDK installed on build machine (runtime is bundled in the EXE).
+
+---
+
+## 6. appPython — Legacy Python Desktop
+
+### 6.1 Project Structure
+
+```
+appPython/
+├── app.py                       # CustomTkinter UI entry point
+├── build_exe.bat                # PyInstaller build script
+├── FlashcardAI.spec             # PyInstaller spec file
+├── decks.json                   # Local deck store
+├── settings.json                # API keys + settings
+├── quiz_sessions.json           # Quiz sessions
+├── models/
+│   └── flashcard.py             # Deck, Flashcard, QuizSession dataclasses
+├── services/
+│   ├── __init__.py
+│   ├── auth_service.py          # Google OAuth (InstalledAppFlow)
+│   ├── dedup_service.py         # Duplicate detection
+│   ├── export_service.py        # Quizlet/TXT export
+│   ├── gemini_service.py        # AI scan + worker pool
+│   ├── storage_service.py       # JSON file I/O
+│   ├── sync_service.py          # Drive sync + Smart Merge
+│   └── video_service.py         # Video frame extraction
+└── ui/                          # CustomTkinter UI screens
+```
+
+### 6.2 GeminiService — Processing Modes
+
+The Python implementation offers three scanning modes:
+
+**Mode 1: Single Image** (`process_image`)
+- Sends one image at a time to Gemini
+- Uses `EXTRACTION_PROMPT` (single-question extraction)
+
+**Mode 2: PDF Batch Sequential** (`process_images_as_pdf_batches`)
+- Merges 50 images into one PDF per batch
+- Sends PDF with `PDF_BATCH_PROMPT` (extracts all questions at once)
+- Sequential: one batch at a time per key
+
+**Mode 3: PDF Batch Parallel** (`process_images_parallel`)
+- Splits images into N equal packs (one per key)
+- Each pack runs in a dedicated `threading.Thread`
+- Shared `progress_lock` for thread-safe progress reporting
+
+### 6.3 Round-Robin Key Rotation
+
+```python
+class GeminiService:
+    def __init__(self):
+        self._keys = []     # List of API keys
+        self._key_index = 0 # Current position
+        self._lock = threading.Lock()
+
+    def _get_next_key(self):
+        with self._lock:
+            key = self._keys[self._key_index % len(self._keys)]
+            self._key_index = (self._key_index + 1) % len(self._keys)
+            return key
+
+    @property
+    def request_delay(self):
+        # Safe RPM = 8 per key. If 3 keys: delay = 60/8/3 = 2.5s per request
+        n = max(len(self._keys), 1)
+        return max(60 / SAFE_RPM / n, 1.0)
+```
+
+### 6.4 PDF_BATCH_PROMPT Explained
+
+The `PDF_BATCH_PROMPT` instructs Gemini to process a multi-page PDF where **each page = one question**. Key directives:
+
+1. **Ignore:** logos, watermarks, page numbers — prevents noise in extracted text
+2. **Look for explicit answer clues first:** highlighted/bold options, checkmarks, filled bubbles
+3. **Infer if no clue found:** Gemini reasons using domain knowledge, sets `"inferred": true`
+4. **Never return `["Unknown"]`:** always provide best guess, never leave blank
+5. **Handle special characters:** code (`==`, `!=`, `&&`), math (λ, Σ, ≥), preserve exactly
+6. **Return JSON array:** one object per page in order, including `NOT_A_QUESTION` pages
+
+### 6.5 Worker Pool + Shared Queue Pattern (Parallel Mode)
+
+```python
+def process_images_parallel(self, image_paths, keys, batch_size=50, ...):
+    # Split images into N packs (one per key)
+    packs = [image_paths[i:i+pack_size] for i in range(0, total, pack_size)]
+
+    all_results = [None] * total   # Pre-allocated result array
+    progress_lock = threading.Lock()
+    shared_progress = {"count": 0}
+
+    def worker(pack_idx, pack_images, api_key):
+        # Each worker has its own GeminiService instance with ONE key
+        worker_svc = GeminiService()
+        worker_svc.set_keys([api_key])
+        # Process sub-batches, write to all_results[global_idx]
+        ...
+
+    threads = [Thread(target=worker, args=(i, pack, key))
+               for i, (pack, key) in enumerate(zip(packs, keys))]
+    for t in threads: t.start()
+    for t in threads: t.join()
+```
+
+> **Key insight:** Each thread writes to a unique, pre-calculated slice of `all_results`. No locking is needed for writes, only for the shared progress counter.
+
+### 6.6 Build Instructions
+
+```bat
+# build_exe.bat
+pyinstaller FlashcardAI.spec --clean --noconfirm
+```
+
+**Spec file key settings:**
+- `onefile=True` → single EXE
+- `windowed=True` → no console window
+- `datas=[("assets/", "assets/")]` → bundle UI assets
+
+---
+
+## 7. appAndroid — React Native Mobile
+
+### 7.1 Project Structure
+
+```
+appAndroid/
+├── App.js                       # Root: NavigationContainer + Stack.Navigator
+├── index.js                     # Expo entry point
+├── app.json                     # Expo config (package name, icons, splash)
+├── eas.json                     # EAS Build config (dev/preview/production)
+├── src/
+│   ├── theme.js                 # Colors, Spacing, Radius constants
+│   ├── screens/
+│   │   ├── HomeScreen.js        # Deck list + import + Drive sync
+│   │   ├── DeckDetailScreen.js  # Deck info + navigate to Flashcard/Quiz
+│   │   ├── FlashcardScreen.js   # Swipe-to-score + 3D flip card
+│   │   └── QuizScreen.js        # Multiple-choice quiz with session resume
+│   └── utils/
+│       ├── storage.js           # AsyncStorage CRUD (decks + sessions)
+│       ├── googleAuth.js        # Google OAuth (Expo AuthSession)
+│       ├── googleDrive.js       # Drive API calls
+│       └── syncService.js       # Drive sync + Smart Merge
+└── android/                     # Native Android build files
+```
+
+### 7.2 Navigation Stack
+
+```javascript
+// App.js
+<NavigationContainer>
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Home"       component={HomeScreen} />
+    <Stack.Screen name="DeckDetail" component={DeckDetailScreen} />
+    <Stack.Screen name="Flashcard"  component={FlashcardScreen} />
+    <Stack.Screen name="Quiz"       component={QuizScreen} />
+  </Stack.Navigator>
+</NavigationContainer>
+```
+
+**Navigation Params:**
+
+| Route | Params Received | Params Passed On |
+| :--- | :--- | :--- |
+| `Home` | — | `deck` → DeckDetail |
+| `DeckDetail` | `{ deck }` | `{ deck }` → Flashcard or Quiz |
+| `Flashcard` | `{ deck }` | — |
+| `Quiz` | `{ deck }` | — |
+
+### 7.3 Screen Flow Diagram
+
+```
+HomeScreen
+  │ tap deck card
+  ▼
+DeckDetailScreen
+  │ tap "Flashcard Mode"         tap "Quiz Mode"
+  ▼                              ▼
+FlashcardScreen            QuizScreen
+  │ swipe right (Known)       │ select options → Confirm
+  │ swipe left (Unknown)      │ → auto-save session
+  │ tap card → flip           │ → Next →
+  ▼ all done                  ▼ all done
+Results Screen             Results Screen (QuizDone)
+```
+
+### 7.4 FlashcardScreen — Gesture System
+
+**PanResponder Setup:**
+
+```javascript
+onMoveShouldSetPanResponder: (_, g) => {
+  const adx = Math.abs(g.dx), ady = Math.abs(g.dy);
+  // Only capture gesture if clearly horizontal AND past dead zone
+  return adx > 12 && adx > ady * 1.5;
+}
+```
+
+> This condition ensures the PanResponder does not compete with vertical ScrollView. If the user scrolls the long question text, `ady > adx / 1.5`, so the condition is false and the scroll wins.
+
+**Swipe Decision:**
+
+```javascript
+onPanResponderRelease: (_, g) => {
+  const isRight = g.dx > SWIPE_THRESHOLD || g.vx > VELOCITY_THR;  // Known ✅
+  const isLeft  = g.dx < -SWIPE_THRESHOLD || g.vx < -VELOCITY_THR; // Unknown ❌
+
+  if (isRight) advanceCard(true);
+  else if (isLeft) advanceCard(false);
+  else {
+    // Snap back with spring animation
+    Animated.spring(swipeX, { toValue: 0, friction: 6, tension: 50 }).start();
+  }
+}
+```
+
+- `SWIPE_THRESHOLD = screen_width * 0.30` (30% of screen width)
+- `VELOCITY_THR = 1.2` (fast flick overrides distance threshold)
+
+**Visual Feedback During Swipe:**
+
+```javascript
+// Card rotation follows swipe position
+const cardRotate = swipeX.interpolate({
+  inputRange: [-SCREEN_W, 0, SCREEN_W],
+  outputRange: ['-18deg', '0deg', '18deg']
+});
+
+// Green "Known" overlay fades in on right swipe
+const rightOverlay = swipeX.interpolate({
+  inputRange: [20, 90], outputRange: [0, 1], extrapolate: 'clamp'
+});
+
+// Underline indicator activates at threshold
+const rightUnderline = swipeX.interpolate({
+  inputRange: [SWIPE_THRESHOLD - 5, SWIPE_THRESHOLD + 5],
+  outputRange: [0, 1], extrapolate: 'clamp'
+});
+```
+
+### 7.5 3D Card Flip Animation
+
+```javascript
+// Single Animated.Value drives both sides
+const flipAnim = useRef(new Animated.Value(0)).current;
+
+// Front: 0° → 180°
+const frontRotateY = flipAnim.interpolate({
+  inputRange: [0, 1], outputRange: ['0deg', '180deg']
+});
+
+// Back: 180° → 360° — appears as card flips to front side
+const backRotateY = flipAnim.interpolate({
+  inputRange: [0, 1], outputRange: ['180deg', '360deg']
+});
+
+// Run spring animation on tap
+function doFlip() {
+  Animated.spring(flipAnim, {
+    toValue: flipped ? 0 : 1,
+    friction: 8, tension: 10, useNativeDriver: false
+  }).start();
+}
+```
+
+> Both front and back sides use `backfaceVisibility: 'hidden'`. At 90° rotation, the visible face transitions to the back face, creating a seamless 3D flip effect.
+
+### 7.6 QuizScreen — Answer Validation
+
+Two answer formats are supported:
+
+```javascript
+// Format detection: check if all correct_answers are single letters
+const isLetterFmt = correct_answers.every(a => /^[A-Za-z]$/.test(a.trim()));
+
+// Letter format: compare by extracting first character from option text
+if (isLetterFmt) {
+  const optLetter = optText[0] === 'A' && (optText[1] === '.' || optText[1] === ')')
+    ? optText[0].toUpperCase() : fallbackLabel;
+  isCorrectOpt = correctAnswers.some(a => a === optLetter);
+}
+
+// Full-text format: compare normalized full option text
+else {
+  isCorrectOpt = correctAnswers.some(a => 
+    a.trim().toLowerCase() === opt.trim().toLowerCase()
+  );
+}
+```
+
+### 7.7 `storage.js` — AsyncStorage API
+
+```javascript
+// All data stored in AsyncStorage (SQLite-backed on Android)
+const DECKS_KEY    = 'flashcard_decks';   // Array of decks
+const SESSIONS_KEY = 'quiz_sessions';     // Object: { deck_id: session }
+
+// Key functions:
+saveDecks(decks)           // Stringify + set with auto updated_at
+loadDecks()                // Parse + return
+updateDeck(updatedDeck)    // Load → find by deck_id → replace → save
+saveSession(deckId, sess)  // Merge into sessions object → save
+loadSessions()             // Return full sessions object
+deleteSession(deckId)      // Delete key from sessions → save
+```
+
+### 7.8 Build Instructions
+
+**Debug APK (local USB testing):**
+
+```bat
+# build_apk_debug.bat
+cd appAndroid
+npx expo prebuild --platform android --clean
+cd android
+.\gradlew.bat assembleDebug
+```
+
+**Release APK:**
+
+```bat
+# build_apk_release.bat
+cd appAndroid
+npx expo prebuild --platform android --clean
+cd android
+.\gradlew.bat assembleRelease
+```
+
+**Output:** `android/app/build/outputs/apk/release/app-release.apk`
+
+> For release signing, configure `android/app/build.gradle` with your keystore in `signingConfigs.release`.
 
 ---
 
 ## 8. Shared Infrastructure
 
-### Google Cloud Setup
-1. Create project in Google Cloud Console.
-2. Enable **Google Drive API** and **Generative Language API**.
-3. Configure OAuth consent screen with `.../auth/google/callback`.
-4. Scopes required: `.../auth/drive.appdata`, `.../auth/userinfo.email`, `openid`.
+### 8.1 Google Cloud Console Setup
 
-### Supabase Setup
-Run `appWeb/appBackend/database_setup.sql` in the SQL Editor to create tables and the `merge_deck_progress` function.
+1. Go to [console.cloud.google.com](https://console.cloud.google.com)
+2. Create new project (e.g., `FlashcardAI`)
+3. **Enable APIs:**
+   - `Google Drive API`
+   - `Generative Language API` (for Gemini direct calls — Desktop apps)
+   - `Google Identity` (OAuth)
+4. **OAuth Consent Screen:**
+   - User Type: External
+   - Add scopes: `drive.appdata`, `drive.file`, `userinfo.email`, `openid`
+5. **Create Credentials:**
+   - Type: `Web application` (for appWeb backend)
+   - Authorized redirect URI: `https://flashcard-ai-bs67.onrender.com/auth/callback`
+   - Type: `Desktop app` (for appDotNet and appPython)
+
+### 8.2 Supabase Setup
+
+1. Create project at [supabase.com](https://supabase.com)
+2. Go to **SQL Editor** and run the full `appWeb/appBackend/database_setup.sql`
+3. Copy **Project URL** and **anon key** → add to backend `.env`
+4. RLS Policies (optional but recommended for production):
+   ```sql
+   ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE deck_progress ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE quiz_sessions ENABLE ROW LEVEL SECURITY;
+   -- Note: Backend uses Supabase service_role key to bypass RLS
+   ```
+
+### 8.3 Render.com Backend Setup
+
+1. Connect GitHub repository
+2. **Build Command:** `npm install` (in `appWeb/appBackend/`)
+3. **Start Command:** `node index.js`
+4. **Root Directory:** `appWeb/appBackend`
+5. Add all environment variables from the table in [Section 4.9](#49-environment-variables)
+6. **Free tier note:** Service sleeps after 15 minutes. Use the Google Apps Script keep-alive:
+
+```javascript
+// Google Apps Script (runs every 14 minutes via trigger)
+function keepAlive() {
+  UrlFetchApp.fetch('https://flashcard-ai-bs67.onrender.com/ping');
+}
+```
+
+### 8.4 Cloudflare Pages Setup (Frontend)
+
+1. Connect GitHub repository
+2. **Build Command:** `npm run build`
+3. **Build Output:** `dist`
+4. **Root Directory:** `appWeb`
+5. Add Environment Variable: `VITE_BACKEND_URL = https://flashcard-ai-bs67.onrender.com`
 
 ---
 
 ## 9. Development Guide
 
-### Prerequisites
-- Node.js (v18+)
-- .NET 8 SDK
-- Python 3.10+
-- Expo CLI (`npm install -g expo-cli`)
+### 9.1 Prerequisites
 
-### Setup From Scratch
-1. **Web**: `cd appWeb && npm install && npm run dev`.
-2. **Backend**: `cd appWeb/appBackend && npm install && node index.js`.
-3. **Desktop**: Open `appDotNet/FlashcardAI.sln` in Visual Studio 2022.
-4. **Mobile**: `cd appAndroid && npm install && npx expo start`.
+| Tool | Version | Used by |
+| :--- | :--- | :--- |
+| Node.js | v18+ | appWeb, appAndroid |
+| npm | v9+ | appWeb, appAndroid |
+| .NET SDK | v8.0 | appDotNet |
+| Python | v3.10+ | appPython |
+| Expo CLI | latest | appAndroid |
+| Java JDK | v17+ | appAndroid (Android build) |
+| Android SDK | API 31+ | appAndroid |
+| Visual Studio | 2022 | appDotNet (WPF designer) |
+
+### 9.2 Setup from Scratch
+
+**appWeb (Frontend):**
+```bash
+cd appWeb
+npm install
+# Create src/.env with:
+# VITE_BACKEND_URL=http://localhost:3000
+npm run dev    # → http://localhost:5173
+```
+
+**appWeb (Backend):**
+```bash
+cd appWeb/appBackend
+npm install
+# Copy .env.example → .env and fill in all values
+node index.js  # → http://localhost:3000
+```
+
+**appDotNet:**
+```bash
+# Open Visual Studio 2022
+# File → Open → Project
+# Navigate to: appDotNet/FlashcardAI/FlashcardAI.csproj
+# Press F5 to run (Debug) or Ctrl+F5 (Release without debugger)
+```
+
+**appPython:**
+```bash
+cd appPython
+pip install -r requirements.txt   # (create if missing: google-genai, customtkinter, Pillow)
+python app.py
+```
+
+**appAndroid:**
+```bash
+cd appAndroid
+npm install
+npx expo start
+# Press 'a' to open in Android emulator or 'r' to run on connected device
+```
+
+### 9.3 Adding New Features — Guidelines
+
+1. **New API endpoint:** Add to the appropriate route file in `appBackend/routes/`. Update this documentation's API table.
+2. **New React component:** Create in `src/components/`. Ensure it handles both `dark` and `light` theme via CSS variables.
+3. **New data field:** Add to `decks.json` schema (Section 3.1), update `Deck.FromDict()` in .NET and `Deck.from_dict()` in Python, and update Android's `storage.js`.
+4. **New notification:** Add to the `NOTIFICATIONS` array in `NotificationBell.jsx`.
+
+### 9.4 Coding Conventions
+
+- **Commit messages:** Conventional Commits format (`feat:`, `fix:`, `docs:`, `refactor:`)
+- **CSS:** Use CSS variables from `index.css` (`var(--primary)`, `var(--bg-main)`, etc.)
+- **State management:** Local component state only (no Redux). Shared state lives in `App.jsx`.
+- **Z-index layers:** `Header (200) > Toggle Button (106) > Search/Tabs (50) < Notification Dropdown (9999)`
 
 ---
 
 ## 10. Deployment Guide
 
-### Web (CI/CD)
-- **Frontend**: Connect GitHub to **Cloudflare Pages**. Build command: `npm run build`, Output: `dist`.
-- **Backend**: Connect GitHub to **Render.com**. Use `node index.js`.
+### 10.1 Web: GitHub → Cloudflare Pages (CI/CD)
 
-### Release Checklist
-- [ ] Update `updated_at` in all modified decks.
-- [ ] Verify `decks.json` schema hasn't changed.
-- [ ] Test Drive Sync merge on at least two different platforms.
-- [ ] Rotate Gemini API keys if any have been leaked or quota used.
+```
+git push main
+  │
+  ├── Cloudflare Pages detects push → auto-build
+  │   cd appWeb && npm install && npm run build
+  │   Deploy dist/ to *.pages.dev
+  │
+  └── Render.com detects push → auto-deploy Backend
+      cd appWeb/appBackend && npm install && node index.js
+```
+
+No manual steps needed after initial configuration.
+
+### 10.2 Desktop: Build EXE → GitHub Release
+
+```bat
+# Step 1: Build .NET EXE
+cd appDotNet
+build_exe.bat
+
+# Step 2: Build Python EXE
+cd ..\appPython
+build_exe.bat
+
+# Step 3: Create GitHub Release
+# Use: releaseApp/release_gh.bat (auto-creates tag + uploads EXEs)
+```
+
+### 10.3 Android: Build APK → Manual Distribution
+
+```bat
+cd appAndroid
+build_apk_release.bat
+# Output: android/app/build/outputs/apk/release/app-release.apk
+# Upload to GitHub Releases or distribute directly
+```
+
+### 10.4 Pre-Release Checklist
+
+- [ ] All deck edits bump `updated_at` to ISO format
+- [ ] `decks.json` schema is backward-compatible (no removed fields)
+- [ ] Test Drive Sync round-trip: modify on Web → sync on Desktop → verify match
+- [ ] Test AI Scan with both 1 key and multiple keys (parallel mode)
+- [ ] Verify both dark and light themes render correctly on all changed components
+- [ ] Run `git status` and confirm no accidental files staged
+- [ ] Backend `.env` secrets are NOT committed to git
+- [ ] Android APK tested on physical device before release
+- [ ] Bump version in `app.json` and tag commit with `vX.Y.Z`
 
 ---
-*Flashcard AI Team — 2026*
+
+*Flashcard AI — Technical Documentation v2.0*
+*Generated: 2026-04-01 | Authors: Flashcard AI Team*
