@@ -57,23 +57,23 @@ Flashcard AI converts physical or digital exam images into study-ready multiple-
 ### Full System Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    GOOGLE CLOUD                         │
-│  ┌──────────────────┐    ┌────────────────────────────┐ │
-│  │  Google OAuth 2.0│    │  Gemini AI API             │ │
-│  │  + Drive API     │    │  (generativelanguage.apis) │ │
-│  └────────┬─────────┘    └───────────────┬────────────┘ │
-└───────────┼──────────────────────────────┼──────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                    GOOGLE CLOUD                          │
+│  ┌──────────────────┐    ┌────────────────────────────┐  │
+│  │  Google OAuth 2.0│    │  Gemini AI API             │  │
+│  │  + Drive API     │    │  (generativelanguage.apis) │  │
+│  └────────┬─────────┘    └───────────────┬────────────┘  │
+└───────────┼──────────────────────────────┼───────────────┘
             │ OAuth + Drive Data           │ PDF + Prompt
             ▼                              ▼
 ┌──────────────────────────────────────────────────────────┐
 │                    RENDER.COM (Backend)                  │
 │  Express.js Server                                       │
-│  ┌─────────────┐ ┌───────────────┐ ┌──────────────────┐ │
-│  │ /auth       │ │ /progress     │ │ /scan            │ │
-│  │ OAuth Flow  │ │ CRUD Supabase │ │ Gemini Proxy     │ │
-│  └──────┬──────┘ └───────┬───────┘ └────────┬─────────┘ │
-└─────────┼────────────────┼──────────────────┼───────────┘
+│  ┌─────────────┐ ┌───────────────┐ ┌──────────────────┐  │
+│  │ /auth       │ │ /progress     │ │ /scan            │  │
+│  │ OAuth Flow  │ │ CRUD Supabase │ │ Gemini Proxy     │  │
+│  └──────┬──────┘ └───────┬───────┘ └────────┬─────────┘  │
+└─────────┼────────────────┼──────────────────┼────────────┘
           │                │                  │
           │           ┌────▼──────┐           │ (Gemini response)
           │           │ SUPABASE  │           │
@@ -83,24 +83,24 @@ Flashcard AI converts physical or digital exam images into study-ready multiple-
           │           └───────────┘           │
           │                                   │
 ┌─────────▼─────────────────────────────────────────────────┐
-│               CLOUDFLARE PAGES (Frontend)                  │
-│  React App (Vite Build)                                    │
+│               CLOUDFLARE PAGES (Frontend)                 │
+│  React App (Vite Build)                                   │
 │  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌───────────────┐  │
 │  │ AIScan  │ │FlashCard │ │ QuizMode │ │  DeckManager  │  │
 │  └─────────┘ └──────────┘ └──────────┘ └───────────────┘  │
 └───────────────────────────────────────────────────────────┘
           │ Same Google Drive AppDataFolder
           ▼
-┌──────────────────────────────────────────┐
-│         DESKTOP & MOBILE CLIENTS        │
-│  ┌────────────────┐  ┌──────────────┐   │
-│  │ appDotNet WPF  │  │ appPython    │   │
-│  │ (Windows EXE)  │  │ (Win/Mac EXE)│   │
-│  └────────────────┘  └──────────────┘   │
-│  ┌─────────────────────────────────────┐ │
-│  │ appAndroid (React Native APK)       │ │
-│  └─────────────────────────────────────┘ │
-└──────────────────────────────────────────┘
+┌───────────────────────────────────────────┐
+│         DESKTOP & MOBILE CLIENTS          │
+│  ┌────────────────┐  ┌──────────────┐     │
+│  │ appDotNet WPF  │  │ appPython    │     │
+│  │ (Windows EXE)  │  │ (Win/Mac EXE)│     │
+│  └────────────────┘  └──────────────┘     │
+│  ┌─────────────────────────────────────┐  │
+│  │ appAndroid (React Native APK)       │  │
+│  └─────────────────────────────────────┘  │
+└───────────────────────────────────────────┘
 ```
 
 ### Key Design Principles
@@ -1237,5 +1237,4 @@ build_apk_release.bat
 
 ---
 
-*Flashcard AI — Technical Documentation v2.0*
-*Generated: 2026-04-01 | Authors: Flashcard AI Team*
+*Flashcard AI — Technical Documentation | Generated: 2026-04-01 | Author: [LHB16](https://github.com/LHB16)*
