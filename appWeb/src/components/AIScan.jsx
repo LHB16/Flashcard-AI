@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle, CheckCircle2, Loader2, Upload, Info, Settings, Terminal } from 'lucide-react';
+import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle, CheckCircle2, Loader2, Upload, Info, Settings, Terminal, HelpCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ApiKeyChip from './ApiKeyChip';
 import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
@@ -302,10 +302,15 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       <div className="scan-left">
       {/* ─── Section 1: API Keys ─── */}
       <div className="glass-panel scan-section">
-        <div className="scan-section-header">
-          <Settings size={20} color="var(--primary)" />
-          <h3>Config & API Keys</h3>
-          {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
+        <div className="scan-section-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Settings size={20} color="var(--primary)" />
+            <h3>Config & API Keys</h3>
+            {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
+          </div>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" title="Get a free Gemini API Key" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', background: 'rgba(79, 70, 229, 0.1)', padding: '6px', borderRadius: '50%', textDecoration: 'none' }}>
+            <HelpCircle size={18} />
+          </a>
         </div>
 
         {configError && (
