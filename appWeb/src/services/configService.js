@@ -11,7 +11,7 @@ const CONFIG_FILENAME = 'config.json';
  */
 const DEFAULT_CONFIG = {
   api_keys: [],
-  batch_size: 50,
+  batch_size: 30,
   updated_at: '',
 };
 

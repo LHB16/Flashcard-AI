@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle, CheckCircle2, Loader2, Upload } from 'lucide-react';
+import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle, CheckCircle2, Loader2, Upload, Info, Settings } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ApiKeyChip from './ApiKeyChip';
 import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
@@ -65,7 +65,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       setConfigFileId(fileId);
     } catch (err) {
       setConfigError(err.message);
-      setConfig({ api_keys: [], batch_size: 50, updated_at: '' });
+      setConfig({ api_keys: [], batch_size: 30, updated_at: '' });
     }
     setConfigLoading(false);
   };
@@ -155,7 +155,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
     setBatchResults([]);
     setLogs([]);
 
-    const batchSize = config.batch_size || 50;
+    const batchSize = Math.max(1, Math.min(parseInt(config.batch_size, 10) || 30, 30));
     const batches = chunk(imageFiles, batchSize);
     const totalImages = imageFiles.length;
 
@@ -300,8 +300,8 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       {/* ─── Section 1: API Keys ─── */}
       <div className="glass-panel scan-section">
         <div className="scan-section-header">
-          <KeyRound size={20} color="var(--primary)" />
-          <h3>API Keys</h3>
+          <Settings size={20} color="var(--primary)" />
+          <h3>Cấu hình & API Keys</h3>
           {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
         </div>
 
@@ -344,6 +344,33 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
               <button className="btn btn-glass" onClick={handleAddKey} style={{ flexShrink: 0 }}>
                 <Plus size={16} /> Add
               </button>
+            </div>
+
+            {/* Batch Size Config */}
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                Số hình mỗi pack (Batch Size)
+                <span title="Tối đa 30 hình 1 pack để đảm bảo chất lượng quét và tránh lỗi quá tải payload của Gemini." style={{ display: 'inline-flex', cursor: 'help' }}>
+                  <Info size={14} color="var(--primary)" />
+                </span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                value={config.batch_size || ''}
+                onChange={(e) => {
+                  let val = parseInt(e.target.value, 10);
+                  if (isNaN(val)) val = '';
+                  else if (val > 30) val = 30;
+                  else if (val < 1) val = 1;
+                  setConfig({ ...config, batch_size: val });
+                  setConfigDirty(true);
+                }}
+                className="key-input"
+                style={{ width: '100%' }}
+                placeholder="Tối đa 30 hình 1 pack"
+              />
             </div>
 
             {/* Save config button */}
