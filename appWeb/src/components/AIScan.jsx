@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle, CheckCircle2, Loader2, Upload, Info, Settings } from 'lucide-react';
+import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle, CheckCircle2, Loader2, Upload, Info, Settings, Terminal } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ApiKeyChip from './ApiKeyChip';
 import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
@@ -472,6 +472,15 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       </div>
 
       <div className="scan-right">
+      {/* ─── Placeholder when Idle ─── */}
+      {scanState === 'idle' && (
+        <div className="glass-panel" style={{ flex: 1, minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.7, border: '1px dashed var(--glass-border)', background: 'transparent' }}>
+          <Terminal size={48} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
+          <h3 style={{ color: 'var(--text-muted)', margin: 0, fontSize: '1.1rem' }}>Terminal Console</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '0.5rem', maxWidth: '80%' }}>Start an AI scan to see live extraction progress and logs here.</p>
+        </div>
+      )}
+
       {/* ─── Section 3: Progress ─── */}
       {(scanState === 'scanning' || scanState === 'done' || scanState === 'cancelled') && (
         <div className="glass-panel scan-section">
