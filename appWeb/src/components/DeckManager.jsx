@@ -134,7 +134,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
           <ArrowLeft size={20} />
         </button>
         <h2 style={{ fontSize: '1.5rem', margin: 0, flex: 1 }}>
-          ⚙️ {deck?.name || 'Deck'} — Manager
+          ⚙️ {deck?.name || 'Deck'}
         </h2>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           {cards.length} cards · {multiCount} multi · {singleCount} single
@@ -319,36 +319,38 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
           {!dedupRunning && dedupResults && dedupResults.length > 0 && (
             <>
               {/* Summary Bar */}
-              <div className="glass-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <AlertTriangle size={20} color="#f59e0b" />
-                <span style={{ flex: 1 }}>
-                  <strong>{dedupResults.filter(d => d.ratio >= 0.99).length}</strong> exact ·{' '}
-                  <strong>{dedupResults.filter(d => d.ratio < 0.99).length}</strong> similar ·{' '}
-                  <strong>{dedupResults.length}</strong> total pairs
-                </span>
-                <button
-                  className="btn btn-glass"
-                  onClick={selectAllExact}
-                  style={{ fontSize: '0.85rem', padding: '0.4rem 1rem' }}
-                >
-                  ☑ Toggle All Exact (100%)
-                </button>
-                {dedupSelected.size > 0 && (
+              <div className="glass-panel dedup-summary-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                <AlertTriangle size={20} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div className="dedup-summary-stats" style={{ flex: 1 }}>
+                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.filter(d => d.ratio >= 0.99).length}</strong> exact</span>
+                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.filter(d => d.ratio < 0.99).length}</strong> similar</span>
+                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.length}</strong> total pairs</span>
+                </div>
+                <div className="dedup-summary-actions">
                   <button
-                    className="btn"
-                    onClick={handleDedupDelete}
-                    style={{
-                      padding: '0.5rem 1.2rem', background: 'rgba(239, 68, 68, 0.15)',
-                      border: '1px solid rgba(239, 68, 68, 0.5)', color: '#f87171', borderRadius: '8px',
-                      display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.85rem'
-                    }}
+                    className="btn btn-glass"
+                    onClick={selectAllExact}
+                    style={{ fontSize: '0.85rem', padding: '0.4rem 1rem' }}
                   >
-                    <Trash2 size={14} /> Delete {dedupSelected.size} selected
+                    ☑ Toggle All Exact (100%)
                   </button>
-                )}
-                <button className="btn btn-glass" onClick={runDedup} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>
-                  🔄
-                </button>
+                  {dedupSelected.size > 0 && (
+                    <button
+                      className="btn"
+                      onClick={handleDedupDelete}
+                      style={{
+                        padding: '0.5rem 1.2rem', background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.5)', color: '#f87171', borderRadius: '8px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.85rem'
+                      }}
+                    >
+                      <Trash2 size={14} /> Delete {dedupSelected.size} selected
+                    </button>
+                  )}
+                  <button className="btn btn-glass" onClick={runDedup} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', display: 'flex', justifyContent: 'center' }}>
+                    🔄
+                  </button>
+                </div>
               </div>
 
               {/* Pairs List */}
