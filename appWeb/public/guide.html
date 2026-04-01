@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - Flashcard AI</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #818cf8;
+                --text: #f9fafb;
+                --text-muted: #9ca3af;
+                --bg: #111827;
+                --card-bg: #1f2937;
+            }
+            body {
+                background-color: var(--bg);
+            }
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.25rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            h1 { border-bottom-color: #374151; }
+            .footer { border-top-color: #374151; }
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        ul {
+            margin-bottom: 1rem;
+            padding-left: 20px;
+            color: var(--text-muted);
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        code {
+            background: rgba(125, 125, 125, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            font-size: 0.875rem;
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+                margin: 20px auto;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📖 Flashcard AI — User Guide</h1>
+        
+        <h2>Section 1: 🚀 Getting Started</h2>
+        <ul>
+            <li><strong>Login with Google Drive</strong> to automatically synchronize your flashcard decks.</li>
+            <li>Alternatively, you can manually upload a <code>decks.json</code> file if you prefer offline usage or local backup.</li>
+        </ul>
+
+        <h2>Section 2: 🃏 Flashcard Mode</h2>
+        <ul>
+            <li>Tap the card or press <strong>Space</strong> to flip and reveal the answer.</li>
+            <li>Swipe right (✅) if you know it, or swipe left (❌) if you don't.</li>
+            <li><strong>Shortcuts:</strong> Use <code>←</code> and <code>→</code> arrow keys, or press <code>R</code> to undo a swipe.</li>
+        </ul>
+
+        <h2>Section 3: 🧠 Quiz Mode</h2>
+        <ul>
+            <li>Select the correct answer and click Next to advance.</li>
+            <li>Use the <code>←</code> button to review previous answers (read-only mode).</li>
+            <li>Use the <code>→</code> button to skip a question and defer it to the end of the session.</li>
+            <li>The system will automatically save your progress so you can resume exactly where you left off.</li>
+        </ul>
+
+        <h2>Section 4: ✨ AI Scan</h2>
+        <ul>
+            <li>Requires Google Drive login to function.</li>
+            <li>Input your <strong>Gemini API keys</strong> (these are saved securely and automatically to your Drive AppData).</li>
+            <li>Select a folder of images, and the system will automatically extract them and generate a flashcard deck.</li>
+            <li>Supported formats include: <code>PNG</code>, <code>JPG</code>, <code>WebP</code>, and <code>BMP</code>.</li>
+            <li>Adding multiple API keys allows the system to process images in parallel, significantly speeding up extraction.</li>
+        </ul>
+
+        <h2>Section 5: 📌 Tips & Shortcuts</h2>
+        <ul>
+            <li>Pin your favorite decks to the top of the list for easy access.</li>
+            <li>Sort decks alphabetically using the A-Z or Z-A buttons.</li>
+            <li>Toggle Dark/Light mode using the bulb icon for comfortable study sessions.</li>
+            <li>AI tools like Brave Leo can read quiz questions aloud to assist with learning.</li>
+        </ul>
+
+        <div class="footer">
+            <p>&copy; 2026 Flashcard AI. <a href="/privacy.html">Privacy Policy</a> | <a href="https://github.com/LHB16/Flashcard-AI" target="_blank">GitHub Repository</a></p>
+        </div>
+    </div>
+</body>
+
+</html>

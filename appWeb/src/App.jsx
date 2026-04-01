@@ -5,6 +5,7 @@ import QuizMode from './components/QuizMode';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import AIScan from './components/AIScan';
 import DeckManager from './components/DeckManager';
+import NotificationBell from './components/NotificationBell';
 import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 import Footer from './components/Footer';
@@ -254,9 +255,12 @@ function App() {
         {isSyncing && <div className="top-progress-bar"></div>}
         <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
           <header style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '2rem', position: 'relative' }}>
-            <button className="btn btn-glass btn-icon" onClick={toggleTheme} style={{ position: 'absolute', right: '1rem', top: 0 }} title="Switch Theme">
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            <div style={{ position: 'absolute', right: '1rem', top: 0, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <NotificationBell />
+              <button className="btn btn-glass btn-icon" onClick={toggleTheme} title="Switch Theme">
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+            </div>
             <h1 className="text-gradient" style={{ fontSize: '3rem', letterSpacing: '-0.02em', marginBottom: '1rem' }}>Flashcard AI</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Cross-platform sync & intelligent learning</p>
           </header>
@@ -378,6 +382,7 @@ function App() {
                       <Cloud size={14} /> Synced {displayName && `(${displayName})`}
                     </span>
                   )}
+                  <NotificationBell />
                   <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                     {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                   </button>
@@ -558,6 +563,7 @@ function App() {
                     <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
                   </span>
                 )}
+                <NotificationBell />
                 <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                   {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
