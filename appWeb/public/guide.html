@@ -12,6 +12,9 @@
             --text-muted: #6b7280;
             --bg: #f9fafb;
             --card-bg: #ffffff;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -22,9 +25,7 @@
                 --bg: #111827;
                 --card-bg: #1f2937;
             }
-            body {
-                background-color: var(--bg);
-            }
+            body { background-color: var(--bg); }
         }
 
         body {
@@ -41,7 +42,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 850px;
             width: 90%;
             margin: 40px auto;
             background: var(--card-bg);
@@ -53,9 +54,10 @@
         h1 {
             color: var(--primary);
             font-size: 2.25rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
+            padding-bottom: 15px;
+            text-align: center;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -65,8 +67,11 @@
 
         h2 {
             font-size: 1.5rem;
-            margin-top: 2rem;
+            margin-top: 2.5rem;
             color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         p {
@@ -81,18 +86,29 @@
         }
 
         li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
-        code {
+        code, kbd {
             background: rgba(125, 125, 125, 0.2);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: monospace;
+            font-size: 0.9em;
         }
 
+        kbd {
+            border: 1px solid rgba(125,125,125,0.4);
+            border-bottom-width: 2px;
+            font-weight: 600;
+        }
+
+        .highlight { color: var(--primary); font-weight: 600; }
+        .success { color: var(--success); font-weight: 600; }
+        .danger { color: var(--danger); font-weight: 600; }
+
         .footer {
-            margin-top: 3rem;
+            margin-top: 3.5rem;
             font-size: 0.875rem;
             text-align: center;
             color: var(--text-muted);
@@ -103,74 +119,76 @@
         .footer a {
             color: var(--primary);
             text-decoration: none;
+            font-weight: 600;
         }
 
         @media (max-width: 640px) {
-            .container {
-                padding: 20px;
-                margin: 20px auto;
-            }
-
-            h1 {
-                font-size: 1.75rem;
-            }
+            .container { padding: 25px; margin: 20px auto; }
+            h1 { font-size: 1.75rem; }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>User Guide — Flashcard AI</h1>
+        <h1>📚 User Guide — Flashcard AI</h1>
         
-        <h2>Getting Started</h2>
-        <p>Flashcard AI is designed for high-efficiency learning with cloud synchronization. To begin:</p>
+        <p style="text-align: center; font-size: 1.1rem; max-width: 600px; margin: 0 auto 2rem auto;">
+            Welcome to Flashcard AI, a multi-platform smart study tool. This guide covers the powerful gestures, shortcuts, and AI features built directly into our Web application.
+        </p>
+
+        <h2>☁️ Getting Started & Sync</h2>
         <ul>
-            <li><strong>Google Drive Sync:</strong> We highly recommend signing in with Google. This creates a secure, private <code>FlashcardAI</code> folder in your Drive to store your decks and progress. This allows you to study across multiple devices (Web, Mobile, Desktop) without losing data.</li>
-            <li><strong>Local Mode:</strong> If you prefer not to use the cloud, you can use the "Local Upload" feature to load a <code>decks.json</code> file from your device. Note that progress in local mode is saved only in your browser's memory.</li>
+            <li><strong>Google Drive Sync:</strong> Sign in with Google to automatically backup your decks and settings to a secure, hidden <code>AppData</code> folder in your Drive. This syncs your decks to Desktop and Mobile seamlessly.</li>
+            <li><strong>Cloud Progress:</strong> Your card mastery and quiz session progress are safely saved to our database via your Google account, letting you pick up exactly where you left off on another device.</li>
+            <li><strong>Local Upload:</strong> Don't want to use the cloud? Use the "Import JSON" button to load local <code>decks.json</code> backups manually.</li>
         </ul>
 
-        <h2>Flashcard Learning Mode</h2>
-        <p>The Flashcard mode uses an active recall system to help you memorize terms quickly.</p>
+        <h2>⚙️ Deck Management</h2>
         <ul>
-            <li><strong>Interaction:</strong> Click on the card to flip it and see the definition. You can also use the <strong>Spacebar</strong>.</li>
-            <li><strong>Feedback:</strong> After flipping, indicate your confidence:
+            <li><strong>Header & Navigation:</strong> The top header automatically collapses when scrolling down to give you more reading room.</li>
+            <li><strong>Sorting & Pinning:</strong> Click the pin icon to keep important decks at the top. Use the Sort button to toggle between Newest, Oldest, A-Z, or Z-A ordering.</li>
+            <li><strong>Duplicate Finder:</strong> Click the Gear (⚙️) icon on a deck to enter the <strong>Deck Manager</strong>. Go to the "Find Duplicates" tab to scan your entire deck. The system uses an advanced fuzzy-matching algorithm to detect overlapping questions and lets you clean them up with one click.</li>
+        </ul>
+
+        <h2>🃏 Flashcard Learning Mode</h2>
+        <p>Active recall mode specifically tailored for blazing fast learning.</p>
+        <ul>
+            <li><strong>Flipping:</strong> Tap the card, click it with your mouse, or press <kbd>Space</kbd> / <kbd>Up</kbd> / <kbd>Down</kbd> to see the answer.</li>
+            <li><strong>Swiping & Feedback:</strong>
                 <ul>
-                    <li>Swipe <strong>Right</strong> (or press <code>→</code>) if you recalled the answer correctly.</li>
-                    <li>Swipe <strong>Left</strong> (or press <code>←</code>) if you don't.</li>
+                    <li><span class="success">✅ Known:</span> Swipe the card to the <strong>Right</strong> (or use <kbd>Right Arrow</kbd>). This moves the card to your Known pile.</li>
+                    <li><span class="danger">❌ Unknown:</span> Swipe the card to the <strong>Left</strong> (or use <kbd>Left Arrow</kbd>).</li>
                 </ul>
             </li>
-            <li><strong>Shortcuts:</strong> 
-                <ul>
-                    <li><code>R</code>: Undo your last swipe action.</li>
-                    <li><code>Home</code>: Jump back to the first card in the deck.</li>
-                </ul>
+            <li><strong>Mouse Drag (Desktop):</strong> You can click and drag the card left or right. A color glow will indicate your choice. Release to confirm!</li>
+            <li><strong>Undo:</strong> Pressed the wrong button? Hit <kbd>R</kbd> or click the <strong>🔄 Undo</strong> button to bring the last card back.</li>
+        </ul>
+
+        <h2>📝 Quiz Practice Mode</h2>
+        <p>A resilient multiple-choice testing engine that saves your progress automatically.</p>
+        <ul>
+            <li><strong>Question Types:</strong> Supports both Single-Choice and Multi-Select (checkboxes) depending on how the AI extracted the exam.</li>
+            <li><strong>Submitting Answers:</strong> Click the options to select them. Single-choice questions auto-submit. For Multi-select, choose your options and click "Submit".
+                <br><em>Keyboard:</em> Use <kbd>Tab</kbd> to focus an option, and <kbd>Space</kbd> to toggle/submit.
+            </li>
+            <li><strong>Session Resilience:</strong> If you close the tab halfway through a 100-question quiz, your answers are remembered. When you return, the quiz resumes instantly.</li>
+            
+            <h4>Navigation & Gestures</h4>
+            <li><strong>Arrows:</strong> Click the <kbd>←</kbd> / <kbd>→</kbd> buttons or use your keyboard's <kbd>Left</kbd> and <kbd>Right</kbd> arrow keys to browse back and forth without losing answers.</li>
+            <li><strong>Touch Swipe:</strong> Swipe left or right on the screen. A floating purple circle will appear to guide your page turns.</li>
+            <li><strong>Reverse Swipe (Jump to Unanswered):</strong> Want to quickly find the first question you haven't answered yet? <br>
+                <strong>Swipe in one direction, hold, and pull back quickly in the opposite direction.</strong> <br>
+                The side indicator will turn <span style="color: #3b82f6; font-weight: bold;">Blue</span> and release to teleport you instantly. Alternatively, press the <kbd>\</kbd> key.
             </li>
         </ul>
 
-        <h2>Quiz Practice Mode</h2>
-        <p>Quiz mode tests your knowledge with multiple-choice questions and tracks your mastery.</p>
+        <h2>🤖 AI Scan Tool</h2>
+        <p>Convert your lecture slides and past exams into digital flashcards.</p>
         <ul>
-            <li><strong>Navigation:</strong> Use the "Next" button to move through questions. Your answers are saved automatically.</li>
-            <li><strong>Review:</strong> Click the <strong>Back (←)</strong> icon to see previous questions. You can see your chosen answer vs the correct one, but you cannot change answers once submitted.</li>
-            <li><strong>Skip & Defer:</strong> Click the <strong>Forward (→)</strong> icon to skip a difficult question. Skipped questions will reappear at the end of the quiz session.</li>
-            <li><strong>Progress:</strong> The circular progress bar at the top shows your current completion percentage.</li>
-        </ul>
-
-        <h2>AI Scan Tool</h2>
-        <p>The AI Scan tool uses Google's Gemini Vision models to turn your images/notes into structured decks instantly.</p>
-        <ul>
-            <li><strong>API Keys:</strong> You must provide at least one Gemini API Key from Google AI Studio. These keys are saved to your private Google Drive AppData folder and never shared.</li>
-            <li><strong>Parallel Loading:</strong> You can add multiple API keys. The system will rotate through them to bypass rate limits, processing dozens of images simultaneously.</li>
-            <li><strong>Image Processing:</strong> Select a folder or multiple images. Gemini will extract text, identify questions, and format them into Term/Definition pairs. </li>
-            <li><strong>Syncing:</strong> Once the scan is complete, the generated deck is saved directly to your Google Drive and becomes available in your "My Decks" tab.</li>
-        </ul>
-
-        <h2>Management & Tips</h2>
-        <ul>
-            <li><strong>Pinning:</strong> Use the Pin icon on any deck to keep it permanently at the top of your list.</li>
-            <li><strong>Sorting:</strong> Toggle between Alphabetical (A-Z) and Reverse Alphabetical (Z-A) sorting to organize large collections.</li>
-            <li><strong>Duplicates:</strong> Use the "Manager" (Gear icon) on a deck to find and delete duplicate questions automatically using fuzzy matching logic.</li>
-            <li><strong>Accessibility:</strong> The app supports full Light and Dark modes. The setting is remembered across sessions.</li>
+            <li><strong>API Key Setup:</strong> Go to the AI Scan tab and input your free Google Gemini API key. Keys are saved securely to your private Google Drive (they never touch our servers).</li>
+            <li><strong>Parallel Extraction:</strong> You can add <em>multiple</em> API keys at once. When you submit a batch of images, the system acts as a Worker Pool—rotating through your keys to process multiple PDFs in parallel, heavily speeding up extraction.</li>
+            <li><strong>Auto-recovery:</strong> If Gemini returns a malformed extraction, our backend uses advanced Binary Splitting and Regex recovery to salvage the questions without failing the entire batch.</li>
         </ul>
 
         <div class="footer">
