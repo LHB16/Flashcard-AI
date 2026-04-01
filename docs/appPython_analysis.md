@@ -68,4 +68,34 @@ Thực tế quá trình sử dụng cho thấy, khi AI Scan bị "đứt gánh" 
 - **Cải thiện:** Lưu RAW text của những Pack bị lỗi Parser. Xây dựng một thư viện auto-fix JSON (Regex) để khôi phục dữ liệu thẻ mà không phải bắt AI quét hình ảnh lại lần 2.
 
 ---
+
+## 4. Quản Lý Deck và Thẻ (DeckFrame)
+
+Khác với các ứng dụng Web load một lần toàn bộ HTML, **appPython** quản lý bộ nhớ của giao diện rất chặt chẽ để tránh giật lag khi 1 Deck có quá nhiều hình:
+
+- **Pagination (Lazy Loading):** Phương thức `_load_more_cards` trong `DeckFrame` chia lượng thẻ render ra thành từng block giới hạn (mặc định 50 thẻ/trang). Khi mở 1 Deck 1000 thẻ, máy chỉ đắp 50 thẻ đầu tiên lên ScrollFrame. Người dùng kéo xuống dòng định bấm nút "Load 50 more" mới đắp tiếp lên UI.
+- **Xóa thẻ cục bộ:** Mỗi dòng thẻ đi kèm một nút bấm `X`. Hành động xoá thẻ thực hiện rất mạch lạc: Móc index -> `deck.cards.pop(idx)` -> `save_decks()` -> Vứt sạch Widget cũ trên UI và Render lại 50 thẻ đầu tiên -> Cập nhật lại thanh đếm (Stats).
+- **Trạng thái thẻ (Status Tracker):** Thẻ có 3 trạng thái Status: 0 (Unseen - Xám), 1 (Wrong - Cam), 2 (Correct - Xanh). Giao diện luôn cập nhật một thanh Progress Bar theo tỷ lệ phần trăm các màu để báo hiệu tiến độ ôn tập. Có sẵn một tuỳ chọn xoá lịch sử (`_reset_progress`) lặp qua toàn bộ mảng và đánh tụt thẻ về 0 mà không làm xoá nội dung của thẻ.
+
+---
+
+## 5. Quét Cấu Trúc Khử Trùng Lặp (Dedup Service)
+
+Khi Scan sách/tài liệu, rất dễ rơi vào trường hợp 1 bài toán bị chụp ở 2 trang liền kề dẫn đến việc tạo ra 2 Card giống hệt nhau. Python app giải quyết bài toán này cực kỳ tối ưu thông qua file `dedup_service.py`.
+
+### 5.1. Thuật Toán Tìm Thẻ Trùng Ở Tốc Độ Cao
+Thay vì dùng vòng lặp N^2 cực nhọc để so sánh string (500 thẻ = 250,000 lần so sánh SequenceMatcher), Thuật toán thực hiện 5 bước tối ưu:
+1. **Chuẩn hoá Text (Normalize):** In thường toàn bộ chữ, loại bỏ khoảng trắng thừa ở `Question` và rút trích các Text ở `Correct Answers`.
+2. **N-gram Shingling (Tách chuỗi 3 kí tự):** Câu "Hello World" bị cắt thành các mảng `Hel`, `ell`, `llo`... (Tốc độ chạy `O(N)`).
+3. **Inverted Index (Chỉ mục đảo):** Tạo dictionary ánh xạ: Cứ cái "shingle" X này thì tồn tại ở thẻ thứ mấy.
+4. **Jaccard Pre-filter:** Đếm tỷ lệ các Shingle chung giữa cặp thẻ A và B. Nếu Tỷ lệ < 0.85 (ngưỡng tương đồng) -> Loại luôn không bao giờ đem đi so sánh String.
+5. **Final SequenceMatcher:** Lọc lại duy nhất các cặp qua vòng Jaccard bằng `difflib.SequenceMatcher`. Thuật toán sẽ tính trung bình tỉ trọng: 60% giống nằm ở Câu Hỏi + 40% giống nằm ở Câu Trả Lời -> Quyết định đây là bản Dupe.
+
+### 5.2. Dialog Quản Lý Cặp Trùng (QuestionDedupDialog)
+Một UI Box Popup thông minh:
+- Liệt kê các thẻ bị trùng với số % tương đồng. Hệ thống phân chia rõ làm 2 rổ: **Exact (Giống 99-100%)** và **Similar (<99%)**.
+- **Auto-check rác:** Với các thẻ Exact 100%, hệ thống tự động tick dấu √ yêu cầu XOÁ vào mặt thẻ được tạo sau (b). Thẻ sinh ra trước (a) được auto-giữ lại. Người dùng chỉ việc bấm 1 nút "Select All 100%" và Delete để dọn dẹp hàng loạt toàn bộ lỗi dư thừa khi chụp dính trang màn hình.
+- Phân trang 20 cặp / 1 tab giao diện để chống đứng UI khi số Cặp Trùng tăng ngoài tầm kiểm soát do import nhầm file.
+
+---
 *Tài liệu này được tạo nhằm mục đích nâng cấp và chuyển tiếp các kiến trúc ổn định nhất cho dự án PNGToQuizlet.*
