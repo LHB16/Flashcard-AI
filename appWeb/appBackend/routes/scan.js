@@ -78,7 +78,57 @@ function cleanJson(text) {
 }
 
 /**
- * Parse Gemini response text into cards array
+ * Auto-fix common JSON issues from Gemini responses:
+ * - Trailing commas before ] or }
+ * - Missing closing brackets/braces
+ * - Unclosed strings (truncated response)
+ */
+function autoFixJson(text) {
+  let fixed = text;
+
+  // 1. Remove trailing commas before ] or }
+  fixed = fixed.replace(/,\s*([\]}])/g, '$1');
+
+  // 2. Try to balance brackets — count opens vs closes
+  const opens = (fixed.match(/\[/g) || []).length;
+  const closes = (fixed.match(/\]/g) || []).length;
+  const braceOpens = (fixed.match(/\{/g) || []).length;
+  const braceCloses = (fixed.match(/\}/g) || []).length;
+
+  // Close any unclosed braces first, then brackets
+  for (let i = 0; i < braceOpens - braceCloses; i++) fixed += '}';
+  // Remove trailing comma before adding closing bracket
+  fixed = fixed.replace(/,\s*$/, '');
+  for (let i = 0; i < opens - closes; i++) fixed += ']';
+
+  // 3. Remove trailing commas again after bracket fix
+  fixed = fixed.replace(/,\s*([\]}])/g, '$1');
+
+  return fixed;
+}
+
+/**
+ * Extract individual JSON objects from a partially valid array string.
+ * Useful when the array itself is broken but individual objects are intact.
+ */
+function extractPartialObjects(text) {
+  const objects = [];
+  const regex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    try {
+      const obj = JSON.parse(match[0]);
+      if (obj.question) objects.push(obj);
+    } catch {
+      // Skip unparseable fragments
+    }
+  }
+  return objects;
+}
+
+/**
+ * Parse Gemini response text into cards array.
+ * Uses multi-layered recovery: direct parse → regex extract → auto-fix → partial object extraction.
  */
 function parseGeminiResponse(responseData) {
   try {
@@ -90,16 +140,51 @@ function parseGeminiResponse(responseData) {
 
     const cleaned = cleanJson(text);
     let parsed;
+    let recoveryMethod = null;
+
+    // Layer 1: Direct parse
     try {
       parsed = JSON.parse(cleaned);
     } catch {
-      // Try to extract JSON array from text
+      // Layer 2: Regex extract JSON array
       const match = cleaned.match(/\[[\s\S]*\]/);
-      if (!match) return { cards: [], error: 'Cannot parse JSON from response' };
-      parsed = JSON.parse(match[0]);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+          recoveryMethod = 'regex_extract';
+        } catch {
+          // Layer 3: Auto-fix broken JSON (trailing commas, missing brackets)
+          try {
+            parsed = JSON.parse(autoFixJson(match[0]));
+            recoveryMethod = 'auto_fix';
+          } catch {
+            // Layer 4: Extract individual objects from broken array
+            parsed = extractPartialObjects(cleaned);
+            recoveryMethod = parsed.length > 0 ? 'partial_recovery' : null;
+          }
+        }
+      } else {
+        // No array found at all — try auto-fix on full text
+        try {
+          parsed = JSON.parse(autoFixJson(cleaned));
+          recoveryMethod = 'auto_fix_full';
+        } catch {
+          parsed = extractPartialObjects(cleaned);
+          recoveryMethod = parsed.length > 0 ? 'partial_recovery' : null;
+        }
+      }
     }
 
-    if (!Array.isArray(parsed)) return { cards: [], error: 'Response is not an array' };
+    if (!parsed || (Array.isArray(parsed) && parsed.length === 0)) {
+      return { cards: [], error: 'Cannot parse JSON from response' };
+    }
+    if (!Array.isArray(parsed)) {
+      return { cards: [], error: 'Response is not an array' };
+    }
+
+    if (recoveryMethod) {
+      console.log(`🔧 [JSON Recovery] Used "${recoveryMethod}" to recover ${parsed.length} items`);
+    }
 
     // Convert to card format, skip NOT_A_QUESTION
     const cards = [];
@@ -117,7 +202,7 @@ function parseGeminiResponse(responseData) {
       });
     }
 
-    return { cards, error: null };
+    return { cards, error: recoveryMethod ? `Recovered via ${recoveryMethod}` : null };
   } catch (err) {
     return { cards: [], error: `Parse error: ${err.message}` };
   }

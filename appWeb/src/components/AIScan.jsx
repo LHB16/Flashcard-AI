@@ -204,6 +204,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
     const validIndices = pdfBatches.map((b, i) => b !== null ? i : -1).filter(i => i !== -1);
     const validPdfs = validIndices.map(i => pdfBatches[i]);
     const validPageCounts = validIndices.map(i => pageCounts[i]);
+    const validImageBatches = validIndices.map(i => batches[i]); // Keep original File[] for binary split
 
     if (validPdfs.length === 0) {
       addLog('❌ All PDF batches failed. Cannot proceed.');
@@ -232,7 +233,8 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
             setBatchResults(prev => [...prev, { index: idx, status: 'error', error }]);
           },
         },
-        controller.signal
+        controller.signal,
+        validImageBatches  // Pass image batches for binary split
       );
 
       setScannedCards(cards);

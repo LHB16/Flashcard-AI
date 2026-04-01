@@ -1,16 +1,14 @@
 /**
  * geminiService.js — Orchestrator for AI Scan flow
  * Sends PDF batches to Render backend, which proxies to Gemini API.
- * Handles round-robin keys, retry logic, and cancellation.
+ * Handles round-robin keys, retry logic, binary split, and cancellation.
  *
  * Reference: appPython/services/gemini_service.py
  */
 import { v4 as uuidv4 } from 'uuid';
+import { imagesToPdf } from './pdfService';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-const MAX_RETRIES = 3;
-const RETRY_DELAY_429 = 30000; // 30s for rate limit
-const RETRY_DELAY_5XX = 5000;  // 5s for server errors
 
 /**
  * Sleep helper that respects AbortSignal
@@ -36,13 +34,12 @@ export function maskKey(key) {
 }
 
 /**
- * Send one PDF batch to backend for Gemini processing
+ * Send one PDF batch to backend for Gemini processing.
  * Tries models sequentially if 404 is encountered, otherwise throws on error.
  */
 async function sendBatch(pdfBase64, apiKey, batchIndex, totalBatches, pageCount, signal) {
   let modelIndex = 0;
 
-  // Try up to 3 models if we hit 404 (model not found)
   for (let attempt = 0; attempt < 3; attempt++) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
@@ -69,14 +66,15 @@ async function sendBatch(pdfBase64, apiKey, batchIndex, totalBatches, pageCount,
     const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
 
     if (res.status === 404) {
-      // Model not found for this key — try next model
       modelIndex = Math.min(modelIndex + 1, 5);
       await sleep(1000, signal);
       continue;
     }
 
-    // For 429, 500, or 400, throw immediately so the orchestrator can re-queue with a DIFFERENT key
-    throw new Error(errData.error || `HTTP ${res.status}`);
+    // For 429, 500, or 400, throw immediately so the orchestrator can re-queue
+    const err = new Error(errData.error || `HTTP ${res.status}`);
+    err.httpStatus = res.status;
+    throw err;
   }
 
   throw new Error(`Model fallback exhausted for batch ${batchIndex + 1}`);
@@ -84,9 +82,6 @@ async function sendBatch(pdfBase64, apiKey, batchIndex, totalBatches, pageCount,
 
 /**
  * Validate all API keys in parallel. Returns list of alive keys only.
- * @param {string[]} apiKeys 
- * @param {function} onLog 
- * @returns {Promise<string[]>}
  */
 export async function validateKeysParallel(apiKeys, onLog) {
   const results = await Promise.all(apiKeys.map(async (key, idx) => {
@@ -117,28 +112,31 @@ export async function validateKeysParallel(apiKeys, onLog) {
 }
 
 /**
- * Process all PDF batches with round-robin key rotation.
+ * Process all PDF batches with a robust worker pool.
  *
- * When multiple keys available, processes N batches in parallel (N = number of keys).
- * Each key handles one batch at a time, then moves to next batch.
+ * Features:
+ * - Round-robin key rotation via shared queue
+ * - Max 2 retries per batch (with different API key)
+ * - Binary Split: permanently failed batches with >1 page get split in half
+ *   and re-queued as two smaller sub-batches to isolate problem images
  *
  * @param {string[]} pdfBatches - array of base64 PDF strings
  * @param {number[]} pageCounts - number of pages in each batch
  * @param {string[]} apiKeys - API keys for round-robin
  * @param {object} callbacks
- * @param {function} callbacks.onLog - (message: string) => void
- * @param {function} callbacks.onProgress - (processed: number, total: number) => void
- * @param {function} callbacks.onBatchDone - (batchIndex: number, cardCount: number) => void
- * @param {function} callbacks.onBatchError - (batchIndex: number, error: string) => void
  * @param {AbortSignal} [signal]
- * @returns {Promise<{ cards: object[], failedBatches: number[] }>}
+ * @param {File[][]} [imageBatches] - original image File[] batches (needed for binary split)
  */
-export async function processBatches(pdfBatches, pageCounts, apiKeys, callbacks, signal) {
+export async function processBatches(pdfBatches, pageCounts, apiKeys, callbacks, signal, imageBatches) {
   const { onLog, onProgress, onBatchDone, onBatchError } = callbacks;
   const totalBatches = pdfBatches.length;
   const totalPages = pageCounts.reduce((a, b) => a + b, 0);
 
-  const orderedCardBatches = Array(totalBatches).fill(null);
+  // Dynamic arrays — can grow when binary split adds sub-batches
+  const pdfList = [...pdfBatches];
+  const pageList = [...pageCounts];
+  const imageList = imageBatches ? [...imageBatches] : null;
+  const cardResults = Array(totalBatches).fill(null);
   const failedBatches = [];
   let processedPages = 0;
 
@@ -161,15 +159,19 @@ export async function processBatches(pdfBatches, pageCounts, apiKeys, callbacks,
       if (!task) break;
 
       const { batchIndex: i, retries } = task;
-      const pageCount = pageCounts[i];
+      const pageCount = pageList[i];
 
       const retryLabel = retries > 0 ? ` (Retry ${retries}/2)` : '';
-      onLog(`📤 Batch ${i + 1}/${totalBatches} → Key ${keyNum} [${maskKey(key)}]${retryLabel}`);
+      onLog(`📤 Batch ${i + 1}/${pdfList.length} [${pageCount} pg] → Key ${keyNum} [${maskKey(key)}]${retryLabel}`);
 
       try {
-        const result = await sendBatch(pdfBatches[i], key, i, totalBatches, pageCount, signal);
+        const result = await sendBatch(pdfList[i], key, i, pdfList.length, pageCount, signal);
         const cards = addCardIds(result.cards || []);
-        orderedCardBatches[i] = cards;
+
+        // Store result (extend array if needed for sub-batches)
+        while (cardResults.length <= i) cardResults.push(null);
+        cardResults[i] = cards;
+
         processedPages += pageCount;
         onBatchDone(i, cards.length);
         onLog(`✅ Batch ${i + 1}: ${cards.length} cards (model: ${result.model_used})`);
@@ -183,7 +185,6 @@ export async function processBatches(pdfBatches, pageCounts, apiKeys, callbacks,
 
         if (retries < 2) {
           onLog(`⚠ Batch ${i + 1} failed: ${err.message}. Re-queueing (Retry ${retries + 1}/2)...`);
-          // Push back to end of queue to be retried by the next available worker/key
           queue.push({ batchIndex: i, retries: retries + 1 });
           
           if (err.message.includes('429')) {
@@ -192,18 +193,61 @@ export async function processBatches(pdfBatches, pageCounts, apiKeys, callbacks,
             await sleep(5000, signal).catch(() => {});
           }
         } else {
-          processedPages += pageCount;
-          failedBatches.push(i);
-          orderedCardBatches[i] = []; // Empty array for permanently failed batch
-          onBatchError(i, err.message);
-          onLog(`❌ Batch ${i + 1}: permanently failed after 3 attempts — ${err.message}`);
-          onProgress(processedPages, totalPages);
+          // === BINARY SPLIT: permanently failed batch with >1 page ===
+          if (pageCount > 1 && imageList && imageList[i] && imageList[i].length > 1) {
+            const imgs = imageList[i];
+            const mid = Math.ceil(imgs.length / 2);
+            const halfA = imgs.slice(0, mid);
+            const halfB = imgs.slice(mid);
+
+            onLog(`🔀 Binary split: Batch ${i + 1} (${imgs.length} imgs) → [${halfA.length}] + [${halfB.length}]`);
+
+            try {
+              const [pdfA, pdfB] = await Promise.all([
+                imagesToPdf(halfA),
+                imagesToPdf(halfB),
+              ]);
+
+              const idxA = pdfList.length;
+              pdfList.push(pdfA.pdfBase64);
+              pageList.push(pdfA.pageCount);
+              imageList.push(halfA);
+
+              const idxB = pdfList.length;
+              pdfList.push(pdfB.pdfBase64);
+              pageList.push(pdfB.pageCount);
+              imageList.push(halfB);
+
+              while (cardResults.length <= idxB) cardResults.push(null);
+
+              queue.push({ batchIndex: idxA, retries: 0 });
+              queue.push({ batchIndex: idxB, retries: 0 });
+
+              onLog(`📋 Sub-batches #${idxA + 1} (${halfA.length} pg) and #${idxB + 1} (${halfB.length} pg) queued`);
+            } catch (splitErr) {
+              processedPages += pageCount;
+              failedBatches.push(i);
+              while (cardResults.length <= i) cardResults.push(null);
+              cardResults[i] = [];
+              onBatchError(i, err.message);
+              onLog(`❌ Batch ${i + 1}: binary split failed (${splitErr.message}) — giving up`);
+              onProgress(processedPages, totalPages);
+            }
+          } else {
+            // Can't split (single image or no image data) — give up
+            processedPages += pageCount;
+            failedBatches.push(i);
+            while (cardResults.length <= i) cardResults.push(null);
+            cardResults[i] = [];
+            onBatchError(i, err.message);
+            onLog(`❌ Batch ${i + 1}: permanently failed after 3 attempts — ${err.message}`);
+            onProgress(processedPages, totalPages);
+          }
         }
       }
     }
   }
 
-  // Spawn one worker per API key
   const workers = apiKeys.map((_, idx) => worker(idx));
 
   try {
@@ -216,9 +260,9 @@ export async function processBatches(pdfBatches, pageCounts, apiKeys, callbacks,
     }
   }
 
-  const allCards = orderedCardBatches.filter(b => b !== null).flat();
+  const allCards = cardResults.filter(b => b !== null).flat();
   const validCount = allCards.length;
-  onLog(`\n🏁 Done! ${validCount} cards from ${totalBatches} batches (${failedBatches.length} failed)`);
+  onLog(`\n🏁 Done! ${validCount} cards from ${pdfList.length} batches (${failedBatches.length} failed)`);
 
   return { cards: allCards, failedBatches };
 }
