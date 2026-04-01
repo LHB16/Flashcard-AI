@@ -299,6 +299,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
 
   return (
     <div className="scan-container animate-fade-in">
+      <div className="scan-left">
       {/* ─── Section 1: API Keys ─── */}
       <div className="glass-panel scan-section">
         <div className="scan-section-header">
@@ -468,7 +469,9 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
           )}
         </div>
       )}
+      </div>
 
+      <div className="scan-right">
       {/* ─── Section 3: Progress ─── */}
       {(scanState === 'scanning' || scanState === 'done' || scanState === 'cancelled') && (
         <div className="glass-panel scan-section">
@@ -554,6 +557,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }
