@@ -41,7 +41,7 @@ export const initGoogleIdentity = async (onSuccess, onError) => {
   }
 };
 
-const getValidToken = async () => {
+export const getValidToken = async () => {
   if (!googleId) {
     throw new Error('Bạn cần đồng bộ với Google trước');
   }

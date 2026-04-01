@@ -3,7 +3,8 @@ import FileLoader from './components/FileLoader';
 import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown } from 'lucide-react';
+import AIScan from './components/AIScan';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 import Footer from './components/Footer';
 
@@ -14,6 +15,7 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [searchQuery, setSearchQuery] = useState('');
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('decks');
 
   const [pinnedDecks, setPinnedDecks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch(e) { return []; }
@@ -166,6 +168,30 @@ function App() {
     setData(null);
     setSelectedDeck(null);
     setMode(null);
+    setActiveTab('decks');
+  };
+
+  const handleScanComplete = async (newDeck) => {
+    // Merge new deck into existing data
+    const updated = data ? [...data, newDeck] : [newDeck];
+    setData(updated);
+
+    // Sync to Drive
+    if (userLoggedIn) {
+      setIsSyncing(true);
+      try {
+        const res = await uploadDecksToDrive(updated, driveFileId);
+        if (!driveFileId && res && res.id) {
+          setDriveFileId(res.id);
+        }
+      } catch (e) {
+        console.error('Error syncing scanned deck to Drive:', e);
+      }
+      setIsSyncing(false);
+    }
+
+    // Switch to decks tab
+    setActiveTab('decks');
   };
 
   const syncTimeoutRef = useRef(null);
@@ -336,21 +362,41 @@ function App() {
                 </div>
               </header>
 
-              <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="text"
-                    placeholder="Search decks..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
-                  />
-                </div>
-                <button className="btn btn-glass" onClick={toggleSort} style={{ width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title="Toggle Sort Order">
-                  {sortOrder === 'asc' ? 'A-Z↓' : sortOrder === 'desc' ? 'Z-A↑' : 'Sort'}
+              {/* Tab Switcher */}
+              <div className="tab-switcher">
+                <button
+                  className={`tab-btn${activeTab === 'decks' ? ' active' : ''}`}
+                  onClick={() => setActiveTab('decks')}
+                >
+                  <BookOpen size={16} /> My Decks
+                </button>
+                <button
+                  className={`tab-btn${activeTab === 'scan' ? ' active' : ''}`}
+                  onClick={() => userLoggedIn && setActiveTab('scan')}
+                  disabled={!userLoggedIn}
+                  title={!userLoggedIn ? 'Login to Google Drive first' : ''}
+                >
+                  <Sparkles size={16} /> AI Scan
                 </button>
               </div>
+
+              {activeTab === 'decks' && (
+                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                    <input
+                      type="text"
+                      placeholder="Search decks..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+                    />
+                  </div>
+                  <button className="btn btn-glass" onClick={toggleSort} style={{ width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title="Toggle Sort Order">
+                    {sortOrder === 'asc' ? 'A-Z↓' : sortOrder === 'desc' ? 'Z-A↑' : 'Sort'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Toggle Button as a Tab - Rectangular with 4 rounded corners and higher transparency */}
@@ -386,56 +432,60 @@ function App() {
             </div>
           </div>
 
-          <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-            {processedDecks.map((deck, idx) => {
-              const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
-              return (
-              <div
-                key={deck.deck_id || idx}
-                className="glass-panel glass-panel-hover"
-                style={{ padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative' }}
-                onClick={() => { setSelectedDeck(deck); setMode('home'); }}
-              >
-                {deck.deck_id && (
-                  <button 
-                    onClick={(e) => togglePin(deck.deck_id, e)}
-                    style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex' }}
-                    className="btn-icon"
-                    title={isPinned ? "Unpin deck" : "Pin deck"}
-                  >
-                    {isPinned ? <Star size={24} color="#fbbf24" fill="#fbbf24" /> : <StarOff size={24} color="var(--text-muted)" />}
-                  </button>
-                )}
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <BookOpen size={36} color="var(--primary)" />
-                  {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center' }}>📌 Pinned</span>}
-                </div>
-                
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
-                {deck.cards && (
-                  <div style={{ marginTop: 'auto' }}>
-                    <div style={{ width: '100%', height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.5rem' }}>
-                      <div 
-                        style={{ 
-                          width: `${(deck.cards.filter(c => c.status === 2).length / deck.cards.length) * 100}%`, 
-                          height: '100%', 
-                          background: 'var(--success)', 
-                          transition: 'width 0.3s ease' 
-                        }}
-                      ></div>
-                    </div>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Progress:</span>
-                      <strong style={{ color: 'var(--primary)' }}>
-                        {deck.cards.filter(c => c.status === 2).length} / {deck.cards.length}
-                      </strong>
-                    </p>
+          {activeTab === 'decks' ? (
+            <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+              {processedDecks.map((deck, idx) => {
+                const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
+                return (
+                <div
+                  key={deck.deck_id || idx}
+                  className="glass-panel glass-panel-hover"
+                  style={{ padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative' }}
+                  onClick={() => { setSelectedDeck(deck); setMode('home'); }}
+                >
+                  {deck.deck_id && (
+                    <button 
+                      onClick={(e) => togglePin(deck.deck_id, e)}
+                      style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex' }}
+                      className="btn-icon"
+                      title={isPinned ? "Unpin deck" : "Pin deck"}
+                    >
+                      {isPinned ? <Star size={24} color="#fbbf24" fill="#fbbf24" /> : <StarOff size={24} color="var(--text-muted)" />}
+                    </button>
+                  )}
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <BookOpen size={36} color="var(--primary)" />
+                    {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center' }}>📌 Pinned</span>}
                   </div>
-                )}
-              </div>
-            )})}
-          </div>
+                  
+                  <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
+                  {deck.cards && (
+                    <div style={{ marginTop: 'auto' }}>
+                      <div style={{ width: '100%', height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+                        <div 
+                          style={{ 
+                            width: `${(deck.cards.filter(c => c.status === 2).length / deck.cards.length) * 100}%`, 
+                            height: '100%', 
+                            background: 'var(--success)', 
+                            transition: 'width 0.3s ease' 
+                          }}
+                        ></div>
+                      </div>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Progress:</span>
+                        <strong style={{ color: 'var(--primary)' }}>
+                          {deck.cards.filter(c => c.status === 2).length} / {deck.cards.length}
+                        </strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )})}
+            </div>
+          ) : (
+            <AIScan userLoggedIn={userLoggedIn} onScanComplete={handleScanComplete} />
+          )}
           <Footer />
         </main>
       </>
