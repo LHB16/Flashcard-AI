@@ -191,11 +191,16 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
 
     // Only trigger if direction was locked (meaning user swiped far enough at least once)
     if (info.lockedDirection) {
-      // Check current distance still exceeds threshold in the locked direction
       const lockRight = info.lockedDirection === 'right';
+      
+      // Normal swipe
       if ((lockRight && diffX > 60) || (!lockRight && diffX < -60)) {
-        if (lockRight) goLeft();   // Swiped right -> go to previous
-        else goRight();            // Swiped left -> go to next
+        if (lockRight) goLeft();
+        else goRight();
+      }
+      // Reverse swipe (Jump)
+      else if ((lockRight && diffX < -60) || (!lockRight && diffX > 60)) {
+        keyHandlersRef.current.goToFirstUnanswered?.();
       }
     }
 
@@ -400,9 +405,20 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       {(() => {
         const info = touchRef.current;
         if (!info.active || !info.lockedDirection) return null;
-        const diffX = Math.abs(info.currentX - info.startX);
-        const isRight = info.lockedDirection === 'right';
-        const activated = diffX > 60;
+        
+        const diffX = info.currentX - info.startX;
+        if (Math.abs(diffX) < 10) return null; // Hide if too close to center
+
+        const lockRight = info.lockedDirection === 'right';
+        const isRightSwipe = diffX > 0;
+        const isOpposite = (lockRight && !isRightSwipe) || (!lockRight && isRightSwipe);
+        const activated = Math.abs(diffX) > 60;
+
+        const IconComponent = isOpposite ? SkipForward : (isRightSwipe ? ChevronLeft : ChevronRight);
+        const bgColor = isOpposite 
+          ? (activated ? 'rgba(59, 130, 246, 0.95)' : 'rgba(59, 130, 246, 0.4)') // Blue for jump
+          : (activated ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)'); // Purple for normal
+
         return (
           <>
             {/* Starting point indicator (Blurry circle) */}
@@ -424,26 +440,23 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
             <div style={{
               position: 'fixed',
               top: '50%',
-              left: isRight ? '1.5rem' : 'auto',
-              right: !isRight ? '1.5rem' : 'auto',
+              left: isRightSwipe ? '1.5rem' : 'auto',
+              right: !isRightSwipe ? '1.5rem' : 'auto',
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              background: activated ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)',
+              background: bgColor,
               color: 'white',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transform: 'translateY(-50%)',
               zIndex: 9999,
-              boxShadow: activated ? '0 8px 32px rgba(139, 92, 246, 0.5)' : '0 4px 16px rgba(0,0,0,0.3)',
+              boxShadow: activated ? (isOpposite ? '0 8px 32px rgba(59, 130, 246, 0.5)' : '0 8px 32px rgba(139, 92, 246, 0.5)') : '0 4px 16px rgba(0,0,0,0.3)',
               transition: 'background 0.15s, box-shadow 0.15s',
               pointerEvents: 'none'
             }}>
-              {isRight
-                ? <ChevronLeft size={36} />
-                : <ChevronRight size={36} />
-              }
+              <IconComponent size={36} />
             </div>
           </>
         );
