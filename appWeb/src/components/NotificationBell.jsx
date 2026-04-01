@@ -118,22 +118,7 @@ export default function NotificationBell() {
       </button>
 
       {showNotif && (
-        <div 
-          className="glass-panel animate-fade-in" 
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 10px)',
-            right: 0,
-            width: '320px',
-            maxHeight: '400px',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 100,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-            padding: 0,
-            overflow: 'hidden'
-          }}
-        >
+        <div className="glass-panel animate-fade-in notification-dropdown">
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Notifications</h3>

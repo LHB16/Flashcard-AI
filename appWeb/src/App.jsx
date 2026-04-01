@@ -357,7 +357,7 @@ function App() {
             <div style={{
               maxHeight: isHeaderCollapsed ? '0' : '400px',
               opacity: isHeaderCollapsed ? 0 : 1,
-              overflow: 'hidden',
+              overflow: isHeaderCollapsed ? 'hidden' : 'visible',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
               pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
             }}>
@@ -536,7 +536,7 @@ function App() {
           <div style={{
             maxHeight: isHeaderCollapsed ? '0' : '300px',
             opacity: isHeaderCollapsed ? 0 : 1,
-            overflow: 'hidden',
+            overflow: isHeaderCollapsed ? 'hidden' : 'visible',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
           }}>
