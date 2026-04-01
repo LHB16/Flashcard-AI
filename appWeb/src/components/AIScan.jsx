@@ -5,6 +5,8 @@ import ApiKeyChip from './ApiKeyChip';
 import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
 import { imagesToPdf, filterImageFiles, chunk } from '../services/pdfService';
 import { processBatches, maskKey, validateKeysParallel } from '../services/geminiService';
+import Skeleton from './Skeleton';
+
 
 /**
  * AIScan — Main component for AI-powered image scanning
@@ -479,12 +481,25 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       <div className="scan-right">
       {/* ─── Placeholder when Idle ─── */}
       {scanState === 'idle' && (
-        <div className="glass-panel" style={{ flex: 1, minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.7, border: '1px dashed var(--glass-border)', background: 'transparent' }}>
-          <Terminal size={48} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-          <h3 style={{ color: 'var(--text-muted)', margin: 0, fontSize: '1.1rem' }}>Terminal Console</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '0.5rem', maxWidth: '80%' }}>Start an AI scan to see live extraction progress and logs here.</p>
+        <div className="glass-panel" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column', padding: '1.5rem', border: '1px dashed var(--glass-border)', background: 'transparent' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem', opacity: 0.5 }}>
+            <Terminal size={20} color="var(--text-muted)" />
+            <Skeleton width="120px" height="18px" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', opacity: 0.3 }}>
+            <Skeleton width="40%" height="14px" />
+            <Skeleton width="70%" height="14px" />
+            <Skeleton width="55%" height="14px" />
+            <Skeleton width="30%" height="14px" />
+            <Skeleton width="65%" height="14px" />
+          </div>
+          <div style={{ marginTop: 'auto', textAlign: 'center', padding: '2rem', opacity: 0.6 }}>
+            <Sparkles size={40} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.3 }} />
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Select a folder and start AI Scan to see logs here.</p>
+          </div>
         </div>
       )}
+
 
       {/* ─── Section 3: Progress ─── */}
       {(scanState === 'scanning' || scanState === 'done' || scanState === 'cancelled') && (
@@ -528,16 +543,21 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
           )}
 
           {/* Log console */}
-          <div className="scan-log" ref={logContainerRef}>
-            {logs.map((log, i) => (
-              <div key={i} className="scan-log-line">{log}</div>
-            ))}
-            {logs.length === 0 && (
-              <div className="scan-log-line" style={{ color: 'var(--text-muted)' }}>Waiting for logs...</div>
+          <div className="scan-log" style={{ minHeight: '180px' }} ref={logContainerRef}>
+            {logs.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Skeleton width="30%" height="12px" style={{ opacity: 0.2 }} />
+                <Skeleton width="50%" height="12px" style={{ opacity: 0.2 }} />
+              </div>
+            ) : (
+              logs.map((log, i) => (
+                <div key={i} className="scan-log-line">{log}</div>
+              ))
             )}
           </div>
         </div>
       )}
+
 
       {/* ─── Section 4: Results ─── */}
       {scanState === 'done' && scannedCards.length > 0 && (

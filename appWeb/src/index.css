@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* Font Inter loaded via index.html for LCP optimization */
 
 :root {
   --root-bg: #0f172a;
@@ -171,6 +171,34 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* Skeleton Shimmer Effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, 
+    var(--glass-bg) 25%, 
+    rgba(255, 255, 255, 0.08) 50%, 
+    var(--glass-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 8px;
+  display: block;
+}
+
+[data-theme="light"] .skeleton {
+    background: linear-gradient(90deg, 
+    rgba(0, 0, 0, 0.05) 25%, 
+    rgba(0, 0, 0, 0.08) 50%, 
+    rgba(0, 0, 0, 0.05) 75%
+  );
+  background-size: 200% 100%;
+}
+
 
 /* File input custom styling */
 .file-upload-wrapper {
@@ -393,7 +421,9 @@ body {
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
+  min-height: 480px; /* Fixed height to prevent CLS */
 }
+
 
 .home-divider {
   display: flex;
@@ -428,7 +458,9 @@ body {
     flex-direction: column;
     justify-content: center;
     max-width: 500px;
+    min-height: 380px; /* Stabilize column height */
   }
+
   .home-divider {
     flex-direction: column;
     width: auto;

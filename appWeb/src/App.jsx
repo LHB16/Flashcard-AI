@@ -9,6 +9,8 @@ import NotificationBell from './components/NotificationBell';
 import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 import Footer from './components/Footer';
+import Skeleton, { HomeSkeleton } from './components/Skeleton';
+
 
 function App() {
   const [data, setData] = useState(null);
@@ -281,17 +283,11 @@ function App() {
           </header>
 
           <div className="home-container">
-            {isSyncing ? (
-              <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                  <Loader2 size={48} className="animate-spin" color="var(--primary)" />
-                </div>
-                <h3 style={{ fontSize: '1.3rem' }}>Syncing data with Google Drive...</h3>
-                <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Please wait a moment</p>
-              </div>
-            ) : (
-              <>
-                <div className="home-column">
+            <div className="home-column">
+              {isSyncing ? (
+                <HomeSkeleton />
+              ) : (
+                <>
                   {userLoggedIn ? (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', borderColor: 'rgba(16, 185, 129, 0.4)', position: 'relative' }}>
@@ -314,40 +310,42 @@ function App() {
                           <Sparkles size={18} /> AI Scan
                         </button>
                       </div>
-
-                      {syncMessage && (
-                        <div className="animate-fade-in" style={{ padding: '1rem', borderRadius: '12px', background: syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)', color: syncMessage.type === 'error' ? 'var(--danger)' : '#60a5fa', border: `1px solid ${syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`, textAlign: 'center', fontWeight: '500' }}>
-                          {syncMessage.text}
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {syncMessage && (
-                        <div className="animate-fade-in" style={{ padding: '1rem', borderRadius: '12px', background: syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)', color: syncMessage.type === 'error' ? 'var(--danger)' : '#60a5fa', border: `1px solid ${syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`, textAlign: 'center', fontWeight: '500' }}>
-                          {syncMessage.text}
-                        </div>
-                      )}
                       <button className="btn btn-glass glass-panel-hover" onClick={handleLoginClick} style={{ padding: '1.5rem', fontSize: '1.2rem', width: '100%', borderColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <Cloud size={28} color="var(--primary)" />
                         Sign in with Google to experience full features
                       </button>
                     </div>
                   )}
-                </div>
+                  {syncMessage && (
+                    <div className="animate-fade-in" style={{ marginTop: '1rem', padding: '1rem', borderRadius: '12px', background: syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)', color: syncMessage.type === 'error' ? 'var(--danger)' : '#60a5fa', border: `1px solid ${syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`, textAlign: 'center', fontWeight: '500' }}>
+                      {syncMessage.text}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
-                <div className="home-divider">
-                  <div className="line"></div>
-                  <span>or Local Upload</span>
-                  <div className="line"></div>
-                </div>
+            <div className="home-divider">
+              <div className="line"></div>
+              <span>{isSyncing ? '---' : 'or Local Upload'}</span>
+              <div className="line"></div>
+            </div>
 
-                <div className="home-column">
-                  <FileLoader onDataLoaded={handleDataLoaded} />
+            <div className="home-column">
+              {isSyncing ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                  <Skeleton height="200px" borderRadius="20px" className="glass-panel" style={{ opacity: 0.5 }} />
+                  <Skeleton height="80px" borderRadius="12px" />
                 </div>
-              </>
-            )}
+              ) : (
+                <FileLoader onDataLoaded={handleDataLoaded} />
+              )}
+            </div>
           </div>
+
           <Footer />
         </main>
       </>
