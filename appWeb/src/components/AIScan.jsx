@@ -301,7 +301,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       <div className="glass-panel scan-section">
         <div className="scan-section-header">
           <Settings size={20} color="var(--primary)" />
-          <h3>Cấu hình & API Keys</h3>
+          <h3>Config & API Keys</h3>
           {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
         </div>
 
@@ -349,8 +349,8 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
             {/* Batch Size Config */}
             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                Số hình mỗi pack (Batch Size)
-                <span title="Tối đa 30 hình 1 pack để đảm bảo chất lượng quét và tránh lỗi quá tải payload của Gemini." style={{ display: 'inline-flex', cursor: 'help' }}>
+                Images per batch (Max 30)
+                <span title="Limit is 30 images per batch to ensure high extraction quality and prevent Gemini payload limits." style={{ display: 'inline-flex', cursor: 'help' }}>
                   <Info size={14} color="var(--primary)" />
                 </span>
               </label>
@@ -369,7 +369,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
                 }}
                 className="key-input"
                 style={{ width: '100%' }}
-                placeholder="Tối đa 30 hình 1 pack"
+                placeholder="Maximum 30 images"
               />
             </div>
 
