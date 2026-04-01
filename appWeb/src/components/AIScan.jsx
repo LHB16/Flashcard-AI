@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import ApiKeyChip from './ApiKeyChip';
 import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
 import { imagesToPdf, filterImageFiles, chunk } from '../services/pdfService';
-import { processBatches, maskKey } from '../services/geminiService';
+import { processBatches, maskKey, validateKeysParallel } from '../services/geminiService';
 
 /**
  * AIScan — Main component for AI-powered image scanning
@@ -161,6 +161,19 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
 
     addLog(`📁 ${totalImages} images → ${batches.length} batch(es) of up to ${batchSize}`);
 
+    // Phase 0: Validate API Keys
+    addLog(`\n── Checking ${config.api_keys.length} API key(s) ──`);
+    const validKeys = await validateKeysParallel(config.api_keys, addLog);
+    
+    if (validKeys.length === 0) {
+      addLog('❌ All API keys are invalid. Scan aborted.');
+      setScanState('done');
+      return;
+    }
+    
+    const deadCount = config.api_keys.length - validKeys.length;
+    addLog(`\n📊 Key check done: ${validKeys.length}/${config.api_keys.length} alive` + (deadCount ? `, ${deadCount} dead (excluded)` : ''));
+
     // Phase 1: Generate PDFs
     setPdfState('generating');
     const pdfBatches = [];
@@ -208,7 +221,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       const { cards, failedBatches: failed } = await processBatches(
         validPdfs,
         validPageCounts,
-        config.api_keys,
+        validKeys,
         {
           onLog: addLog,
           onProgress: (processed, total) => setProgress({ processed, total }),

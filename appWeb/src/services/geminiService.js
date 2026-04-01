@@ -103,6 +103,40 @@ async function sendBatch(pdfBase64, apiKey, batchIndex, totalBatches, pageCount,
 }
 
 /**
+ * Validate all API keys in parallel. Returns list of alive keys only.
+ * @param {string[]} apiKeys 
+ * @param {function} onLog 
+ * @returns {Promise<string[]>}
+ */
+export async function validateKeysParallel(apiKeys, onLog) {
+  const results = await Promise.all(apiKeys.map(async (key, idx) => {
+    const keyNum = idx + 1;
+    const masked = maskKey(key);
+    if (onLog) onLog(`🔍 Testing Key ${keyNum} [${masked}]...`);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/scan/validate`, {
+        headers: { 'x-gemini-key': key }
+      });
+      const data = await res.json();
+      
+      if (data.valid) {
+        if (onLog) onLog(`✅ Key ${keyNum} [${masked}]: ${data.msg}`);
+        return { key, valid: true };
+      } else {
+        if (onLog) onLog(`❌ Key ${keyNum} [${masked}]: ${data.msg || 'Invalid'}`);
+        return { key, valid: false };
+      }
+    } catch (err) {
+      if (onLog) onLog(`❌ Key ${keyNum} [${masked}]: Failed to reach server (${err.message})`);
+      return { key, valid: false };
+    }
+  }));
+
+  return results.filter(r => r.valid).map(r => r.key);
+}
+
+/**
  * Process all PDF batches with round-robin key rotation.
  *
  * When multiple keys available, processes N batches in parallel (N = number of keys).

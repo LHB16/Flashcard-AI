@@ -124,6 +124,46 @@ function parseGeminiResponse(responseData) {
 }
 
 /**
+ * GET /scan/validate
+ * Header: x-gemini-key
+ * Validates the API key by sending a simple prompt to the first working model.
+ */
+router.get('/validate', async (req, res) => {
+  const geminiKey = req.headers['x-gemini-key'];
+  if (!geminiKey || !geminiKey.startsWith('AIza')) {
+    return res.json({ valid: false, msg: 'Invalid API key format.' });
+  }
+
+  for (const model of MODEL_LIST) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+      const geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: 'Say OK in one word.' }] }] })
+      });
+
+      if (geminiRes.ok) {
+        return res.json({ valid: true, msg: `✓ Valid (${model})` });
+      }
+
+      const errText = await geminiRes.text();
+      // If 404, model is not found, try the next one
+      if (geminiRes.status === 404 || errText.toLowerCase().includes('not found')) {
+        continue;
+      }
+
+      // Other error (400, 403, 429) -> invalid or quota exceeded
+      return res.json({ valid: false, msg: `Invalid: ${errText.slice(0, 80)}` });
+    } catch (err) {
+      return res.json({ valid: false, msg: `Error: ${err.message.slice(0, 80)}` });
+    }
+  }
+
+  return res.json({ valid: false, msg: 'No working model found.' });
+});
+
+/**
  * POST /scan/process
  * Body: { pdf_base64, batch_index, total_batches, page_count }
  * Header: x-gemini-key
