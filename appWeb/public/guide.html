@@ -120,44 +120,57 @@
 
 <body>
     <div class="container">
-        <h1>📖 Flashcard AI — User Guide</h1>
+        <h1>User Guide — Flashcard AI</h1>
         
-        <h2>Section 1: 🚀 Getting Started</h2>
+        <h2>Getting Started</h2>
+        <p>Flashcard AI is designed for high-efficiency learning with cloud synchronization. To begin:</p>
         <ul>
-            <li><strong>Login with Google Drive</strong> to automatically synchronize your flashcard decks.</li>
-            <li>Alternatively, you can manually upload a <code>decks.json</code> file if you prefer offline usage or local backup.</li>
+            <li><strong>Google Drive Sync:</strong> We highly recommend signing in with Google. This creates a secure, private <code>FlashcardAI</code> folder in your Drive to store your decks and progress. This allows you to study across multiple devices (Web, Mobile, Desktop) without losing data.</li>
+            <li><strong>Local Mode:</strong> If you prefer not to use the cloud, you can use the "Local Upload" feature to load a <code>decks.json</code> file from your device. Note that progress in local mode is saved only in your browser's memory.</li>
         </ul>
 
-        <h2>Section 2: 🃏 Flashcard Mode</h2>
+        <h2>Flashcard Learning Mode</h2>
+        <p>The Flashcard mode uses an active recall system to help you memorize terms quickly.</p>
         <ul>
-            <li>Tap the card or press <strong>Space</strong> to flip and reveal the answer.</li>
-            <li>Swipe right (✅) if you know it, or swipe left (❌) if you don't.</li>
-            <li><strong>Shortcuts:</strong> Use <code>←</code> and <code>→</code> arrow keys, or press <code>R</code> to undo a swipe.</li>
+            <li><strong>Interaction:</strong> Click on the card to flip it and see the definition. You can also use the <strong>Spacebar</strong>.</li>
+            <li><strong>Feedback:</strong> After flipping, indicate your confidence:
+                <ul>
+                    <li>Swipe <strong>Right</strong> (or press <code>→</code>) if you recalled the answer correctly.</li>
+                    <li>Swipe <strong>Left</strong> (or press <code>←</code>) if you don't.</li>
+                </ul>
+            </li>
+            <li><strong>Shortcuts:</strong> 
+                <ul>
+                    <li><code>R</code>: Undo your last swipe action.</li>
+                    <li><code>Home</code>: Jump back to the first card in the deck.</li>
+                </ul>
+            </li>
         </ul>
 
-        <h2>Section 3: 🧠 Quiz Mode</h2>
+        <h2>Quiz Practice Mode</h2>
+        <p>Quiz mode tests your knowledge with multiple-choice questions and tracks your mastery.</p>
         <ul>
-            <li>Select the correct answer and click Next to advance.</li>
-            <li>Use the <code>←</code> button to review previous answers (read-only mode).</li>
-            <li>Use the <code>→</code> button to skip a question and defer it to the end of the session.</li>
-            <li>The system will automatically save your progress so you can resume exactly where you left off.</li>
+            <li><strong>Navigation:</strong> Use the "Next" button to move through questions. Your answers are saved automatically.</li>
+            <li><strong>Review:</strong> Click the <strong>Back (←)</strong> icon to see previous questions. You can see your chosen answer vs the correct one, but you cannot change answers once submitted.</li>
+            <li><strong>Skip & Defer:</strong> Click the <strong>Forward (→)</strong> icon to skip a difficult question. Skipped questions will reappear at the end of the quiz session.</li>
+            <li><strong>Progress:</strong> The circular progress bar at the top shows your current completion percentage.</li>
         </ul>
 
-        <h2>Section 4: ✨ AI Scan</h2>
+        <h2>AI Scan Tool</h2>
+        <p>The AI Scan tool uses Google's Gemini Vision models to turn your images/notes into structured decks instantly.</p>
         <ul>
-            <li>Requires Google Drive login to function.</li>
-            <li>Input your <strong>Gemini API keys</strong> (these are saved securely and automatically to your Drive AppData).</li>
-            <li>Select a folder of images, and the system will automatically extract them and generate a flashcard deck.</li>
-            <li>Supported formats include: <code>PNG</code>, <code>JPG</code>, <code>WebP</code>, and <code>BMP</code>.</li>
-            <li>Adding multiple API keys allows the system to process images in parallel, significantly speeding up extraction.</li>
+            <li><strong>API Keys:</strong> You must provide at least one Gemini API Key from Google AI Studio. These keys are saved to your private Google Drive AppData folder and never shared.</li>
+            <li><strong>Parallel Loading:</strong> You can add multiple API keys. The system will rotate through them to bypass rate limits, processing dozens of images simultaneously.</li>
+            <li><strong>Image Processing:</strong> Select a folder or multiple images. Gemini will extract text, identify questions, and format them into Term/Definition pairs. </li>
+            <li><strong>Syncing:</strong> Once the scan is complete, the generated deck is saved directly to your Google Drive and becomes available in your "My Decks" tab.</li>
         </ul>
 
-        <h2>Section 5: 📌 Tips & Shortcuts</h2>
+        <h2>Management & Tips</h2>
         <ul>
-            <li>Pin your favorite decks to the top of the list for easy access.</li>
-            <li>Sort decks alphabetically using the A-Z or Z-A buttons.</li>
-            <li>Toggle Dark/Light mode using the bulb icon for comfortable study sessions.</li>
-            <li>AI tools like Brave Leo can read quiz questions aloud to assist with learning.</li>
+            <li><strong>Pinning:</strong> Use the Pin icon on any deck to keep it permanently at the top of your list.</li>
+            <li><strong>Sorting:</strong> Toggle between Alphabetical (A-Z) and Reverse Alphabetical (Z-A) sorting to organize large collections.</li>
+            <li><strong>Duplicates:</strong> Use the "Manager" (Gear icon) on a deck to find and delete duplicate questions automatically using fuzzy matching logic.</li>
+            <li><strong>Accessibility:</strong> The app supports full Light and Dark modes. The setting is remembered across sessions.</li>
         </ul>
 
         <div class="footer">

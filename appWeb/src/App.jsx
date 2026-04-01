@@ -254,15 +254,30 @@ function App() {
       <>
         {isSyncing && <div className="top-progress-bar"></div>}
         <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-          <header style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '2rem', position: 'relative' }}>
-            <div style={{ position: 'absolute', right: '1rem', top: 0, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <header className="app-header" style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '4rem', 
+            marginTop: '2rem',
+            padding: '1rem 2rem', 
+            background: 'var(--glass-bg)', 
+            backdropFilter: 'blur(10px)', 
+            borderRadius: '16px', 
+            border: '1px solid var(--glass-border)',
+            position: 'relative',
+            zIndex: 10
+          }}>
+            <div className="app-header-left">
+              <h1 className="text-gradient" style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', margin: 0 }}>Flashcard AI</h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: 0 }}>Cross-platform sync & intelligent learning</p>
+            </div>
+            <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <NotificationBell />
               <button className="btn btn-glass btn-icon" onClick={toggleTheme} title="Switch Theme">
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>
             </div>
-            <h1 className="text-gradient" style={{ fontSize: '3rem', letterSpacing: '-0.02em', marginBottom: '1rem' }}>Flashcard AI</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>Cross-platform sync & intelligent learning</p>
           </header>
 
           <div className="home-container">
@@ -315,7 +330,7 @@ function App() {
                       )}
                       <button className="btn btn-glass glass-panel-hover" onClick={handleLoginClick} style={{ padding: '1.5rem', fontSize: '1.2rem', width: '100%', borderColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <Cloud size={28} color="var(--primary)" />
-                        Continue with Google Drive
+                        Sign in with Google to experience full features
                       </button>
                     </div>
                   )}

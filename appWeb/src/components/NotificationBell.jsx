@@ -5,28 +5,24 @@ const NOTIFICATIONS = [
   {
     id: 'notif_aiscan_v1',
     date: '2026-03-31',
-    icon: '✨',
     title: 'New: AI Scan Feature',
     desc: 'Upload a folder of images to auto-generate flashcard decks using Gemini AI.'
   },
   {
     id: 'notif_quiz_nav_v1',
     date: '2026-03-30',
-    icon: '🧭',
     title: 'New: Quiz Navigation',
     desc: 'Use ← → buttons to review previous answers or skip questions in Quiz Mode.'
   },
   {
     id: 'notif_pin_sort_v1',
     date: '2026-03-29',
-    icon: '📌',
     title: 'New: Pin & Sort Decks',
     desc: 'Pin your favorite decks to the top and sort A-Z or Z-A.'
   },
   {
     id: 'notif_progress_v1',
     date: '2026-03-29',
-    icon: '☁️',
     title: 'New: Cloud Progress Sync',
     desc: 'Your flashcard progress is now synced to the cloud via Supabase.'
   },
@@ -133,7 +129,7 @@ export default function NotificationBell() {
           </div>
 
           {/* List */}
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
             {NOTIFICATIONS.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                 No notifications
@@ -162,9 +158,11 @@ export default function NotificationBell() {
                        if (notif.link) e.currentTarget.style.background = isRead ? 'transparent' : 'rgba(79, 70, 229, 0.05)';
                     }}
                   >
-                    <div style={{ fontSize: '1.5rem', flexShrink: 0, filter: isRead ? 'grayscale(40%)' : 'none' }}>
-                      {notif.icon}
-                    </div>
+                    {notif.icon && (
+                      <div style={{ fontSize: '1.5rem', flexShrink: 0, filter: isRead ? 'grayscale(40%)' : 'none' }}>
+                        {notif.icon}
+                      </div>
+                    )}
                     <div>
                       <h4 style={{ margin: '0 0 0.2rem', fontSize: '0.95rem', color: isRead ? 'var(--text-main)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {notif.title}
