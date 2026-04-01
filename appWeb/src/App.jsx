@@ -4,7 +4,8 @@ import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import AIScan from './components/AIScan';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
+import DeckManager from './components/DeckManager';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 import Footer from './components/Footer';
 
@@ -620,13 +621,20 @@ function App() {
                 </div>
               </div>
 
-              <div style={{ marginTop: '3rem', textAlign: 'center' }}>
+              <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-glass glass-panel-hover"
+                  onClick={() => setMode('manage')}
+                  style={{ fontSize: '0.95rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
+                >
+                  <Settings size={18} /> Manage Cards
+                </button>
                 <button
                   className="btn btn-glass"
                   onClick={() => setMode('shortcuts')}
-                  style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                  style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
                 >
-                  ⌨️ Keyboard Shortcuts Guide
+                  ⌨️ Shortcuts
                 </button>
               </div>
             </div>
@@ -635,6 +643,7 @@ function App() {
           {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
           {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
+          {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
         </div>
       </main>
     </>
