@@ -183,8 +183,19 @@
             </li>
         </ul>
 
-        <h2>🤖 AI Scan Tool</h2>
+        <h2 id="ai-scan">🤖 AI Scan Tool</h2>
         <p>Convert your lecture slides and past exams into digital flashcards.</p>
+        
+        <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid var(--success); padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <h4 style="margin-top: 0; color: var(--success); display: flex; align-items: center; gap: 8px;">🔑 How to get a FREE Gemini API Key</h4>
+            <ol style="margin-bottom: 0; padding-left: 20px; color: var(--text);">
+                <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary); font-weight: bold; text-decoration: none;">Google AI Studio</a> and sign in with your Google account.</li>
+                <li>Click the <strong>"Create API key"</strong> button.</li>
+                <li>Select a project (or create a new one if prompted) and generate the key.</li>
+                <li>Copy the generated key (it usually starts with <code>AIza...</code>).</li>
+                <li>Paste the key into the <strong>Config & API Keys</strong> section in the AI Scan tab on our app and click <strong>Add</strong>.</li>
+            </ol>
+        </div>
         <ul>
             <li><strong>API Key Setup:</strong> Go to the AI Scan tab and input your free Google Gemini API key. Keys are saved securely to your private Google Drive (they never touch our servers).</li>
             <li><strong>Parallel Extraction:</strong> You can add <em>multiple</em> API keys at once. When you submit a batch of images, the system acts as a Worker Pool—rotating through your keys to process multiple PDFs in parallel, heavily speeding up extraction.</li>

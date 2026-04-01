@@ -308,7 +308,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
             <h3>Config & API Keys</h3>
             {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
           </div>
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" title="Get a free Gemini API Key" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', background: 'rgba(79, 70, 229, 0.1)', padding: '6px', borderRadius: '50%', textDecoration: 'none' }}>
+          <a href="/guide.html#ai-scan" target="_blank" rel="noreferrer" title="How to get a free Gemini API Key" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', background: 'rgba(79, 70, 229, 0.1)', padding: '6px', borderRadius: '50%', textDecoration: 'none' }}>
             <HelpCircle size={18} />
           </a>
         </div>
