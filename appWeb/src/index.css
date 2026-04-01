@@ -772,9 +772,9 @@ body {
   .notification-dropdown {
     position: fixed;
     top: 70px;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
     width: 90%;
     max-width: 360px;
     height: auto;

@@ -359,9 +359,9 @@ function App() {
               opacity: isHeaderCollapsed ? 0 : 1,
               overflow: isHeaderCollapsed ? 'hidden' : 'visible',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-              pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
+              pointerEvents: 'none',
               position: 'relative',
-              zIndex: 105
+              zIndex: 106
             }}>
               <header className="app-header" style={{ 
                 display: 'flex', 
@@ -372,7 +372,10 @@ function App() {
                 background: 'var(--glass-bg)', 
                 backdropFilter: 'blur(10px)', 
                 borderRadius: '16px', 
-                border: '1px solid var(--glass-border)'
+                border: '1px solid var(--glass-border)',
+                position: 'relative',
+                zIndex: 50,
+                pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
               }}>
                 <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Select a Deck</h1>
@@ -393,7 +396,7 @@ function App() {
               </header>
 
               {/* Tab Switcher */}
-              <div className="tab-switcher">
+              <div className="tab-switcher" style={{ position: 'relative', pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
                 <button
                   className={`tab-btn${activeTab === 'decks' ? ' active' : ''}`}
                   onClick={() => setActiveTab('decks')}
@@ -411,7 +414,7 @@ function App() {
               </div>
 
               {activeTab === 'decks' && (
-                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px' }}>
+                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px', position: 'relative', pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
                   <div style={{ position: 'relative', flex: 1 }}>
                     <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
                     <input
@@ -434,7 +437,7 @@ function App() {
               display: 'flex', 
               justifyContent: 'center', 
               marginTop: isHeaderCollapsed ? '0' : '-32px',
-              zIndex: 106,
+              zIndex: 105,
               position: 'relative',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
@@ -540,9 +543,9 @@ function App() {
             opacity: isHeaderCollapsed ? 0 : 1,
             overflow: isHeaderCollapsed ? 'hidden' : 'visible',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
+            pointerEvents: 'none',
             position: 'relative',
-            zIndex: 105
+            zIndex: 106
           }}>
             <header className="app-header" style={{ 
               display: 'flex', 
@@ -553,7 +556,10 @@ function App() {
               background: 'var(--glass-bg)', 
               backdropFilter: 'blur(10px)', 
               borderRadius: '16px', 
-              border: '1px solid var(--glass-border)'
+              border: '1px solid var(--glass-border)',
+              position: 'relative',
+              zIndex: 50,
+              pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
             }}>
               <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Flashcard AI</h1>
@@ -585,7 +591,7 @@ function App() {
             display: 'flex', 
             justifyContent: 'center', 
             marginTop: isHeaderCollapsed ? '0' : '-32px',
-            zIndex: 106,
+            zIndex: 105,
             position: 'relative',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
           }}>
