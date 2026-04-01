@@ -269,9 +269,18 @@ function App() {
                         <h3 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>Connected to Google Drive</h3>
                         <p style={{ color: 'var(--text-muted)' }}>Any changes from now on will be synced automatically.</p>
                       </div>
-                      <button className="btn btn-primary" onClick={handleSyncFromDrive} style={{ padding: '1.2rem', fontSize: '1.1rem', width: '100%', borderRadius: '12px' }}>
-                        ▶ Start
-                      </button>
+                      <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+                        <button className="btn btn-primary" onClick={handleSyncFromDrive} style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px' }}>
+                          ▶ Start
+                        </button>
+                        <button 
+                          className="btn btn-glass glass-panel-hover" 
+                          onClick={() => { setData([]); setSelectedDeck(null); setMode(null); setActiveTab('scan'); }} 
+                          style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                        >
+                          <Sparkles size={18} /> AI Scan
+                        </button>
+                      </div>
 
                       {syncMessage && (
                         <div className="animate-fade-in" style={{ padding: '1rem', borderRadius: '12px', background: syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)', color: syncMessage.type === 'error' ? 'var(--danger)' : '#60a5fa', border: `1px solid ${syncMessage.type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`, textAlign: 'center', fontWeight: '500' }}>
