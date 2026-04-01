@@ -281,6 +281,7 @@ appWeb/
 │   │   ├── ApiKeyChip.jsx       # API key display chip component
 │   │   ├── DeckManager.jsx      # Card viewer + duplicate checker
 │   │   ├── FileLoader.jsx       # Import/Export decks.json
+│   │   ├── Skeleton.jsx         # Reusable shimmering placeholders for CLS mitigation
 │   │   ├── FlashcardMode.jsx    # Swipe-to-score flashcard study
 │   │   ├── Footer.jsx           # Footer with links
 │   │   ├── KeyboardShortcuts.jsx# Keyboard shortcut overlay
@@ -589,6 +590,19 @@ User selects folder → filterImageFiles() → setImageFiles()
 | Variable | Example Value | Purpose |
 | :--- | :--- | :--- |
 | `VITE_BACKEND_URL` | `https://flashcard-ai-bs67.onrender.com` | Backend URL for all API calls |
+
+### 4.10 Web Performance & UX Optimization
+
+The web application is optimized for **Core Web Vitals (CWV)** to ensure a smooth, professional user experience on both desktop and mobile.
+
+#### ⚡ Largest Contentful Paint (LCP)
+- **Strategic Font Loading**: The `Inter` font is preloaded via `<link rel="preconnect">` and `<link rel="stylesheet">` in `index.html` to ensure the brand typography is discovered and rendered as early as possible.
+- **Resource Priority**: Critical assets are prioritized to reduce the "render-blocking" phase of the initial load.
+
+#### 🧩 Cumulative Layout Shift (CLS)
+- **Skeleton Loading Screens**: Instead of blank spaces or full-screen spinners, the app uses shimmering placeholders (`Skeleton.jsx`) that mimic the final UI structure. This preserves the layout's vertical space during async calls.
+- **Stable Container Heights**: Key layout wrappers like `.home-container` and `.home-column` utilize `min-height` and fixed aspect ratios to prevent the page from "jumping" when Google Drive data or AI scan results arrive.
+- **Predictive Transitions**: Transitions between "Syncing" and "Active" states are managed through a unified structure to keep the user's focus stable.
 
 ---
 

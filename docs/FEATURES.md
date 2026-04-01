@@ -33,6 +33,9 @@
 - **Progress Isolation**: Flashcard progress and quiz sessions are handled independently to preserve data integrity
 - **Cloud Progress**: Study percentage and quiz sessions synced to PostgreSQL for cross-device access
 - **Responsive Design**: Glassmorphism UI with dark/light theme, fully mobile-optimized
+- **Skeleton Screens**: Predictive shimmer loading states for Drive sync and AI scans to eliminate layout shifts
+- **Performance Optimized**: Core Web Vitals (LCP/CLS) compliant with font preloading and stable container heights
+- **Zero-Shift Transitions**: Strategic min-heights and placeholders ensure a stable reading experience during async loads
 
 ### Data & Sync
 - Local JSON files (`decks.json`, `settings.json`, `quiz_sessions.json`, `token.json`)

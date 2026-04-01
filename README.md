@@ -27,6 +27,11 @@ Unlike traditional SaaS, Flashcard AI prioritizes user data ownership:
 *   **Robust Recovery**: Uses Binary Splitting and Regex post-processing to salvage malformed AI responses.
 *   **Key Rotation**: Automatic round-robin rotation between multiple API keys to optimize rate limits.
 
+### ⚡ Performance & UX
+*   **Core Web Vitals Optimized**: Achieved "Good" scores for LCP and CLS through strategic resource preloading and layout stabilization.
+*   **Skeleton Screens**: Predictive loading interfaces (shimmer effect) that eliminate layout shifts during Google Drive sync and AI scans.
+*   **Adaptive Theme Placeholders**: Shimmering skeletons that automatically adapt to light/dark system preferences.
+
 ### Cross-Platform Pillars
 *   **Web App (React + Vite)**: Full-featured desktop/mobile-responsive interface with Google OAuth login and persistent sessions.
 *   **Desktop App (.NET 8 WPF)**: High-performance management tool featuring the **Smart Merge** algorithm for conflict-free Drive synchronization.
