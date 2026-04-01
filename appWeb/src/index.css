@@ -771,10 +771,10 @@ body {
 @media (max-width: 480px) {
   .notification-dropdown {
     position: fixed;
-    top: 50%;
+    top: 70px;
     left: 50%;
     right: auto;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     width: 90%;
     max-width: 360px;
     height: auto;

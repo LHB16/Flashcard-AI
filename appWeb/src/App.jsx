@@ -434,7 +434,7 @@ function App() {
               display: 'flex', 
               justifyContent: 'center', 
               marginTop: isHeaderCollapsed ? '0' : '-32px',
-              zIndex: 102,
+              zIndex: 106,
               position: 'relative',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
@@ -453,7 +453,7 @@ function App() {
                   cursor: 'pointer',
                   background: 'rgba(255, 255, 255, 0.03)',
                   backdropFilter: 'blur(12px)',
-                  boxShadow: isHeaderCollapsed ? '0 4px 15px rgba(0,0,0,0.1)' : 'none',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
                   transition: 'all 0.4s'
                 }}
               >
@@ -585,7 +585,7 @@ function App() {
             display: 'flex', 
             justifyContent: 'center', 
             marginTop: isHeaderCollapsed ? '0' : '-32px',
-            zIndex: 102,
+            zIndex: 106,
             position: 'relative',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
           }}>
@@ -604,7 +604,7 @@ function App() {
                 cursor: 'pointer',
                 background: 'rgba(255, 255, 255, 0.03)',
                 backdropFilter: 'blur(12px)',
-                boxShadow: isHeaderCollapsed ? '0 4px 15px rgba(0,0,0,0.1)' : 'none',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
                 transition: 'all 0.4s'
               }}
             >
