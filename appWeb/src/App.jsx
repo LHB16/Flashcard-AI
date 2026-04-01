@@ -208,6 +208,10 @@ function App() {
         const freshData = dataRef.current;
         if (!freshData) return;
 
+        // 1. Upload structurally modified JSON to Google Drive directly without blocking UI
+        uploadDecksToDrive(freshData, driveFileId).catch(e => console.warn('Drive sync failed:', e));
+
+        // 2. Sync progress to Supabase
         if (selectedDeck) {
           const known = selectedDeck.cards.filter(c => c.status === 2).length;
           const total = selectedDeck.cards.length;
@@ -228,8 +232,6 @@ function App() {
         }
       } catch (e) {
         console.error("Background sync failed:", e);
-      } finally {
-        setIsDriveSyncing(false);
       }
     }, 3000);
   };
