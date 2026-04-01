@@ -1,6 +1,7 @@
 # Flashcard AI Ecosystem
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![React Native](https://img.shields.io/badge/react--native-v0.83-61DAFB?logo=react&logoColor=black)](https://reactnative.dev/)
 [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://react.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
@@ -29,6 +30,7 @@ Unlike traditional SaaS, Flashcard AI prioritizes user data ownership:
 ### Cross-Platform Pillars
 *   **Web App (React + Vite)**: Full-featured desktop/mobile-responsive interface with Google OAuth login and persistent sessions.
 *   **Desktop App (.NET 8 WPF)**: High-performance management tool featuring the **Smart Merge** algorithm for conflict-free Drive synchronization.
+*   **Desktop App (Python)**: Cross-platform GUI built with CustomTkinter, supporting parallel scanning and local data management.
 *   **Mobile App (Android)**: Portable study tool with 3D card animations, swipe-to-score gestures, and full session resilience.
 
 ### Advanced Study Engine
@@ -44,7 +46,8 @@ Unlike traditional SaaS, Flashcard AI prioritizes user data ownership:
 | :--- | :--- | :--- |
 | **Frontend Web** | React, Vite, Tailwind | Cloudflare Pages |
 | **Backend API** | Node.js, Express | Render.com |
-| **Desktop** | .NET 8, WPF, MVVM | Native EXE |
+| **Desktop** | .NET 8, WPF, MVVM | .exe (Windows) |
+| **Desktop** | Python 3.10+, CustomTkinter | .exe (PyInstaller) |
 | **Mobile** | React Native, Expo | Android APK |
 | **Database** | PostgreSQL | Supabase |
 | **Storage** | Google Drive API | AppData Space |
@@ -65,7 +68,11 @@ Access the hosted version at: [lhb16-flashcard-ai.pages.dev](https://lhb16-flash
    ```bash
    cd appDotNet/FlashcardAI && dotnet run
    ```
-3. **Mobile (Android)**:
+3. **Desktop (Python)**:
+   ```bash
+   cd appPython && pip install -r requirements.txt && python app.py
+   ```
+4. **Mobile (Android)**:
    ```bash
    cd appAndroid && npm install && npx expo start
    ```
