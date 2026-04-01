@@ -681,7 +681,7 @@ appDotNet/
 └──────────────┘             └──────────────┘            │  StorageService  │ 
                                    │                     └──────────────────┘
                               INotifyPropertyChanged          │
-                                                        ┌──────▼────────────┐
+                                                        ┌─────▼─────────────┐
                                                         │  Models           │
                                                         │  Deck, Flashcard  │
                                                         └───────────────────┘
