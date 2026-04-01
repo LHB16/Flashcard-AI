@@ -121,7 +121,7 @@ function App() {
     }
   };
 
-  const handleSyncFromDrive = async () => {
+  const handleSyncFromDrive = async (goToScan = false) => {
     setIsSyncing(true);
     setSyncMessage(null);
     try {
@@ -131,7 +131,18 @@ function App() {
         // Successfully loaded from drive
         handleDataLoaded(result.data, false);
       } else {
-        setSyncMessage({ type: 'error', text: "No desk.json found on this Google Drive. Please upload a file manually below to initialize sync." });
+        if (goToScan) {
+           // New account, no desks.json. Setup empty environment for them to create decks.
+           setData([]);
+           setSelectedDeck(null);
+        } else {
+           setSyncMessage({ type: 'error', text: "No desk.json found on this Google Drive. Please upload a file manually or use AI Scan to create one." });
+        }
+      }
+
+      if (goToScan) {
+        setMode(null);
+        setActiveTab('scan');
       }
     } catch (e) {
       console.error(e);
@@ -273,12 +284,12 @@ function App() {
                         <p style={{ color: 'var(--text-muted)' }}>Any changes from now on will be synced automatically.</p>
                       </div>
                       <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
-                        <button className="btn btn-primary" onClick={handleSyncFromDrive} style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px' }}>
+                        <button className="btn btn-primary" onClick={() => handleSyncFromDrive(false)} style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px' }}>
                           ▶ Start
                         </button>
                         <button 
                           className="btn btn-glass glass-panel-hover" 
-                          onClick={() => { setData([]); setSelectedDeck(null); setMode(null); setActiveTab('scan'); }} 
+                          onClick={() => handleSyncFromDrive(true)} 
                           style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                         >
                           <Sparkles size={18} /> AI Scan
