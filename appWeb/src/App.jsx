@@ -266,7 +266,7 @@ function App() {
             borderRadius: '16px', 
             border: '1px solid var(--glass-border)',
             position: 'relative',
-            zIndex: 10
+            zIndex: 200
           }}>
             <div className="app-header-left">
               <h1 className="text-gradient" style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', margin: 0 }}>Flashcard AI</h1>
@@ -375,8 +375,7 @@ function App() {
               overflow: isHeaderCollapsed ? 'hidden' : 'visible',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
               pointerEvents: 'none',
-              position: 'relative',
-              zIndex: 105
+              position: 'relative'
             }}>
               <header className="app-header" style={{ 
                 display: 'flex', 
@@ -389,7 +388,7 @@ function App() {
                 borderRadius: '16px', 
                 border: '1px solid var(--glass-border)',
                 position: 'relative',
-                zIndex: 50,
+                zIndex: 200,
                 pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
               }}>
                 <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -411,7 +410,7 @@ function App() {
               </header>
 
               {/* Tab Switcher */}
-              <div className="tab-switcher" style={{ position: 'relative', pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
+              <div className="tab-switcher" style={{ position: 'relative', zIndex: 50, pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
                 <button
                   className={`tab-btn${activeTab === 'decks' ? ' active' : ''}`}
                   onClick={() => setActiveTab('decks')}
@@ -429,7 +428,7 @@ function App() {
               </div>
 
               {activeTab === 'decks' && (
-                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px', position: 'relative', pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
+                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px', position: 'relative', zIndex: 50, pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
                   <div style={{ position: 'relative', flex: 1 }}>
                     <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
                     <input
@@ -559,8 +558,7 @@ function App() {
             overflow: isHeaderCollapsed ? 'hidden' : 'visible',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             pointerEvents: 'none',
-            position: 'relative',
-            zIndex: 105
+            position: 'relative'
           }}>
             <header className="app-header" style={{ 
               display: 'flex', 
@@ -573,7 +571,7 @@ function App() {
               borderRadius: '16px', 
               border: '1px solid var(--glass-border)',
               position: 'relative',
-              zIndex: 50,
+              zIndex: 200,
               pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
             }}>
               <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
