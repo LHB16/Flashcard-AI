@@ -20,7 +20,6 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [searchQuery, setSearchQuery] = useState('');
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
-  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('decks');
   const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
   const [deckToDelete, setDeckToDelete] = useState(null);
