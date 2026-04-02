@@ -169,6 +169,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
   const containerRef = useRef(null);
   const indicatorRef = useRef(null);
   const startPointRef = useRef(null);
+  const touchRef = useRef({ active: false, startX: 0, startY: 0, currentX: 0, currentY: 0, lockedDirection: null });
 
   const updateIndicator = useCallback((info) => {
     if (!indicatorRef.current || !startPointRef.current) return;
