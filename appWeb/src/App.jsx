@@ -101,10 +101,14 @@ function App() {
       }
     );
     // Tự động thu gọn header khi cuộn xuống
+    const lastScrollYRef = { current: window.scrollY };
     const handleScroll = () => {
-      if (window.scrollY > 80) {
+      const currentScrollY = window.scrollY;
+      // Chỉ tự động thu gọn nếu đang cuộn xuống và vượt qua mốc 80px
+      if (currentScrollY > 80 && lastScrollYRef.current <= 80) {
         setIsHeaderCollapsed(true);
       }
+      lastScrollYRef.current = currentScrollY;
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -555,7 +559,7 @@ function App() {
               opacity: isHeaderCollapsed ? 0 : 1,
               overflow: isHeaderCollapsed ? 'hidden' : 'visible',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-              pointerEvents: 'none',
+              pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
               position: 'relative'
             }}>
               <header className="app-header" style={{ 
