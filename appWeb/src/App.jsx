@@ -695,10 +695,10 @@ function App() {
                   className="btn btn-glass" 
                   style={{ border: 'none', padding: '0.6rem 1rem', fontWeight: 'bold' }}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'center' }}>
-                  Đã chọn <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
+                  Selected <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
                 </div>
                 <button 
                   onClick={() => setShowDeleteConfirm(true)} 
@@ -713,7 +713,7 @@ function App() {
                      display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
                   }}
                 >
-                  <Trash2 size={16} /> Xóa
+                  <Trash2 size={16} /> Delete
                 </button>
               </div>
             )}
@@ -760,10 +760,20 @@ function App() {
                     )}
                     {deck.deck_id && (
                       <button 
-                        onClick={(e) => togglePin(deck.deck_id, e)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex' }}
+                        onClick={(e) => !isSelectionMode && togglePin(deck.deck_id, e)}
+                        disabled={isSelectionMode}
+                        style={{ 
+                          background: 'none', 
+                          border: 'none', 
+                          cursor: isSelectionMode ? 'not-allowed' : 'pointer', 
+                          padding: '0.5rem', 
+                          borderRadius: '50%', 
+                          display: 'flex',
+                          opacity: isSelectionMode ? 0.3 : 1,
+                          transition: 'opacity 0.2s'
+                        }}
                         className="btn-icon pin-btn"
-                        title={isPinned ? "Unpin deck" : "Pin deck"}
+                        title={isSelectionMode ? "Disabled in selection mode" : (isPinned ? "Unpin deck" : "Pin deck")}
                       >
                         {isPinned ? <Star size={24} color="#fbbf24" strokeWidth={2.5} /> : <Star size={24} color="var(--text-muted)" strokeWidth={1.5} />}
                       </button>
