@@ -7,7 +7,7 @@ import AIScan from './components/AIScan';
 import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
 import NotificationBell from './components/NotificationBell';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
@@ -373,6 +373,11 @@ function App() {
 
           <Footer />
         </main>
+        <AddDeckModal 
+          isOpen={isAddDeckModalOpen} 
+          onClose={() => setIsAddDeckModalOpen(false)} 
+          onDeckCreated={handleDeckCreated} 
+        />
       </>
     );
   }
@@ -571,6 +576,11 @@ function App() {
           )}
           <Footer />
         </main>
+        <AddDeckModal 
+          isOpen={isAddDeckModalOpen} 
+          onClose={() => setIsAddDeckModalOpen(false)} 
+          onDeckCreated={handleDeckCreated} 
+        />
       </>
     )
   }
