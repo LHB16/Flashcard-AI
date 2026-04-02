@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.0 | **Last Updated:** 2026-04-01 | **Status:** Complete
+> **Version:** 2.1 | **Last Updated:** 2026-04-02 | **Status:** Complete
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -491,6 +491,7 @@ const halfB = imgs.slice(mid);
 | GET | `/progress/quiz/:deck_id` | Query: `google_id` | `{ data: session \| null }` |
 | POST | `/progress/cards/save` | `{ google_id, deck_id, cards_map }` | `{ message }` — calls `merge_deck_progress()` RPC |
 | GET | `/progress/cards/:deck_id` | Query: `google_id` | `{ data: { card_id: status, ... } }` |
+| POST | `/progress/deck/on-modified` | `{ google_id, deck_id, card_id?, action }` | `{ message }` — deletes `quiz_sessions`, resets card status in `deck_progress` |
 
 ### 4.6 Google OAuth Flow (Step-by-Step)
 
@@ -643,6 +644,123 @@ To achieve sub-1.5s LCP targets, resource discovery is moved as early as possibl
 1.  **Font Preconnect**: `index.html` initiates a handshake with Google Fonts infrastructure (`fonts.gstatic.com`) immediately.
 2.  **CSS Decoupling**: Removed `@import` from `index.css` to eliminate the "import-chain" load delay, replacing it with a parallelized `<link>` tag in the `<head>`.
 3.  **Container Anchoring**: Strategic `min-height: 480px` (HomeContainer) and `380px` (HomeColumn) in `index.css` ensure that the "above-the-fold" coordinates remain stable throughout the entire paint cycle.
+
+### 4.11 DeckManager — Card Editing Engine
+
+Added in **2026-04-02**, `DeckManager.jsx` was extended with a full card creation and editing workflow, alongside a series of correctness and data-consistency fixes.
+
+#### 4.11.1 Add Card Feature
+
+A new **Add Card** button in the `view` tab opens the edit form pre-populated with a blank card template. The workflow is identical to editing an existing card.
+
+```javascript
+// Correct implementation: both state transitions must fire together
+setEditingCard({
+  index: -1,
+  isNew: true,
+  data: {
+    card_id: uuidv4(),       // unique identity for Supabase progress
+    question: '',
+    options: ['A. ', 'B. ', 'C. ', 'D. '],
+    correct_answers: [],
+    question_type: 'single_choice',
+    status: 0,
+    notes: ''
+  }
+});
+setTab('edit'); // ← was missing; without this, the form never renders
+```
+
+> **Bug fixed:** The original `onClick` handler called `setEditingCard(...)` but omitted `setTab('edit')`, so clicking "Add Card" silently set state without rendering the editor.
+
+#### 4.11.2 Card Validation Before Save
+
+Before committing a card to the deck, the save handler enforces the following rules in order:
+
+| Rule | Condition | Alert Message |
+| :--- | :--- | :--- |
+| Non-empty question | `question.trim() === ''` | `"Question content cannot be empty!"` |
+| At least one correct answer | `correct_answers.length === 0` | `"Please select at least one correct answer!"` |
+| Single-choice: exactly 1 answer | `type === 'single_choice' && count !== 1` | `"Single Choice questions must have exactly 1 correct answer!"` |
+| Multiple-choice: at least 2 answers | `type === 'multiple_choice' && count < 2` | `"Multiple Choice questions must have at least 2 correct answers!"` |
+
+#### 4.11.3 Deck ID Fallback for Legacy Decks
+
+Older decks created before `deck_id` was introduced may not carry this field. All structure-change notifications now use a resolved identifier:
+
+```javascript
+// Resolves the best available identifier for the deck
+const deckIdToSync = deck?.deck_id || deck?.title || deck?.name;
+```
+
+This ensures `notifyDeckStructureChanged()` always delivers a valid `deck_id` to the backend, regardless of the deck's origin.
+
+#### 4.11.4 Deck Structure Change Notification Flow
+
+Whenever a card is added, edited, or deleted, the frontend must synchronize the backend database to maintain study-session consistency.
+
+```
+User saves card edit
+  │
+  ├── await notifyDeckStructureChanged(deckIdToSync, card_id, 'edit')
+  │     │
+  │     └── POST /progress/deck/on-modified
+  │           ├── DELETE quiz_sessions WHERE deck_id = deckId
+  │           │     → Forces Quiz Mode to restart with the new question set
+  │           │
+  │           └── UPDATE deck_progress SET cards_status[card_id] = 0
+  │                 → Resets the edited card's Flashcard status to "New"
+  │
+  ├── deck.cards = newCards   (local mutation)
+  ├── onDeckModified()        (triggers Drive upload + React re-render)
+  └── setTab('view')
+```
+
+> The `await` before `notifyDeckStructureChanged()` is critical. Without it, the user can navigate back to Quiz Mode before the `quiz_sessions` deletion completes on the backend, causing the stale session to be loaded one last time.
+
+#### 4.11.5 Progress Sync Fix in `handleDeckModified`
+
+`handleDeckModified` in `App.jsx` is the central callback fired after any deck mutation. Two correctness issues were resolved:
+
+**Issue 1 — Shallow Copy:** The original `setSelectedDeck(prev => ({ ...prev }))` only created a shallow copy of the deck object. Since `prev.cards` still pointed to the mutated array, React's reconciler could not detect changes in child components that depended on `deck.cards`.
+
+```javascript
+// Before: shallow copy — children may not re-render
+setSelectedDeck(prev => prev ? { ...prev } : prev);
+
+// After: deep copy of cards array triggers correct re-render
+setSelectedDeck(prev => {
+  if (!prev) return prev;
+  return { ...prev, cards: [...(prev.cards || [])] };
+});
+```
+
+**Issue 2 — Stale Closure:** `handleDeckModified` is memoized with `useCallback`. When it read `selectedDeck.cards` to compute the progress percentage for Supabase, it used the version of `selectedDeck` captured at memoization time — which was the *pre-mutation* state.
+
+```javascript
+// Before: reads stale selectedDeck from closure
+const known = selectedDeck.cards.filter(c => c.status === 2).length;
+
+// After: finds the fresh deck from the always-current dataRef
+const freshDeck = freshData.find(d => d.deck_id === selectedDeck?.deck_id);
+const known = freshDeck.cards.filter(c => c.status === 2).length;
+```
+
+The `useCallback` dependency was also narrowed from `selectedDeck` (entire object) to `selectedDeck?.deck_id` (scalar string) to avoid unnecessary callback recreation on every card-status update.
+
+#### 4.11.6 Critical Bug: Mis-Routed API Endpoint
+
+All calls to `notifyDeckStructureChanged()` were silently returning HTTP `404` because the target URL was incorrect.
+
+| | URL |
+| :--- | :--- |
+| **Incorrect (before)** | `POST ${BACKEND_URL}/deck/on-modified` |
+| **Correct (after)** | `POST ${BACKEND_URL}/progress/deck/on-modified` |
+
+The handler is defined in `routes/progress.js`, which is mounted by `index.js` under the `/progress` prefix (`app.use('/progress', progressRoutes)`). The missing prefix segment caused every structure-change notification to fail with a 404, meaning:
+
+- Quiz sessions were **never deleted** after card edits → stale quiz state persisted across page reloads.
+- Card statuses in `deck_progress` were **never reset** → the edited card appeared as already-learned on the next Flashcard session.
 
 ---
 
