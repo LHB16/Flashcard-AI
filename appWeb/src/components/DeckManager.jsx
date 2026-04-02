@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2 } from 'lucide-react';
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
+import ShareDeckModal from './ShareDeckModal';
 
 const CARDS_PER_PAGE = 30;
 const DEDUP_PAIRS_PER_PAGE = 15;
@@ -17,6 +18,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   const [page, setPage] = useState(0);
   const [selectedCards, setSelectedCards] = useState(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Dedup state
   const [dedupResults, setDedupResults] = useState(null);
@@ -158,6 +160,13 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           {cards.length} cards · {multiCount} multi · {singleCount} single
         </span>
+        <button 
+          className="btn btn-glass" 
+          onClick={() => setIsShareModalOpen(true)}
+          style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '10px' }}
+        >
+          <Share2 size={16} color="var(--primary)" /> Share
+        </button>
       </div>
 
       {/* Tab Bar - Hidden in Edit Mode */}
@@ -728,6 +737,12 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
           </div>
         </div>
       )}
+
+      <ShareDeckModal 
+        isOpen={isShareModalOpen} 
+        onClose={() => setIsShareModalOpen(false)} 
+        deck={deck} 
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const progressRoutes = require('./routes/progress');
 const scanRoutes = require('./routes/scan');
+const shareRoutes = require('./routes/share');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.get('/ping', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/progress', progressRoutes);
 app.use('/scan', scanRoutes);
+app.use('/share', shareRoutes);
 
 app.listen(PORT, () => {
   console.log(`Backend Server đang chạy tại cổng: ${PORT}`);

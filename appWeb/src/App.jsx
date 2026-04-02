@@ -6,8 +6,9 @@ import KeyboardShortcuts from './components/KeyboardShortcuts';
 import AIScan from './components/AIScan';
 import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
+import ImportSharedDeckModal from './components/ImportSharedDeckModal';
 import NotificationBell from './components/NotificationBell';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive, deleteDecksProgress } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
@@ -22,6 +23,7 @@ function App() {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('decks');
   const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedDecks, setSelectedDecks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -233,6 +235,29 @@ function App() {
         }
       } catch (e) {
         console.error('Error syncing new deck to Drive:', e);
+      }
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDeckImported = async (clonedDeck) => {
+    const updated = data ? [...data, clonedDeck] : [clonedDeck];
+    setData(updated);
+    
+    // Auto-select the newly imported deck
+    setSelectedDeck(clonedDeck);
+    setMode('home');
+    
+    // Sync to Drive
+    if (userLoggedIn) {
+      setIsSyncing(true);
+      try {
+        const res = await uploadDecksToDrive(updated, driveFileId);
+        if (!driveFileId && res && res.id) {
+          setDriveFileId(res.id);
+        }
+      } catch (e) {
+        console.error('Error syncing imported deck to Drive:', e);
       }
       setIsSyncing(false);
     }
@@ -553,19 +578,35 @@ function App() {
                 >
                   <Sparkles size={16} /> AI Scan
                 </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setIsAddDeckModalOpen(true)}
-                  style={{ 
-                    padding: '0.4rem 1.25rem', 
-                    fontSize: '0.85rem', 
-                    height: '36px',
-                    marginLeft: 'auto',
-                    borderRadius: '10px'
-                  }}
-                >
-                  <Plus size={16} /> Add Deck
-                </button>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                  {userLoggedIn && (
+                    <button
+                      className="btn btn-glass"
+                      onClick={() => setIsImportModalOpen(true)}
+                      style={{ 
+                        padding: '0.4rem 1rem', 
+                        fontSize: '0.85rem', 
+                        height: '36px',
+                        borderRadius: '10px'
+                      }}
+                      title="Import a shared deck"
+                    >
+                      <Download size={16} /> Import
+                    </button>
+                  )}
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setIsAddDeckModalOpen(true)}
+                    style={{ 
+                      padding: '0.4rem 1.25rem', 
+                      fontSize: '0.85rem', 
+                      height: '36px',
+                      borderRadius: '10px'
+                    }}
+                  >
+                    <Plus size={16} /> Add Deck
+                  </button>
+                </div>
               </div>
 
               {activeTab === 'decks' && (
@@ -749,6 +790,11 @@ function App() {
           isOpen={isAddDeckModalOpen} 
           onClose={() => setIsAddDeckModalOpen(false)} 
           onDeckCreated={handleDeckCreated} 
+        />
+        <ImportSharedDeckModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onDeckImported={handleDeckImported}
         />
 
         {/* Delete Deck Confirmation Modal */}

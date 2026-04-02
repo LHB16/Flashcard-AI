@@ -58,3 +58,20 @@ BEGIN
     updated_at = NOW();
 END;
 $$ LANGUAGE plpgsql;
+
+-- 6. Tạo bảng Shared Decks lưu trữ nội dung deck được chia sẻ (JSONB)
+CREATE TABLE IF NOT EXISTS shared_decks (
+  deck_id TEXT PRIMARY KEY,
+  owner_id TEXT REFERENCES users(google_id) ON DELETE CASCADE,
+  deck_data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Tạo bảng Deck Invites lưu email những người được phép xem deck
+CREATE TABLE IF NOT EXISTS deck_invites (
+  deck_id TEXT REFERENCES shared_decks(deck_id) ON DELETE CASCADE,
+  receiver_email TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (deck_id, receiver_email)
+);
