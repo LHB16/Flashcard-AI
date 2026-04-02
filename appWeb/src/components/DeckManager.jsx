@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash } from 'lucide-react';
 import { findDuplicateQuestions } from '../services/dedupService';
+import { v4 as uuidv4 } from 'uuid';
+import { notifyDeckStructureChanged } from '../services/driveSync';
 
 const CARDS_PER_PAGE = 30;
 const DEDUP_PAIRS_PER_PAGE = 15;
@@ -44,7 +46,14 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   // ─── Card Actions ───
   const handleDeleteSingle = useCallback((origIdx) => {
     // Immutable update: create new cards array without the deleted card
+    const cardToDelete = deck.cards[origIdx];
     deck.cards = deck.cards.filter((_, idx) => idx !== origIdx);
+    
+    // Cleanup progress in DB
+    if (cardToDelete && cardToDelete.card_id) {
+       notifyDeckStructureChanged(deck.deck_id, cardToDelete.card_id, 'delete');
+    }
+    
     onDeckModified();
     setDeleteConfirm(null);
     setSelectedCards(prev => { const n = new Set(prev); n.delete(origIdx); return n; });
@@ -53,6 +62,10 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   const handleDeleteSelected = useCallback(() => {
     if (!selectedCards.size) return;
     const indices = new Set(selectedCards);
+    
+    // Invalidate quiz sessions (too complex to surgical delete many)
+    notifyDeckStructureChanged(deck.deck_id, null, 'delete_multiple');
+
     // Immutable update: filter out all cards whose indices are in the selection set
     deck.cards = deck.cards.filter((_, idx) => !indices.has(idx));
     setSelectedCards(new Set());
@@ -198,6 +211,30 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                 <Trash2 size={16} /> Delete {selectedCards.size} selected
               </button>
             )}
+            
+            <button
+              className="btn btn-primary"
+              onClick={() => setEditingCard({
+                index: -1,
+                isNew: true,
+                data: {
+                  card_id: uuidv4(),
+                  question: '',
+                  options: ['A. ', 'B. ', 'C. ', 'D. '],
+                  correct_answers: [],
+                  question_type: 'single_choice',
+                  status: 0,
+                  notes: ''
+                }
+              })}
+              style={{
+                padding: '0.7rem 1.2rem', borderRadius: '10px',
+                display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem',
+                marginLeft: 'auto'
+              }}
+            >
+              <Plus size={18} /> Add Card
+            </button>
           </div>
 
           {/* Card List */}
@@ -488,12 +525,25 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   alert("Question content cannot be empty!");
                   return;
                 }
-                if (window.confirm("Save changes to this flashcard?")) {
+                if (window.confirm(editingCard.isNew ? "Add this new card?" : "Save changes to this flashcard?")) {
                   const newCards = [...deck.cards];
-                  newCards[editingCard.index] = editingCard.data;
+                  
+                  if (editingCard.isNew) {
+                    newCards.push(editingCard.data);
+                    // Reset quiz session
+                    notifyDeckStructureChanged(deck.deck_id, null, 'add');
+                  } else {
+                    // Reset status to unlearned for edited cards
+                    const updatedCard = { ...editingCard.data, status: 0 };
+                    newCards[editingCard.index] = updatedCard;
+                    // Reset progress in DB
+                    notifyDeckStructureChanged(deck.deck_id, editingCard.data.card_id, 'edit');
+                  }
+                  
                   deck.cards = newCards;
                   onDeckModified();
                   setTab('view');
+                  setEditingCard(null);
                 }
               }}
               style={{ padding: '0.6rem 2rem', borderRadius: '12px' }}

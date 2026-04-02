@@ -175,11 +175,64 @@ router.post('/delete-bulk', async (req, res) => {
     // Check for errors in any of the results
     const firstError = results.find(r => r.error)?.error;
     if (firstError) throw firstError;
-
     res.json({ message: 'Database clean up successful', count: deck_ids.length });
   } catch (error) {
     console.error('Bulk Delete Error:', error);
     res.status(500).json({ error: 'Lỗi dọn dẹp CSDL Supabase' });
+  }
+});
+
+// Update or reset progress when deck structure changes (edit/delete/add cards)
+router.post('/deck/on-modified', async (req, res) => {
+  const { google_id, deck_id, card_id, action } = req.body;
+
+  if (!google_id || !deck_id) {
+    return res.status(400).json({ error: 'Missing google_id or deck_id' });
+  }
+
+  try {
+    const promises = [];
+
+    // 1. Always reset Quiz Session because indices/order are now broken
+    promises.push(
+      supabase.from('quiz_sessions')
+        .delete()
+        .eq('google_id', google_id)
+        .eq('deck_id', deck_id)
+    );
+
+    // 2. Handle card-specific progress in deck_progress (JSONB)
+    if (card_id && (action === 'delete' || action === 'edit')) {
+      // First, get current map
+      const { data: current } = await supabase
+        .from('deck_progress')
+        .select('cards_status')
+        .eq('google_id', google_id)
+        .eq('deck_id', deck_id)
+        .single();
+
+      if (current && current.cards_status) {
+        let newStatus = { ...current.cards_status };
+        if (action === 'delete') {
+          delete newStatus[card_id];
+        } else if (action === 'edit') {
+          newStatus[card_id] = 0; // Reset to unlearned
+        }
+
+        promises.push(
+          supabase.from('deck_progress')
+            .update({ cards_status: newStatus })
+            .eq('google_id', google_id)
+            .eq('deck_id', deck_id)
+        );
+      }
+    }
+
+    await Promise.all(promises);
+    res.json({ message: 'Deck modifications synced to DB' });
+  } catch (error) {
+    console.error('Deck Modify Sync Error:', error);
+    res.status(500).json({ error: 'Lỗi đồng bộ thay đổi cấu trúc' });
   }
 });
 

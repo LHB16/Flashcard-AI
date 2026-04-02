@@ -204,3 +204,32 @@ export const deleteDecksProgress = async (deckIds) => {
     return null;
   }
 };
+
+/**
+ * Thông báo thay đổi cấu trúc bộ thẻ (Thêm/Sửa/Xóa) để dọn dẹp DB
+ */
+export const notifyDeckStructureChanged = async (deckId, cardId = null, action = 'edit') => {
+  if (!googleId || !deckId) return null;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/deck/on-modified`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        google_id: googleId, 
+        deck_id: deckId, 
+        card_id: cardId, 
+        action 
+      })
+    });
+
+    if (!res.ok) {
+       console.warn("Failed to notify deck modification:", await res.text());
+       return null;
+    }
+    return res.json();
+  } catch (e) {
+    console.error("Error notifying deck structure change:", e);
+    return null;
+  }
+};
