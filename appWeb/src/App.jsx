@@ -8,7 +8,7 @@ import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
 import ImportSharedDeckModal from './components/ImportSharedDeckModal';
 import NotificationBell from './components/NotificationBell';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard, LogOut } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, ChevronLeft, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard, LogOut } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive, deleteDecksProgress } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
@@ -441,7 +441,7 @@ function App() {
               <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: 0 }}>Cross-platform sync & intelligent learning</p>
             </div>
             <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <NotificationBell icon={theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />} />
+              <NotificationBell />
               <button className="btn btn-glass btn-icon" onClick={toggleTheme} title="Switch Theme">
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>

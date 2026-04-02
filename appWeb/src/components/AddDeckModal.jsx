@@ -145,7 +145,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
 
   const addManualCard = () => {
     if (!currentCard.question.trim()) {
-      alert("Question cannot be empty!");
+      showAlert("Empty Question", "Question cannot be empty!");
       return;
     }
     setManualCards(prev => [...prev, { ...currentCard, card_id: uuidv4(), status: 0 }]);
