@@ -3,7 +3,6 @@ import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, Ch
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
-import EditCard from './EditCard';
 import ConfirmationModal from './ConfirmationModal';
 import ShareDeckView from './ShareDeckView';
 
