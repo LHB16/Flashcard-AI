@@ -183,7 +183,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             onClick={() => setTab('share')}
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
-            🤝 Share Deck
+            <Share2 size={18} /> Share Deck
           </button>
         </div>
       )}
