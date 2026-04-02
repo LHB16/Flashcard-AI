@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { X, Plus, Trash, BookOpen, Layers, CheckCircle2, AlertTriangle, ArrowRight, Trash2, Pencil } from 'lucide-react';
+import { X, Plus, Trash, BookOpen, Layers, AlertTriangle, ArrowRight, Trash2, Pencil } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -73,11 +73,8 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
 
   const parseBulkText = (text) => {
     const cards = [];
-    // Split by {[(Q)]} to find question blocks. 
-    // Format: ... {[(Q)]} Q-Content {[(Q)]} {[(A)]} A-Content {[(A)]} {[(O)]} O-Content {[(O)]} ...
     const qParts = text.split(/\{\[\(Q\)\]\}/g);
     
-    // Index 1, 3, 5... are the questions
     for (let i = 1; i < qParts.length; i += 2) {
       const question = (qParts[i] || '').trim();
       const afterQ = qParts[i+1] || '';
@@ -96,7 +93,6 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
         allOptionsRaw.push({ text: match[1].trim(), isCorrect: false, pos: match.index });
       }
       
-      // Sort by position in text for natural order
       allOptionsRaw.sort((a, b) => a.pos - b.pos);
       
       if (allOptionsRaw.length > 0) {
@@ -138,16 +134,32 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-4xl max-h-[90vh] flex flex-col bg-[var(--card-bg)] border border-[var(--glass-border)] rounded-[24px] shadow-2xl overflow-hidden">
+    <div className="animate-fade-in" style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
+    }}>
+      <div className="glass-panel" style={{
+        width: '100%', maxWidth: '900px', maxHeight: '90vh',
+        display: 'flex', flexDirection: 'column', 
+        background: 'var(--card-bg)', borderRadius: '24px', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+      }}>
         
         {/* Header */}
-        <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-black/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--primary)] flex items-center justify-center text-white">
+        <div style={{
+          padding: '1.5rem', borderBottom: '1px solid var(--glass-border)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'rgba(0,0,0,0.05)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+            }}>
               <Plus size={24} />
             </div>
-            <h2 className="text-xl font-bold text-[var(--text-main)]">Create New Deck</h2>
+            <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)', fontWeight: 'bold' }}>Create New Deck</h2>
           </div>
           <button 
             onClick={() => {
@@ -156,100 +168,138 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
                 onClose();
               }
             }} 
-            className="p-2 hover:bg-white/5 rounded-full text-[var(--text-muted)] transition-colors"
+            className="btn btn-glass btn-icon"
+            style={{ borderRadius: '50%' }}
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Deck Name Input */}
-        <div className="px-6 py-4 bg-black/5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">Deck Name (Required)</label>
+        <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.02)' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+            Deck Name (Required)
+          </label>
           <input 
             type="text"
             value={deckName}
             onChange={e => setDeckName(e.target.value)}
             placeholder="e.g., Biology Chapter 1, English Vocabulary..."
-            className="w-full p-3 bg-white/5 border border-[var(--glass-border)] rounded-xl text-lg text-[var(--text-main)] outline-none focus:border-[var(--primary)] transition-all"
+            style={{
+              width: '100%', padding: '0.8rem 1rem', background: 'rgba(255,255,255,0.05)',
+              border: '1px solid var(--glass-border)', borderRadius: '12px', fontSize: '1.1rem',
+              color: 'var(--text-main)', outline: 'none'
+            }}
           />
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-[var(--glass-border)] h-14">
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--glass-border)', height: '56px' }}>
           <button 
             onClick={() => setActiveTab('bulk')}
-            className={`flex-1 flex items-center justify-center gap-2 font-medium transition-all ${activeTab === 'bulk' ? 'text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--primary)]/5' : 'text-[var(--text-muted)] hover:bg-white/5'}`}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+              background: activeTab === 'bulk' ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
+              color: activeTab === 'bulk' ? 'var(--primary)' : 'var(--text-muted)',
+              borderBottom: activeTab === 'bulk' ? '2px solid var(--primary)' : 'none'
+            }}
           >
             <Layers size={18} /> Bulk Import
           </button>
           <button 
             onClick={() => setActiveTab('manual')}
-            className={`flex-1 flex items-center justify-center gap-2 font-medium transition-all ${activeTab === 'manual' ? 'text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--primary)]/5' : 'text-[var(--text-muted)] hover:bg-white/5'}`}
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+              background: activeTab === 'manual' ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
+              color: activeTab === 'manual' ? 'var(--primary)' : 'var(--text-muted)',
+              borderBottom: activeTab === 'manual' ? '2px solid var(--primary)' : 'none'
+            }}
           >
             <Pencil size={18} /> Manual Entry
           </button>
         </div>
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
           {activeTab === 'bulk' ? (
-            <div className="flex flex-col gap-4 animate-fade-in">
-              <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm flex gap-3 items-start">
-                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{
+                padding: '1rem', borderRadius: '16px', background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.2)', color: '#60a5fa', fontSize: '0.9rem',
+                display: 'flex', gap: '0.8rem', alignItems: 'flex-start'
+              }}>
+                <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
-                  <p className="font-bold mb-1 underline">Format Instructions:</p>
-                  <p>Wrap question in <b>{"{[(Q)]}"}</b> tags.</p>
-                  <p>Wrap correct answers in <b>{"{[(A)]}"}</b> tags.</p>
-                  <p>Wrap wrong options (distractors) in <b>{"{[(O)]}"}</b> tags.</p>
-                  <p className="mt-2 opacity-80 italic">Example: {"{[(Q)]} What is 1+1? {[(Q)]} {[(A)]} 2 {[(A)]} {[(O)]} 3 {[(O)]} {[(O)]} 4 {[(O)]}"}</p>
+                  <p style={{ margin: '0 0 0.5rem', fontWeight: 'bold', textDecoration: 'underline' }}>Format Instructions:</p>
+                  <p style={{ margin: '0 0 0.2rem' }}>Wrap question in <b>{"{[(Q)]}"}</b> tags.</p>
+                  <p style={{ margin: '0 0 0.2rem' }}>Wrap correct answers in <b>{"{[(A)]}"}</b> tags.</p>
+                  <p style={{ margin: '0 0 0.5rem' }}>Wrap wrong options (distractors) in <b>{"{[(O)]}"}</b> tags.</p>
+                  <p style={{ margin: 0, opacity: 0.8, fontStyle: 'italic' }}>Example: {"{[(Q)]} What is 1+1? {[(Q)]} {[(A)]} 2 {[(A)]} {[(O)]} 3 {[(O)]} {[(O)]} 4 {[(O)]}"}</p>
                 </div>
               </div>
               <textarea 
                 value={bulkText}
                 onChange={e => setBulkText(e.target.value)}
                 placeholder="Paste your content here..."
-                className="w-full min-h-[300px] p-4 bg-white/5 border border-[var(--glass-border)] rounded-2xl text-[var(--text-main)] font-mono text-sm leading-relaxed outline-none focus:border-[var(--primary)] transition-all resize-none"
+                style={{
+                  width: '100%', minHeight: '250px', padding: '1rem', background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--glass-border)', borderRadius: '16px', color: 'var(--text-main)',
+                  fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.5', outline: 'none', resize: 'none'
+                }}
               />
             </div>
           ) : (
-            <div className="flex flex-col lg:flex-row gap-6 animate-fade-in">
+            <div className="animate-fade-in" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
               {/* Manual Form */}
-              <div className="flex-1 flex flex-col gap-6">
+              <div style={{ flex: '1 1 400px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Question</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.8rem' }}>Question</label>
                   <textarea 
                     value={currentCard.question}
-                    onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                    onInput={e => { e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }}
                     onChange={e => setCurrentCard(prev => ({ ...prev, question: e.target.value }))}
-                    style={{ minHeight: '100px' }}
-                    className="w-full p-4 bg-white/5 border border-[var(--glass-border)] rounded-2xl text-[var(--text-main)] outline-none focus:border-[var(--primary)] resize-none"
+                    style={{
+                      width: '100%', minHeight: '100px', padding: '1rem', background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid var(--glass-border)', borderRadius: '16px', color: 'var(--text-main)',
+                      outline: 'none', resize: 'none'
+                    }}
                     placeholder="Enter question text..."
                   />
                 </div>
 
-                <div className="flex items-center justify-between py-3 border-y border-[var(--glass-border)]">
-                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Type</span>
-                   <div className="flex gap-2">
-                     {['single_choice', 'multiple_choice'].map(t => (
-                       <button
-                         key={t}
-                         onClick={() => setCurrentCard(p => ({ ...p, question_type: t, correct_answers: t === 'single_choice' ? [p.correct_answers[0]] : p.correct_answers }))}
-                         className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${currentCard.question_type === t ? 'bg-[var(--primary)]/20 text-[var(--primary)] border-[var(--primary)]/40' : 'bg-white/5 text-[var(--text-muted)] border-[var(--glass-border)]'}`}
-                       >
-                         {t === 'multiple_choice' ? 'Multiple' : 'Single'}
-                       </button>
-                     ))}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0', borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)' }}>
+                   <span style={{ fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Type</span>
+                   <div style={{ display: 'flex', gap: '0.5rem' }}>
+                     {['single_choice', 'multiple_choice'].map(t => {
+                       const isActive = currentCard.question_type === t;
+                       return (
+                         <button
+                           key={t}
+                           onClick={() => setCurrentCard(p => ({ ...p, question_type: t, correct_answers: t === 'single_choice' ? [p.correct_answers[0]] : p.correct_answers }))}
+                           style={{
+                             padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer',
+                             border: `1px solid ${isActive ? 'rgba(79, 70, 229, 0.4)' : 'var(--glass-border)'}`,
+                             background: isActive ? 'rgba(79, 70, 229, 0.2)' : 'rgba(255,255,255,0.05)',
+                             color: isActive ? 'var(--primary)' : 'var(--text-muted)'
+                           }}
+                         >
+                           {t === 'multiple_choice' ? 'Multiple' : 'Single'}
+                         </button>
+                       )
+                     })}
                    </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">Options (Click letter to toggle correct)</label>
-                  <div className="flex flex-col gap-3">
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '1rem' }}>Options (Click letter to toggle correct)</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                     {currentCard.options.map((opt, idx) => {
                       const letter = String.fromCharCode(65 + idx);
                       const isCorrect = currentCard.correct_answers.includes(letter);
                       return (
-                        <div key={idx} className="flex gap-3">
+                        <div key={idx} style={{ display: 'flex', gap: '0.8rem' }}>
                            <button 
                              onClick={() => {
                                let newCorrect = [...currentCard.correct_answers];
@@ -260,19 +310,31 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
                                }
                                setCurrentCard(p => ({ ...p, correct_answers: newCorrect }));
                              }}
-                             className={`w-10 h-10 shrink-0 rounded-xl font-bold transition-all flex items-center justify-center ${isCorrect ? 'bg-[var(--success)] text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'bg-white/5 text-[var(--text-muted)] border border-[var(--glass-border)]'}`}
+                             style={{
+                               width: '40px', height: '40px', flexShrink: 0, borderRadius: '12px', fontWeight: 'bold',
+                               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                               background: isCorrect ? 'var(--success)' : 'rgba(255,255,255,0.05)',
+                               color: isCorrect ? '#fff' : 'var(--text-muted)',
+                               border: isCorrect ? 'none' : '1px solid var(--glass-border)',
+                               boxShadow: isCorrect ? '0 0 15px rgba(16, 185, 129, 0.4)' : 'none',
+                               transition: 'all 0.2s'
+                             }}
                            >
                              {letter}
                            </button>
                            <textarea 
-                             onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                             onInput={e => { e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }}
                              value={opt.replace(/^[A-Z]\.\s+/, '')}
                              onChange={e => {
                                const newOpts = [...currentCard.options];
                                newOpts[idx] = `${letter}. ${e.target.value}`;
                                setCurrentCard(p => ({ ...p, options: newOpts }));
                              }}
-                             className="flex-1 p-2.5 bg-white/5 border border-[var(--glass-border)] rounded-xl text-[var(--text-main)] outline-none focus:border-[var(--primary)] resize-none"
+                             style={{
+                               flex: 1, padding: '0.65rem 1rem', borderRadius: '12px',
+                               background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)',
+                               color: 'var(--text-main)', outline: 'none', resize: 'none', minHeight: '40px'
+                             }}
                              rows={1}
                            />
                            {currentCard.options.length > 2 && (
@@ -288,7 +350,11 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
                                  });
                                  setCurrentCard(p => ({ ...p, options: newOpts, correct_answers: newCorrect.length ? newCorrect : ['A'] }));
                                }}
-                               className="w-10 h-10 shrink-0 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors flex items-center justify-center"
+                               style={{
+                                 width: '40px', height: '40px', flexShrink: 0, borderRadius: '12px',
+                                 display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                 background: 'transparent', border: 'none', color: '#ef4444'
+                               }}
                              >
                                <Trash size={18} />
                              </button>
@@ -302,7 +368,11 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
                            const letter = String.fromCharCode(65 + currentCard.options.length);
                            setCurrentCard(p => ({ ...p, options: [...p.options, `${letter}. `] }));
                         }}
-                        className="w-full p-3 bg-white/5 border border-dashed border-[var(--glass-border)] rounded-xl text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)]/50 transition-all flex items-center justify-center gap-2"
+                        style={{
+                          width: '100%', padding: '0.8rem', borderRadius: '12px', cursor: 'pointer',
+                          background: 'rgba(255,255,255,0.05)', border: '1px dashed var(--glass-border)',
+                          color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                        }}
                       >
                         <Plus size={18} /> Add Option
                       </button>
@@ -312,37 +382,44 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
 
                 <button 
                   onClick={addManualCard}
-                  className="mt-2 w-full p-4 bg-[var(--primary)]/10 border border-[var(--primary)]/30 text-[var(--primary)] rounded-2xl font-bold hover:bg-[var(--primary)]/20 transition-all flex items-center justify-center gap-2"
+                  className="btn"
+                  style={{
+                    marginTop: '0.5rem', padding: '1rem', borderRadius: '16px', fontWeight: 'bold',
+                    background: 'rgba(79, 70, 229, 0.1)', border: '1px solid rgba(79, 70, 229, 0.3)',
+                    color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                  }}
                 >
                   <ArrowRight size={20} /> Add this card to Preview
                 </button>
               </div>
 
               {/* Preview List */}
-              <div className="w-full lg:w-80 flex flex-col gap-4 border-t lg:border-t-0 lg:border-l border-[var(--glass-border)] pt-6 lg:pt-0 lg:pl-6">
-                 <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-bold text-[var(--text-muted)] uppercase tracking-widest">Added Cards ({manualCards.length})</h3>
-                    {manualCards.length > 0 && <button onClick={() => setManualCards([])} className="text-xs text-red-400 hover:underline">Clear all</button>}
+              <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: '1px solid var(--glass-border)', paddingLeft: '1.5rem' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Added Cards ({manualCards.length})</h3>
+                    {manualCards.length > 0 && (
+                      <button onClick={() => setManualCards([])} style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}>Clear all</button>
+                    )}
                  </div>
-                 <div className="flex flex-col gap-3 max-h-[400px] lg:max-h-none overflow-y-auto pr-2 custom-scrollbar">
+                 <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '450px', overflowY: 'auto', paddingRight: '0.5rem' }}>
                     {manualCards.length === 0 ? (
-                      <div className="py-12 border border-dashed border-[var(--glass-border)] rounded-2xl flex flex-col items-center justify-center gap-3 opacity-40">
+                      <div style={{ padding: '3rem', border: '1px dashed var(--glass-border)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.8rem', opacity: 0.4 }}>
                          <BookOpen size={32} />
-                         <span className="text-xs">No cards added yet</span>
+                         <span style={{ fontSize: '0.8rem' }}>No cards added yet</span>
                       </div>
                     ) : (
                       manualCards.slice().reverse().map((card, idx) => (
-                        <div key={card.card_id} className="p-3 bg-white/5 border border-[var(--glass-border)] rounded-xl flex gap-3 items-center group animate-fade-in">
-                          <div className="w-8 h-8 shrink-0 rounded-lg bg-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] font-bold text-xs">
+                        <div key={card.card_id} className="animate-fade-in" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                          <div style={{ width: '32px', height: '32px', flexShrink: 0, borderRadius: '8px', background: 'rgba(79, 70, 229, 0.2)', color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                              {manualCards.length - idx}
                           </div>
-                          <div className="flex-1 min-w-0">
-                             <p className="text-xs text-[var(--text-main)] truncate font-medium">{card.question}</p>
-                             <p className="text-[10px] text-[var(--success)] mt-0.5">✓ {card.correct_answers.join(', ')}</p>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>{card.question}</p>
+                             <p style={{ margin: '0.2rem 0 0', fontSize: '0.65rem', color: 'var(--success)' }}>✓ {card.correct_answers.join(', ')}</p>
                           </div>
                           <button 
                             onClick={() => setManualCards(prev => prev.filter(c => c.card_id !== card.card_id))}
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/20 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
+                            style={{ padding: '0.4rem', borderRadius: '8px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -356,18 +433,20 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[var(--glass-border)] bg-black/10 flex flex-col sm:flex-row gap-3">
+        <div style={{ padding: '1.5rem', borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.05)', display: 'flex', gap: '0.8rem' }}>
           <button 
             onClick={() => {
               if (window.confirm("Abort creation? All input will be lost.")) { onClose(); resetState(); }
             }}
-            className="flex-1 p-4 bg-white/5 border border-[var(--glass-border)] text-[var(--text-muted)] rounded-2xl font-bold hover:bg-white/10 transition-all"
+            className="btn btn-glass"
+            style={{ flex: 1, padding: '1rem', borderRadius: '16px', fontWeight: 'bold' }}
           >
             Cancel
           </button>
           <button 
             onClick={handleCreateDeck}
-            className="flex-[2] p-4 bg-[var(--primary)] text-white rounded-2xl font-bold shadow-[0_10px_30px_rgba(79,70,229,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="btn btn-primary"
+            style={{ flex: 2, padding: '1rem', borderRadius: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 10px 30px rgba(79,70,229,0.3)' }}
           >
             {activeTab === 'bulk' ? <Layers size={20} /> : <BookOpen size={20} />}
             Create Deck Now
