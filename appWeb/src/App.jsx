@@ -325,8 +325,11 @@ function App() {
   const syncTimeoutRef = useRef(null);
 
   const handleDeckModified = React.useCallback(() => {
-    // Force refresh selectedDeck reference to trigger prop update in children
-    setSelectedDeck(prev => prev ? { ...prev } : prev);
+    // Force refresh selectedDeck reference with a deep copy of cards to trigger prop update in children
+    setSelectedDeck(prev => {
+      if (!prev) return prev;
+      return { ...prev, cards: [...(prev.cards || [])] };
+    });
     setData(prev => prev ? [...prev] : prev);
 
     if (!userLoggedIn || !driveFileId) return;
@@ -340,20 +343,26 @@ function App() {
         // 1. Upload structurally modified JSON to Google Drive directly without blocking UI
         uploadDecksToDrive(freshData, driveFileId).catch(e => console.warn('Drive sync failed:', e));
 
-        // 2. Sync progress to Supabase
-        if (selectedDeck) {
-          const known = selectedDeck.cards.filter(c => c.status === 2).length;
-          const total = selectedDeck.cards.length;
-          const percent = total > 0 ? Math.round((known / total) * 100) : 0;
-          const gId = localStorage.getItem('g_id');
+        // 2. Sync progress to Supabase — use freshData to find the current deck
+        const gId = localStorage.getItem('g_id');
+        if (gId) {
+          // Find the fresh version of the selected deck from dataRef
+          const currentDeckId = selectedDeck?.deck_id;
+          const freshDeck = currentDeckId
+            ? freshData.find(d => d.deck_id === currentDeckId)
+            : null;
 
-          if (gId) {
+          if (freshDeck) {
+            const known = freshDeck.cards.filter(c => c.status === 2).length;
+            const total = freshDeck.cards.length;
+            const percent = total > 0 ? Math.round((known / total) * 100) : 0;
+
             fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/progress/save`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 google_id: gId,
-                deck_id: selectedDeck.deck_id || selectedDeck.title,
+                deck_id: freshDeck.deck_id || freshDeck.title,
                 percent
               })
             }).catch(e => console.warn("Supabase Progress Sync issue:", e));
@@ -363,7 +372,8 @@ function App() {
         console.error("Background sync failed:", e);
       }
     }, 3000);
-  }, [userLoggedIn, driveFileId, selectedDeck]);
+  }, [userLoggedIn, driveFileId, selectedDeck?.deck_id]);
+
 
   // 1. Render file selection & Login first
   if (!data) {

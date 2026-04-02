@@ -214,19 +214,22 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             
             <button
               className="btn btn-primary"
-              onClick={() => setEditingCard({
-                index: -1,
-                isNew: true,
-                data: {
-                  card_id: uuidv4(),
-                  question: '',
-                  options: ['A. ', 'B. ', 'C. ', 'D. '],
-                  correct_answers: [],
-                  question_type: 'single_choice',
-                  status: 0,
-                  notes: ''
-                }
-              })}
+              onClick={() => {
+                setEditingCard({
+                  index: -1,
+                  isNew: true,
+                  data: {
+                    card_id: uuidv4(),
+                    question: '',
+                    options: ['A. ', 'B. ', 'C. ', 'D. '],
+                    correct_answers: [],
+                    question_type: 'single_choice',
+                    status: 0,
+                    notes: ''
+                  }
+                });
+                setTab('edit');
+              }}
               style={{
                 padding: '0.7rem 1.2rem', borderRadius: '10px',
                 display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem',
