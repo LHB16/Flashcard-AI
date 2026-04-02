@@ -528,6 +528,21 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   alert("Question content cannot be empty!");
                   return;
                 }
+                
+                const correctCount = editingCard.data.correct_answers?.length || 0;
+                if (correctCount === 0) {
+                  alert("Please select at least one correct answer!");
+                  return;
+                }
+                if (editingCard.data.question_type === 'single_choice' && correctCount !== 1) {
+                  alert("Single Choice questions must have exactly 1 correct answer!");
+                  return;
+                }
+                if (editingCard.data.question_type === 'multiple_choice' && correctCount < 2) {
+                  alert("Multiple Choice questions must have at least 2 correct answers!");
+                  return;
+                }
+
                 if (window.confirm(editingCard.isNew ? "Add this new card?" : "Save changes to this flashcard?")) {
                   const newCards = [...deck.cards];
                   
