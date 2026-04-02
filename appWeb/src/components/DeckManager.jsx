@@ -265,7 +265,11 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                       className="btn-glass btn-icon"
                       onClick={() => setDeleteConfirm(card._origIdx)}
                       title="Delete card"
-                      style={{ color: '#ef4444', padding: '0.4rem' }}
+                      style={{ 
+                        color: '#ef4444', 
+                        width: '32px', height: '32px', padding: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -273,7 +277,11 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                       className="btn-glass btn-icon"
                       onClick={() => setEditingCard({ index: card._origIdx, data: JSON.parse(JSON.stringify(deck.cards[card._origIdx])) })}
                       title="Edit card"
-                      style={{ color: 'var(--primary)', padding: '0.4rem' }}
+                      style={{ 
+                        color: 'var(--primary)', 
+                        width: '32px', height: '32px', padding: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
                     >
                       <Pencil size={16} />
                     </button>
@@ -448,19 +456,21 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
       {editingCard && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'var(--root-bg)', // Solid background as requested
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(6px)', // Translucent/blurred overlay as updated
           display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-          zIndex: 10000, padding: '2rem 1.5rem', overflowY: 'auto' // Allow main container to scroll
+          zIndex: 10000, padding: '2rem 1.25rem', overflowY: 'auto'
         }}>
-          <div className="glass-panel animate-fade-in" style={{
-            width: '100%', maxWidth: '650px',
+          <div className="animate-fade-in" style={{
+            width: '100%', maxWidth: '900px', // Wider frame
             display: 'flex', flexDirection: 'column',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)',
-            background: 'var(--card-bg)', // Opaque background
-            borderRadius: '24px'
+            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+            background: 'var(--card-bg)', // Opaque frame
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             {/* Modal Header */}
-            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.1)' }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <Pencil size={20} color="var(--primary)" /> Edit Flashcard
               </h3>
