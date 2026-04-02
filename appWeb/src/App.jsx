@@ -28,7 +28,7 @@ function App() {
     return localStorage.getItem('deck_sort_order') || 'none';
   });
 
-  const togglePin = (deck_id, e) => {
+  const togglePin = React.useCallback((deck_id, e) => {
     e.stopPropagation();
     if (!deck_id) return;
     setPinnedDecks(prev => {
@@ -36,15 +36,15 @@ function App() {
       localStorage.setItem('pinned_decks', JSON.stringify(newPinned));
       return newPinned;
     });
-  };
+  }, [pinnedDecks]);
 
-  const toggleSort = () => {
+  const toggleSort = React.useCallback(() => {
     setSortOrder(prev => {
       const next = prev === 'none' ? 'asc' : prev === 'asc' ? 'desc' : 'none';
       localStorage.setItem('deck_sort_order', next);
       return next;
     });
-  };
+  }, []);
 
   const processedDecks = React.useMemo(() => {
     if (!data) return [];
@@ -102,12 +102,12 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = React.useCallback(() => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     localStorage.setItem('app-theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
-  };
+  }, [theme]);
 
   const handleLoginClick = () => {
     setIsSyncing(true);
@@ -179,12 +179,12 @@ function App() {
     }
   };
 
-  const resetAll = () => {
+  const resetAll = React.useCallback(() => {
     setData(null);
     setSelectedDeck(null);
     setMode(null);
     setActiveTab('decks');
-  };
+  }, []);
 
   const handleScanComplete = async (newDeck) => {
     // Merge new deck into existing data
@@ -211,7 +211,7 @@ function App() {
 
   const syncTimeoutRef = useRef(null);
 
-  const handleDeckModified = () => {
+  const handleDeckModified = React.useCallback(() => {
     setData(prev => prev ? [...prev] : prev);
 
     if (!userLoggedIn || !driveFileId) return;
@@ -248,7 +248,7 @@ function App() {
         console.error("Background sync failed:", e);
       }
     }, 3000);
-  };
+  }, [userLoggedIn, driveFileId, selectedDeck]);
 
   // 1. Render file selection & Login first
   if (!data) {

@@ -3,7 +3,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-const QuizMode = ({ deck, onBack, onDeckModified }) => {
+const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -167,8 +167,62 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
 
   // Touch Swipe Navigation — using refs to avoid stale closures
   const containerRef = useRef(null);
-  const touchRef = useRef({ active: false, startX: 0, startY: 0, currentX: 0, currentY: 0, lockedDirection: null });
-  const [swipeRender, setSwipeRender] = useState(0); // trigger re-render for indicator
+  const indicatorRef = useRef(null);
+  const startPointRef = useRef(null);
+
+  const updateIndicator = useCallback((info) => {
+    if (!indicatorRef.current || !startPointRef.current) return;
+
+    if (!info.active || !info.lockedDirection) {
+      indicatorRef.current.style.display = 'none';
+      startPointRef.current.style.display = 'none';
+      return;
+    }
+
+    const diffX = info.currentX - info.startX;
+    if (Math.abs(diffX) < 10) {
+      indicatorRef.current.style.display = 'none';
+      startPointRef.current.style.display = 'none';
+      return;
+    }
+
+    const lockRight = info.lockedDirection === 'right';
+    const isRightSwipe = diffX > 0;
+    const isOpposite = (lockRight && !isRightSwipe) || (!lockRight && isRightSwipe);
+    const activated = Math.abs(diffX) > 60;
+
+    // Update Start Point
+    startPointRef.current.style.display = 'block';
+    startPointRef.current.style.left = `${info.startX}px`;
+    startPointRef.current.style.top = `${info.startY}px`;
+
+    // Update Main Indicator
+    indicatorRef.current.style.display = 'flex';
+    indicatorRef.current.style.left = isRightSwipe ? '1.5rem' : 'auto';
+    indicatorRef.current.style.right = !isRightSwipe ? '1.5rem' : 'auto';
+    
+    const bgColor = isOpposite 
+      ? (activated ? 'rgba(59, 130, 246, 0.95)' : 'rgba(59, 130, 246, 0.4)')
+      : (activated ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)');
+    
+    indicatorRef.current.style.background = bgColor;
+    indicatorRef.current.style.boxShadow = activated 
+      ? (isOpposite ? '0 8px 32px rgba(59, 130, 246, 0.5)' : '0 8px 32px rgba(139, 92, 246, 0.5)') 
+      : '0 4px 16px rgba(0,0,0,0.3)';
+
+    // Update Icon (since we can't easily swap Lucide icons via style, we'll keep them both and toggle display)
+    const iconNormal = indicatorRef.current.querySelector('.icon-normal');
+    const iconJump = indicatorRef.current.querySelector('.icon-jump');
+    const iconLeft = indicatorRef.current.querySelector('.icon-left');
+    const iconRight = indicatorRef.current.querySelector('.icon-right');
+
+    if (iconNormal) iconNormal.style.display = isOpposite ? 'none' : 'block';
+    if (iconJump) iconJump.style.display = isOpposite ? 'block' : 'none';
+    
+    // Nested direction icons
+    if (iconLeft) iconLeft.style.display = (!isOpposite && isRightSwipe) ? 'block' : 'none';
+    if (iconRight) iconRight.style.display = (!isOpposite && !isRightSwipe) ? 'block' : 'none';
+  }, []);
 
   const handleTouchStart = useCallback((e) => {
     const t = e.touches[0];
@@ -178,10 +232,10 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       startY: t.clientY,
       currentX: t.clientX,
       currentY: t.clientY,
-      lockedDirection: null, // not locked yet
+      lockedDirection: null,
     };
-    setSwipeRender(v => v + 1);
-  }, []);
+    updateIndicator(touchRef.current);
+  }, [updateIndicator]);
 
   const handleTouchEnd = useCallback(() => {
     const info = touchRef.current;
@@ -189,24 +243,21 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
 
     const diffX = info.currentX - info.startX;
 
-    // Only trigger if direction was locked (meaning user swiped far enough at least once)
     if (info.lockedDirection) {
       const lockRight = info.lockedDirection === 'right';
       
-      // Normal swipe
       if ((lockRight && diffX > 60) || (!lockRight && diffX < -60)) {
         if (lockRight) goLeft();
         else goRight();
       }
-      // Reverse swipe (Jump)
       else if ((lockRight && diffX < -60) || (!lockRight && diffX > 60)) {
         keyHandlersRef.current.goToFirstUnanswered?.();
       }
     }
 
     touchRef.current = { active: false, startX: 0, startY: 0, currentX: 0, currentY: 0, lockedDirection: null };
-    setSwipeRender(v => v + 1);
-  }, [goLeft, goRight]);
+    updateIndicator(touchRef.current);
+  }, [goLeft, goRight, updateIndicator]);
 
   const handleTouchMove = useCallback((e) => {
     const info = touchRef.current;
@@ -217,15 +268,14 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
     const dx = Math.abs(currentX - info.startX);
     const dy = Math.abs(currentY - info.startY);
 
-    // Lock direction on first significant horizontal move (>= 20px)
     if (!info.lockedDirection && dx > 20 && dx > dy) {
       info.lockedDirection = (currentX - info.startX) > 0 ? 'right' : 'left';
     }
 
     info.currentX = currentX;
     info.currentY = currentY;
-    setSwipeRender(v => v + 1);
-  }, []);
+    updateIndicator(info);
+  }, [updateIndicator]);
 
 
   const goToFirstUnanswered = () => {
@@ -401,66 +451,41 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
-      {/* Fixed Swipe Indicator */}
-      {(() => {
-        const info = touchRef.current;
-        if (!info.active || !info.lockedDirection) return null;
-        
-        const diffX = info.currentX - info.startX;
-        if (Math.abs(diffX) < 10) return null; // Hide if too close to center
+      {/* Fixed Swipe Indicator (Direct DOM via Ref) */}
+      <div ref={startPointRef} style={{
+        position: 'fixed',
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        background: 'rgba(139, 92, 246, 0.2)',
+        filter: 'blur(8px)',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 9998,
+        pointerEvents: 'none',
+        display: 'none'
+      }} />
 
-        const lockRight = info.lockedDirection === 'right';
-        const isRightSwipe = diffX > 0;
-        const isOpposite = (lockRight && !isRightSwipe) || (!lockRight && isRightSwipe);
-        const activated = Math.abs(diffX) > 60;
-
-        const IconComponent = isOpposite ? SkipForward : (isRightSwipe ? ChevronLeft : ChevronRight);
-        const bgColor = isOpposite 
-          ? (activated ? 'rgba(59, 130, 246, 0.95)' : 'rgba(59, 130, 246, 0.4)') // Blue for jump
-          : (activated ? 'rgba(139, 92, 246, 0.95)' : 'rgba(139, 92, 246, 0.4)'); // Purple for normal
-
-        return (
-          <>
-            {/* Starting point indicator (Blurry circle) */}
-            <div style={{
-              position: 'fixed',
-              left: info.startX,
-              top: info.startY,
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: 'rgba(139, 92, 246, 0.2)',
-              filter: 'blur(8px)',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 9998,
-              pointerEvents: 'none'
-            }} />
-            
-            {/* Main indicator at the edge */}
-            <div style={{
-              position: 'fixed',
-              top: '50%',
-              left: isRightSwipe ? '1.5rem' : 'auto',
-              right: !isRightSwipe ? '1.5rem' : 'auto',
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
-              background: bgColor,
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transform: 'translateY(-50%)',
-              zIndex: 9999,
-              boxShadow: activated ? (isOpposite ? '0 8px 32px rgba(59, 130, 246, 0.5)' : '0 8px 32px rgba(139, 92, 246, 0.5)') : '0 4px 16px rgba(0,0,0,0.3)',
-              transition: 'background 0.15s, box-shadow 0.15s',
-              pointerEvents: 'none'
-            }}>
-              <IconComponent size={36} />
-            </div>
-          </>
-        );
-      })()}
+      <div ref={indicatorRef} style={{
+        position: 'fixed',
+        top: '50%',
+        width: '64px',
+        height: '64px',
+        borderRadius: '50%',
+        color: 'white',
+        display: 'none',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transform: 'translateY(-50%)',
+        zIndex: 9999,
+        transition: 'background 0.15s, box-shadow 0.15s',
+        pointerEvents: 'none'
+      }}>
+        <div className="icon-jump" style={{ display: 'none' }}><SkipForward size={36} /></div>
+        <div className="icon-normal" style={{ display: 'none' }}>
+           <div className="icon-left" style={{ display: 'none' }}><ChevronLeft size={36} /></div>
+           <div className="icon-right" style={{ display: 'none' }}><ChevronRight size={36} /></div>
+        </div>
+      </div>
 
       {/* Top Header Row */}
       <div style={{ 
@@ -659,6 +684,6 @@ const QuizMode = ({ deck, onBack, onDeckModified }) => {
       )}
     </div>
   );
-};
+});
 
 export default QuizMode;
