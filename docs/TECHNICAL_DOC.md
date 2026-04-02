@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.1 | **Last Updated:** 2026-04-02 | **Status:** Complete
+> **Version:** 2.2 | **Last Updated:** 2026-04-02 | **Status:** Complete
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -47,6 +47,7 @@ Flashcard AI converts physical or digital exam images into study-ready multiple-
 | Multi-API Key Pool | ✅ | ✅ | ✅ | ❌ |
 | Duplicate Detection | ✅ | ✅ | ✅ | ❌ |
 | Cloud Progress Sync | ✅ (Supabase) | ❌ | ❌ | ❌ |
+| Share & Clone Decks | ✅ | ❌ | ❌ | ❌ |
 | Export (Quizlet/TXT) | ✅ | ✅ | ✅ | ❌ |
 | Offline-First | ❌ | ✅ | ✅ | ✅ |
 
@@ -264,6 +265,30 @@ $$ LANGUAGE plpgsql;
 
 > The `||` operator merges two JSONB objects, with the right side winning on key conflicts. This means newer card statuses are always applied correctly without overwriting unrelated cards.
 
+**Table: `shared_decks`** — Stores JSONB snapshot of a shared deck
+
+```sql
+CREATE TABLE shared_decks (
+  deck_id      TEXT    PRIMARY KEY,        -- Original deck's UUID
+  owner_id     TEXT    NOT NULL,           -- Owner's google_id
+  deck_data    JSONB   NOT NULL,           -- Full deck snapshot at time of sharing
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Table: `deck_invites`** — Maps recipient emails to shared deck access
+
+```sql
+CREATE TABLE deck_invites (
+  id             UUID  DEFAULT gen_random_uuid() PRIMARY KEY,
+  deck_id        TEXT  REFERENCES shared_decks(deck_id) ON DELETE CASCADE,
+  receiver_email TEXT  NOT NULL,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+> These two tables power the Share & Clone feature. The `deck_data` JSONB column stores a full snapshot of the deck **at the time of sharing**, so recipients always get a consistent clone regardless of future edits by the owner.
+
 ---
 
 ## 4. appWeb — React + Express
@@ -278,14 +303,17 @@ appWeb/
 │   ├── main.jsx                 # React entry point
 │   ├── components/
 │   │   ├── AIScan.jsx           # AI Scan orchestration UI
+│   │   ├── AddDeckModal.jsx     # Create deck via Bulk Import or Manual Entry
 │   │   ├── ApiKeyChip.jsx       # API key display chip component
-│   │   ├── DeckManager.jsx      # Card viewer + duplicate checker
+│   │   ├── DeckManager.jsx      # Card viewer, editor, dedup + Share tab
 │   │   ├── FileLoader.jsx       # Import/Export decks.json
+│   │   ├── ImportSharedDeckModal.jsx # Modal to import a shared deck by ID
 │   │   ├── Skeleton.jsx         # Reusable shimmering placeholders for CLS mitigation
 │   │   ├── FlashcardMode.jsx    # Swipe-to-score flashcard study
 │   │   ├── Footer.jsx           # Footer with links
 │   │   ├── KeyboardShortcuts.jsx# Keyboard shortcut overlay
 │   │   ├── NotificationBell.jsx # Notification dropdown
+│   │   ├── ShareDeckView.jsx    # Share deck UI (email invite + Copy ID)
 │   │   └── QuizMode.jsx         # Multiple-choice quiz engine
 │   └── services/
 │       ├── configService.js     # config.json CRUD on Drive
@@ -302,7 +330,8 @@ appWeb/
     └── routes/
         ├── auth.js              # Google OAuth flow + token refresh
         ├── progress.js          # Supabase progress CRUD
-        └── scan.js              # Gemini API proxy + JSON recovery
+        ├── scan.js              # Gemini API proxy + JSON recovery
+        └── share.js             # Share deck creation + shared deck fetch
 ```
 
 ### 4.2 App.jsx — Component State
@@ -349,7 +378,8 @@ App.jsx renders:
 #### `DeckManager.jsx`
 
 - **Props:** `deck: Deck`, `onBack: () => void`, `onDeckModified: () => void`
-- **Tabs:** `"view"` (paginated card list) | `"dedup"` (duplicate detection)
+- **Tabs:** `"view"` (paginated card list) | `"dedup"` (duplicate detection) | `"share"` (Share Deck UI)
+- The `"share"` tab renders `ShareDeckView.jsx` inline — no modal or separate route needed.
 - **Duplicate Detection Algorithm:**
   1. Normalize question text (lowercase, collapse whitespace)
   2. Build 3-gram shingles for each card
@@ -492,6 +522,13 @@ const halfB = imgs.slice(mid);
 | POST | `/progress/cards/save` | `{ google_id, deck_id, cards_map }` | `{ message }` — calls `merge_deck_progress()` RPC |
 | GET | `/progress/cards/:deck_id` | Query: `google_id` | `{ data: { card_id: status, ... } }` |
 | POST | `/progress/deck/on-modified` | `{ google_id, deck_id, card_id?, action }` | `{ message }` — deletes `quiz_sessions`, resets card status in `deck_progress` |
+
+**`/share` routes**
+
+| Method | Path | Request Body | Response | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message }` | Upserts deck snapshot to `shared_decks`, inserts rows into `deck_invites` |
+| GET | `/share/view/:deck_id` | — | `{ deck_data }` | Returns the JSONB snapshot for the given `deck_id`. Used by `ImportSharedDeckModal` to fetch the deck before cloning. |
 
 ### 4.6 Google OAuth Flow (Step-by-Step)
 
@@ -761,6 +798,78 @@ The handler is defined in `routes/progress.js`, which is mounted by `index.js` u
 
 - Quiz sessions were **never deleted** after card edits → stale quiz state persisted across page reloads.
 - Card statuses in `deck_progress` were **never reset** → the edited card appeared as already-learned on the next Flashcard session.
+
+---
+
+### 4.12 Share & Clone Deck Feature
+
+Added in **2026-04-02**. Allows users to share any deck via email or a sharable Deck ID. Recipients receive a fully independent clone that does not affect the original.
+
+#### 4.12.1 Design Principles
+
+- **Snapshot model, not live link:** When a user shares a deck, the entire `deck_data` JSON is written to Supabase at that moment. If the owner later edits or deletes their deck, recipients are unaffected.
+- **Clone on import:** When a recipient imports via Deck ID, the app fetches `deck_data` from `shared_decks`, assigns a fresh `uuidv4()` as the new `deck_id`, resets all `card.status` to `0`, and clears timestamps. The cloned deck is uploaded to the recipient's Drive as a completely new, independent entry.
+- **No forced navigation on load:** After importing, the app sets `selectedDeck(null)` and `mode(null)` so the user always lands on the deck list — never silently dropped into study mode.
+
+#### 4.12.2 Share Flow
+
+```
+User opens DeckManager → clicks "Share Deck" tab
+  │
+  ├── ShareDeckView.jsx renders:
+  │     ├── Deck ID display + "Copy ID" button (copies deck.deck_id to clipboard)
+  │     ├── Textarea for recipient email addresses (comma, newline, or semicolon separated)
+  │     └── "Share Now" button
+  │
+  ▼
+POST /share/create
+  Body: { google_id, deck_id, deck_data (full JSON), receiver_emails[] }
+  │
+  ├── Supabase UPSERT → shared_decks (deck_id, owner_id, deck_data)
+  └── Supabase INSERT → deck_invites (deck_id, receiver_email) × N emails
+```
+
+#### 4.12.3 Import (Clone) Flow
+
+```
+User clicks "Add Deck" → clicks "Import" button in modal header
+  │
+  ├── ImportSharedDeckModal opens
+  │     └── User pastes a Deck ID
+  │
+  ▼
+GET /share/view/:deck_id
+  Response: { deck_data: { ...original deck JSON... } }
+  │
+  ▼
+handleDeckImported(clonedDeck) in App.jsx:
+  1. Assign new deck_id: uuidv4()
+  2. Reset created_at / updated_at to now
+  3. Reset all card.status = 0, clear card notes
+  4. setData([...data, clonedDeck])
+  5. setSelectedDeck(null) + setMode(null)  ← user lands on deck list
+  6. uploadDecksToDrive(updated, driveFileId) ← syncs clone to Drive
+```
+
+#### 4.12.4 Navigation Fix — No Auto-Select for Single-Deck Users
+
+Before this feature, `handleDataLoaded()` would auto-select the deck and jump to `mode: 'home'` if the user only had one deck. This broke the flow for new users who import a shared deck — they had no way to reach the deck list, switch decks, or log out.
+
+```javascript
+// Before: bypassed deck selection for single-deck users
+if (decksData && decksData.length === 1) {
+  setSelectedDeck(decksData[0]);
+  setMode('home');
+}
+
+// After: always show the selection list
+setSelectedDeck(null);
+setMode(null);
+```
+
+#### 4.12.5 Global Logout Button
+
+All three rendering branches in `App.jsx` (login screen, deck list, study mode) now display a `<CloudOff>` logout button in the header with `color: var(--danger)` (red), ensuring the user always has an escape route regardless of their navigation state.
 
 ---
 
