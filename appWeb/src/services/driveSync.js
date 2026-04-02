@@ -212,7 +212,7 @@ export const notifyDeckStructureChanged = async (deckId, cardId = null, action =
   if (!googleId || !deckId) return null;
 
   try {
-    const res = await fetch(`${BACKEND_URL}/deck/on-modified`, {
+    const res = await fetch(`${BACKEND_URL}/progress/deck/on-modified`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 

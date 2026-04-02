@@ -524,7 +524,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             
             <button
               className="btn btn-primary"
-              onClick={() => {
+              onClick={async () => {
                 if (!editingCard.data.question.trim()) {
                   alert("Question content cannot be empty!");
                   return;
@@ -549,14 +549,14 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   
                   if (editingCard.isNew) {
                     newCards.push(editingCard.data);
-                    // Reset quiz session
-                    notifyDeckStructureChanged(deckIdToSync, null, 'add');
+                    // Reset quiz session — await to ensure DB is clean before navigating
+                    await notifyDeckStructureChanged(deckIdToSync, null, 'add');
                   } else {
                     // Reset status to unlearned for edited cards
                     const updatedCard = { ...editingCard.data, status: 0 };
                     newCards[editingCard.index] = updatedCard;
-                    // Reset progress in DB
-                    notifyDeckStructureChanged(deckIdToSync, editingCard.data.card_id, 'edit');
+                    // Reset progress in DB — await to ensure DB is clean before navigating
+                    await notifyDeckStructureChanged(deckIdToSync, editingCard.data.card_id, 'edit');
                   }
                   
                   deck.cards = newCards;
