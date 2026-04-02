@@ -60,9 +60,23 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
   user-select: none;
+}
+
+/* Kích hoạt bôi đen văn bản trên PC (thiết bị có chuột) */
+@media (pointer: fine) {
+  * {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Giữ cho các nút và thành phần điều hướng không bị bôi đen để giữ cảm giác ứng dụng */
+  button, .btn, .tab-btn, .nav-item, i, svg {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 
 input, textarea, [contenteditable="true"] {
