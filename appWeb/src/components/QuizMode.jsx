@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2, Hourglass } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -401,8 +401,9 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
   // ============ RENDER ============
   if (isLoading) {
     return (
-      <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center' }}>
-        <h3>⏳ Loading quiz session...</h3>
+      <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+        <Hourglass size={32} className="animate-spin-slow" color="var(--primary)" />
+        <h3 style={{ margin: 0 }}>Loading quiz session...</h3>
       </div>
     );
   }

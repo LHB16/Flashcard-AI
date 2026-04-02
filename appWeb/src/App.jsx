@@ -8,7 +8,7 @@ import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
 import ImportSharedDeckModal from './components/ImportSharedDeckModal';
 import NotificationBell from './components/NotificationBell';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive, deleteDecksProgress } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
@@ -742,14 +742,14 @@ function App() {
                         className="btn-icon pin-btn"
                         title={isPinned ? "Unpin deck" : "Pin deck"}
                       >
-                        {isPinned ? <Star size={24} color="#fbbf24" fill="#fbbf24" /> : <StarOff size={24} color="var(--text-muted)" />}
+                        {isPinned ? <Star size={24} color="#fbbf24" strokeWidth={2.5} /> : <Star size={24} color="var(--text-muted)" strokeWidth={1.5} />}
                       </button>
                     )}
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
                     <BookOpen size={36} color="var(--primary)" />
-                    {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center' }}>📌 Pinned</span>}
+                    {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(251, 191, 36, 0.2)' }}><Star size={12} color="#fbbf24" strokeWidth={2.5} /> Pinned</span>}
                   </div>
                   
                   <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
@@ -1005,7 +1005,7 @@ function App() {
                   onClick={() => setMode('shortcuts')}
                   style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
                 >
-                  ⌨️ Shortcuts
+                  <Keyboard size={18} /> Shortcuts
                 </button>
               </div>
             </div>

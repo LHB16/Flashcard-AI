@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings } from 'lucide-react';
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
@@ -153,8 +153,9 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
         <button className="btn btn-glass btn-icon" onClick={onBack} title="Back">
           <ArrowLeft size={20} />
         </button>
-        <h2 style={{ fontSize: '1.5rem', margin: 0, flex: 1 }}>
-          ⚙️ {deck?.name || 'Deck'}
+        <h2 style={{ fontSize: '1.5rem', margin: 0, flex: 1, display: 'flex', alignItems: 'center' }}>
+          <Settings size={22} color="var(--primary)" style={{ marginRight: '10px' }} /> 
+          {deck?.name || 'Deck'}
         </h2>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           {cards.length} cards · {multiCount} multi · {singleCount} single
@@ -169,14 +170,14 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             onClick={() => setTab('view')}
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
           >
-            📋 View & Delete
+            View & Delete
           </button>
           <button
             className={`btn ${tab === 'dedup' ? 'btn-primary' : 'btn-glass'}`}
             onClick={() => { setTab('dedup'); if (!dedupResults && !dedupRunning) runDedup(); }}
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
           >
-            🔍 Check Duplicates
+            Check Duplicates
           </button>
           <button
             className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
