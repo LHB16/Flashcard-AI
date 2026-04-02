@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2, Hourglass, AlertTriangle, RotateCw } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 

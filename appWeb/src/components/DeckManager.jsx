@@ -553,34 +553,22 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             <button
               className="btn btn-primary"
               onClick={async () => {
-                const showAlert = (title, description) => {
-                  setConfirmConfig({
-                    isOpen: true,
-                    title,
-                    description,
-                    confirmText: "OK",
-                    type: "warning",
-                    icon: AlertTriangle,
-                    onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
-                  });
-                };
-
                 if (!editingCard.data.question.trim()) {
-                  showAlert("Question Empty", "Question content cannot be empty!");
+                  alert("Question content cannot be empty!");
                   return;
                 }
                 
                 const correctCount = editingCard.data.correct_answers?.length || 0;
                 if (correctCount === 0) {
-                  showAlert("No Answer", "Please select at least one correct answer!");
+                  alert("Please select at least one correct answer!");
                   return;
                 }
                 if (editingCard.data.question_type === 'single_choice' && correctCount !== 1) {
-                  showAlert("Invalid Selection", "Single Choice questions must have exactly 1 correct answer!");
+                  alert("Single Choice questions must have exactly 1 correct answer!");
                   return;
                 }
                 if (editingCard.data.question_type === 'multiple_choice' && correctCount < 2) {
-                  showAlert("Invalid Selection", "Multiple Choice questions must have at least 2 correct answers!");
+                  alert("Multiple Choice questions must have at least 2 correct answers!");
                   return;
                 }
 
@@ -593,9 +581,8 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   type: isNew ? "warning" : "info",
                   icon: isNew ? Plus : Save,
                   onConfirm: async () => {
-                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-                    // ─── BACKGROUND SYNC ───
-                    const deckIdToSync = selectedDeck?.deck_id;
+                    closeConfirm();
+                    // ... existing saving logic ...
                     const newCards = [...deck.cards];
                     if (isNew) {
                       newCards.push(editingCard.data);
