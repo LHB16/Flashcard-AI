@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2, Hourglass } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2, Hourglass, AlertTriangle, RotateCw } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -17,6 +17,18 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [isLoading, setIsLoading] = useState(true);
   const [focusedIdx, setFocusedIdx] = useState(-1);
+
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: '',
+    type: 'warning',
+    icon: AlertTriangle,
+    onConfirm: () => {}
+  });
+
+  const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
   const currentCard = cards[currentIndex];
   const multiChoice = currentCard?.question_type === 'multiple_choice' && currentCard?.correct_answers?.length > 1;
@@ -379,23 +391,32 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
 
   // ============ RESET ============
   const resetQuiz = () => {
-    if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
-      setCurrentIndex(0);
-      setSelectedAnswer(null);
-      setSelectedMulti([]);
-      setIsAnswered(false);
-      setScore(0);
-      setWrongCount(0);
-      setIsFinished(false);
-      setAnswers({});
+    setConfirmConfig({
+      isOpen: true,
+      title: "Reset Progress?",
+      description: "Are you sure you want to reset all quiz progress? This action cannot be undone.",
+      confirmText: "Reset",
+      type: "danger",
+      icon: RotateCw,
+      onConfirm: () => {
+        setCurrentIndex(0);
+        setSelectedAnswer(null);
+        setSelectedMulti([]);
+        setIsAnswered(false);
+        setScore(0);
+        setWrongCount(0);
+        setIsFinished(false);
+        setAnswers({});
 
-      saveToBackend({
-        current_index: 0,
-        answers: {},
-        correct_count: 0,
-        wrong_count: 0
-      });
-    }
+        saveToBackend({
+          current_index: 0,
+          answers: {},
+          correct_count: 0,
+          wrong_count: 0
+        });
+        closeConfirm();
+      }
+    });
   };
 
   // ============ RENDER ============
@@ -684,6 +705,17 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
           </button>
         </div>
       )}
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        icon={confirmConfig.icon}
+      />
     </div>
   );
 });

@@ -8,10 +8,11 @@ import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
 import ImportSharedDeckModal from './components/ImportSharedDeckModal';
 import NotificationBell from './components/NotificationBell';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard, LogOut } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive, deleteDecksProgress } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
+import ConfirmationModal from './components/ConfirmationModal';
 
 
 function App() {
@@ -28,6 +29,17 @@ function App() {
   const [selectedDecks, setSelectedDecks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Generic confirmation modal state
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: '',
+    type: 'warning',
+    icon: AlertTriangle,
+    onConfirm: () => {}
+  });
 
   const [pinnedDecks, setPinnedDecks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch(e) { return []; }
@@ -128,17 +140,25 @@ function App() {
   };
 
   const handleLogoutClick = () => {
-    if (window.confirm("Are you sure you want to log out / disconnect from Google Drive?")) {
-      logoutGoogle();
-      setUserLoggedIn(false);
-      setDriveFileId(null);
-      setSyncMessage(null);
-      // Reset all navigation state → return to login screen
-      setData(null);
-      setSelectedDeck(null);
-      setMode(null);
-      setActiveTab('decks');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Logout / Disconnect?",
+      description: "Are you sure you want to log out and disconnect from Google Drive? Your local data will remain until you log in again or clear browser cache.",
+      confirmText: "Logout",
+      type: "danger",
+      icon: LogOut,
+      onConfirm: () => {
+        logoutGoogle();
+        setUserLoggedIn(false);
+        setDriveFileId(null);
+        setSyncMessage(null);
+        setData(null);
+        setSelectedDeck(null);
+        setMode(null);
+        setActiveTab('decks');
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
   };
 
   const handleSyncFromDrive = async (goToScan = false) => {
@@ -156,7 +176,15 @@ function App() {
            setData([]);
            setSelectedDeck(null);
         } else {
-           setSyncMessage({ type: 'error', text: "No desk.json found on this Google Drive. Please upload a file manually or use AI Scan to create one." });
+           setConfirmConfig({
+             isOpen: true,
+             title: "No data found",
+             description: "No desk.json found on this Google Drive. Please upload a file manually or use AI Scan to create one.",
+             confirmText: "Close",
+             type: "warning",
+             icon: AlertTriangle,
+             onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+           });
         }
       }
 
@@ -166,7 +194,15 @@ function App() {
       }
     } catch (e) {
       console.error(e);
-      setSyncMessage({ type: 'error', text: "Failed to connect to Google Drive. Please try again." });
+      setConfirmConfig({
+        isOpen: true,
+        title: "Sync Failed",
+        description: "Failed to connect to Google Drive or fetch data. Please check your internet connection and try again.",
+        confirmText: "Close",
+        type: "danger",
+        icon: AlertTriangle,
+        onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+      });
     }
     setIsSyncing(false);
   };
@@ -543,7 +579,6 @@ function App() {
   if (data && !selectedDeck) {
     return (
       <>
-        {isSyncing && <div className="top-progress-bar"></div>}
         <main className="app-main" style={{ padding: '1.5rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
           {/* Collapsible Container */}
           <div style={{
@@ -831,55 +866,29 @@ function App() {
           onDeckImported={handleDeckImported}
         />
 
-        {/* Delete Deck Confirmation Modal */}
-        {showDeleteConfirm && (
-          <div className="animate-fade-in" style={{
-            position: 'fixed', inset: 0, zIndex: 3000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
-          }}>
-            <div className="glass-panel scale-in" style={{
-              width: '100%', maxWidth: '420px', background: 'var(--card-bg)', 
-              borderRadius: '24px', overflow: 'hidden', padding: '2rem',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column',
-              border: '1px solid rgba(239, 68, 68, 0.3)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                  <AlertTriangle size={32} color="#ef4444" />
-                </div>
-              </div>
-              <h2 style={{ fontSize: '1.25rem', textAlign: 'center', margin: '0 0 1rem', color: 'var(--text-main)' }}>Delete {selectedDecks.size} Deck{selectedDecks.size > 1 ? 's' : ''}?</h2>
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 2rem' }}>
-                Are you sure you want to permanently delete the selected decks? All flashcards inside will be lost. This action cannot be undone.
-              </p>
-              
-              <div style={{ display: 'flex', gap: '0.8rem' }}>
-                <button 
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={isDeleting}
-                  className="btn btn-glass"
-                  style={{ flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold' }}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={confirmDeleteDeck}
-                  disabled={isDeleting}
-                  className="btn"
-                  style={{ 
-                    flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold', 
-                    background: '#ef4444', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                    opacity: isDeleting ? 0.7 : 1, cursor: isDeleting ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ConfirmationModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={confirmDeleteDeck}
+          title={`Delete ${selectedDecks.size} Deck${selectedDecks.size > 1 ? 's' : ''}?`}
+          description="Are you sure you want to permanently delete the selected decks? All flashcards inside will be lost. This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          icon={Trash2}
+          type="danger"
+          isLoading={isDeleting}
+        />
+
+        <ConfirmationModal
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmConfig.onConfirm}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          confirmText={confirmConfig.confirmText}
+          type={confirmConfig.type}
+          icon={confirmConfig.icon}
+        />
       </>
     )
   }

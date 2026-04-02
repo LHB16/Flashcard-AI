@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, RotateCcw, Loader2 } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
 const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const cards = deck?.cards || [];
@@ -19,6 +19,18 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const touchStartX = useRef(null);
   const isAnimating = useRef(false);
   const cardRef = useRef(null);
+
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: '',
+    type: 'warning',
+    icon: AlertTriangle,
+    onConfirm: () => {}
+  });
+
+  const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
   const [isSyncingCards, setIsSyncingCards] = useState(false);
   const syncCardsTimeoutRef = useRef(null);
@@ -156,17 +168,26 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
   const restartStudy = () => {
     if (isAnimating.current) return;
-    if (window.confirm("Are you sure you want to reset all progress? This action cannot be undone.")) {
-      cards.forEach(c => c.status = 0);
-      if (onDeckModified) onDeckModified();
-      triggerCardSync();
-      setIndex(0);
-      setKnown(0);
-      setUnknown(0);
-      setDone(false);
-      setFlipped(false);
-      setDragX(0);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Reset Progress?",
+      description: "Are you sure you want to reset all progress for this deck? This action cannot be undone.",
+      confirmText: "Reset",
+      type: "danger",
+      icon: RotateCw,
+      onConfirm: () => {
+        cards.forEach(c => c.status = 0);
+        if (onDeckModified) onDeckModified();
+        triggerCardSync();
+        setIndex(0);
+        setKnown(0);
+        setUnknown(0);
+        setDone(false);
+        setFlipped(false);
+        setDragX(0);
+        closeConfirm();
+      }
+    });
   };
 
   // Keyboard shortcuts
@@ -550,6 +571,17 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         </button>
       </div>
 
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        icon={confirmConfig.icon}
+      />
     </div>
   );
 };

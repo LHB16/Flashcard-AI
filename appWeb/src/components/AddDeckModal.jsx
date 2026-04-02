@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { X, Plus, Trash, BookOpen, Layers, AlertTriangle, ArrowRight, Trash2, Pencil } from 'lucide-react';
+import { X, Plus, Trash, BookOpen, Layers, AlertTriangle, ArrowRight, Trash2, Pencil, LogOut } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import ConfirmationModal from './ConfirmationModal';
 
 /**
  * AddDeckModal — Create a new deck via Bulk Import or Manual Entry
@@ -22,11 +22,35 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
     question_type: 'single_choice'
   });
 
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    confirmText: '',
+    type: 'warning',
+    icon: AlertTriangle,
+    onConfirm: () => {}
+  });
+
+  const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+
+  const showAlert = (title, description, type = 'warning') => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      description,
+      confirmText: "OK",
+      type,
+      icon: AlertTriangle,
+      onConfirm: closeConfirm
+    });
+  };
+
   if (!isOpen) return null;
 
   const handleCreateDeck = () => {
     if (!deckName.trim()) {
-      alert("Please enter a Deck Name!");
+      showAlert("Missing Name", "Please enter a Deck Name!");
       return;
     }
 
@@ -35,13 +59,13 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
     if (activeTab === 'bulk') {
       finalCards = parseBulkText(bulkText);
       if (finalCards.length === 0) {
-        alert("No valid cards found in Bulk Import text. Check your format!");
+        showAlert("Format Error", "No valid cards found in Bulk Import text. Check your format!");
         return;
       }
     } else {
       finalCards = manualCards;
       if (finalCards.length === 0) {
-        alert("Please add at least one card manually!");
+        showAlert("Empty Deck", "Please add at least one card manually!");
         return;
       }
     }
@@ -172,10 +196,19 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
             </button>
             <button 
               onClick={() => {
-                if (window.confirm("Discard changes? All input data will be lost.")) {
-                  resetState();
-                  onClose();
-                }
+                setConfirmConfig({
+                  isOpen: true,
+                  title: "Discard Changes?",
+                  description: "Are you sure you want to discard your changes? All input data will be lost.",
+                  confirmText: "Discard",
+                  type: "danger",
+                  icon: AlertTriangle,
+                  onConfirm: () => {
+                    resetState();
+                    onClose();
+                    closeConfirm();
+                  }
+                });
               }} 
               className="btn btn-glass btn-icon"
               style={{ borderRadius: '50%' }}
@@ -446,7 +479,19 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
         <div style={{ padding: '1.5rem', borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.05)', display: 'flex', gap: '0.8rem' }}>
           <button 
             onClick={() => {
-              if (window.confirm("Abort creation? All input will be lost.")) { onClose(); resetState(); }
+              setConfirmConfig({
+                isOpen: true,
+                title: "Abort Creation?",
+                description: "Are you sure you want to abort creating this deck? All input will be lost.",
+                confirmText: "Abort",
+                type: "danger",
+                icon: AlertTriangle,
+                onConfirm: () => {
+                  onClose();
+                  resetState();
+                  closeConfirm();
+                }
+              });
             }}
             className="btn btn-glass"
             style={{ flex: 1, padding: '1rem', borderRadius: '16px', fontWeight: 'bold' }}
@@ -462,6 +507,18 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
             Create Deck Now
           </button>
         </div>
+
+        {/* Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={confirmConfig.isOpen}
+          onClose={closeConfirm}
+          onConfirm={confirmConfig.onConfirm}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          confirmText={confirmConfig.confirmText}
+          type={confirmConfig.type}
+          icon={confirmConfig.icon}
+        />
       </div>
     </div>
   );

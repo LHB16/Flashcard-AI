@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save } from 'lucide-react';
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
+import EditCard from './EditCard';
+import ConfirmationModal from './ConfirmationModal';
 import ShareDeckView from './ShareDeckView';
 
 const CARDS_PER_PAGE = 30;
@@ -25,6 +27,17 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   const [dedupPage, setDedupPage] = useState(0);
   const [dedupSelected, setDedupSelected] = useState(new Set());
   const [editingCard, setEditingCard] = useState(null); // { index, data }
+  const [confirmConfig, setConfirmConfig] = useState({ 
+    isOpen: false, 
+    title: '', 
+    description: '', 
+    confirmText: '', 
+    type: 'warning', 
+    icon: AlertTriangle, 
+    onConfirm: () => {} 
+  });
+
+  const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
   const cards = deck?.cards || [];
   const deckIdToSync = deck?.deck_id || deck?.title || deck?.name;
@@ -301,25 +314,23 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   </p>
                 </div>
 
-                {/* Delete button */}
-                {deleteConfirm === card._origIdx ? (
-                  <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
-                    <button
-                      className="btn"
-                      onClick={() => handleDeleteSingle(card._origIdx)}
-                      style={{ padding: '0.4rem 0.8rem', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
-                    >Yes</button>
-                    <button
-                      className="btn btn-glass"
-                      onClick={() => setDeleteConfirm(null)}
-                      style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem' }}
-                    ><X size={14} /></button>
-                  </div>
-                ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flexShrink: 0 }}>
                     <button
                       className="btn-glass btn-icon"
-                      onClick={() => setDeleteConfirm(card._origIdx)}
+                      onClick={() => {
+                        setConfirmConfig({
+                          isOpen: true,
+                          title: "Delete Card?",
+                          description: "Are you sure you want to delete this flashcard? This action cannot be undone.",
+                          confirmText: "Delete",
+                          type: "danger",
+                          icon: Trash2,
+                          onConfirm: () => {
+                            handleDeleteSingle(card._origIdx);
+                            closeConfirm();
+                          }
+                        });
+                      }}
                       title="Delete card"
                       style={{ 
                         color: '#ef4444', 
@@ -345,7 +356,6 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                       <Pencil size={16} />
                     </button>
                   </div>
-                )}
               </div>
             ))}
 
@@ -523,7 +533,17 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <button 
                 className="btn btn-glass btn-icon" 
-                onClick={() => { if (window.confirm("Discard changes?")) setTab('view'); }}
+                onClick={() => {
+                  setConfirmConfig({
+                    isOpen: true,
+                    title: "Discard changes?",
+                    description: "Are you sure you want to leave? Your unsaved edits will be lost.",
+                    confirmText: "Discard",
+                    type: "danger",
+                    icon: AlertTriangle,
+                    onConfirm: () => { setTab('view'); closeConfirm(); }
+                  });
+                }}
                 title="Back to list"
               >
                 <ArrowLeft size={20} />
@@ -553,26 +573,32 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   return;
                 }
 
-                if (window.confirm(editingCard.isNew ? "Add this new card?" : "Save changes to this flashcard?")) {
-                  const newCards = [...deck.cards];
-                  
-                  if (editingCard.isNew) {
-                    newCards.push(editingCard.data);
-                    // Reset quiz session — await to ensure DB is clean before navigating
-                    await notifyDeckStructureChanged(deckIdToSync, null, 'add');
-                  } else {
-                    // Reset status to unlearned for edited cards
-                    const updatedCard = { ...editingCard.data, status: 0 };
-                    newCards[editingCard.index] = updatedCard;
-                    // Reset progress in DB — await to ensure DB is clean before navigating
-                    await notifyDeckStructureChanged(deckIdToSync, editingCard.data.card_id, 'edit');
+                const isNew = editingCard.isNew;
+                setConfirmConfig({
+                  isOpen: true,
+                  title: isNew ? "Add card?" : "Save changes?",
+                  description: isNew ? "Do you want to add this new card to the deck?" : "Are you sure you want to save the changes to this flashcard?",
+                  confirmText: isNew ? "Add" : "Save",
+                  type: isNew ? "warning" : "info",
+                  icon: isNew ? Plus : Save,
+                  onConfirm: async () => {
+                    closeConfirm();
+                    // ... existing saving logic ...
+                    const newCards = [...deck.cards];
+                    if (isNew) {
+                      newCards.push(editingCard.data);
+                      await notifyDeckStructureChanged(deckIdToSync, null, 'add');
+                    } else {
+                      const updatedCard = { ...editingCard.data, status: 0 };
+                      newCards[editingCard.index] = updatedCard;
+                      await notifyDeckStructureChanged(deckIdToSync, editingCard.data.card_id, 'edit');
+                    }
+                    deck.cards = newCards;
+                    onDeckModified();
+                    setTab('view');
+                    setEditingCard(null);
                   }
-                  
-                  deck.cards = newCards;
-                  onDeckModified();
-                  setTab('view');
-                  setEditingCard(null);
-                }
+                });
               }}
               style={{ padding: '0.6rem 2rem', borderRadius: '12px' }}
             >
@@ -745,6 +771,17 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
           onBack={() => setTab('view')} 
         />
       )}
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        icon={confirmConfig.icon}
+      />
     </div>
   );
 }
