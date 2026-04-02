@@ -264,14 +264,36 @@ function App() {
   };
 
   const pressTimerRef = useRef(null);
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
 
-  const handleDeckPressStart = (deck) => {
+  const handleDeckPressStart = (deck, e) => {
     if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
+    
+    // Store initial touch coordinates to detect scrolling
+    if (e && e.touches && e.touches[0]) {
+      touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e && e.clientX) {
+      touchStartPosRef.current = { x: e.clientX, y: e.clientY };
+    }
+
     pressTimerRef.current = setTimeout(() => {
       setIsSelectionMode(true);
       selectDeck(deck);
       pressTimerRef.current = null;
-    }, 500); // 500ms long press
+    }, 800); // 800ms long press, more intentional
+  };
+
+  const handleDeckTouchMove = (e) => {
+    if (!pressTimerRef.current) return;
+    
+    // If user moves more than 10px, it's a scroll or swipe, not a long press
+    if (e.touches && e.touches[0]) {
+      const moveX = Math.abs(e.touches[0].clientX - touchStartPosRef.current.x);
+      const moveY = Math.abs(e.touches[0].clientY - touchStartPosRef.current.y);
+      if (moveX > 10 || moveY > 10) {
+        handleDeckPressEnd();
+      }
+    }
   };
 
   const handleDeckPressEnd = () => {
@@ -710,13 +732,14 @@ function App() {
                   }}
                   onMouseDown={(e) => {
                      // Only trigger long press if not clicking the pin button
-                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck);
+                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck, e);
                   }}
                   onMouseUp={() => !isSelectionMode && handleDeckPressEnd()}
                   onMouseLeave={() => !isSelectionMode && handleDeckPressEnd()}
                   onTouchStart={(e) => {
-                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck);
+                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck, e);
                   }}
+                  onTouchMove={handleDeckTouchMove}
                   onTouchEnd={() => !isSelectionMode && handleDeckPressEnd()}
                   onClick={(e) => handleDeckClick(deck, e)}
                   onContextMenu={(e) => {
