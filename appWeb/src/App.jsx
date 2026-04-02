@@ -128,7 +128,12 @@ function App() {
       logoutGoogle();
       setUserLoggedIn(false);
       setDriveFileId(null);
-      setSyncMessage(null); // Tắt thông báo đỏ/xanh
+      setSyncMessage(null);
+      // Reset all navigation state → return to login screen
+      setData(null);
+      setSelectedDeck(null);
+      setMode(null);
+      setActiveTab('decks');
     }
   };
 
