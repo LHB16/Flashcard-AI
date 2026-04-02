@@ -8,7 +8,7 @@ import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
 import NotificationBell from './components/NotificationBell';
 import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X } from 'lucide-react';
-import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
+import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive, deleteDecksProgress } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
 
@@ -283,8 +283,16 @@ function App() {
     setSelectedDecks(new Set());
   };
 
+  const handleDeleteCurrentDeck = () => {
+    if (!selectedDeck) return;
+    const id = selectedDeck.deck_id || selectedDeck.name;
+    setSelectedDecks(new Set([id]));
+    setShowDeleteConfirm(true);
+  };
+
   const confirmDeleteDeck = async () => {
     setIsDeleting(true);
+    const deckIdsToDelete = Array.from(selectedDecks);
     const updatedDecks = data.filter(d => {
         const id = d.deck_id || d.name;
         return !selectedDecks.has(id);
@@ -293,10 +301,19 @@ function App() {
 
     if (userLoggedIn) {
       try {
-        await uploadDecksToDrive(updatedDecks, driveFileId);
+        await Promise.all([
+          uploadDecksToDrive(updatedDecks, driveFileId),
+          deleteDecksProgress(deckIdsToDelete)
+        ]);
       } catch (e) {
-        console.error('Error deleting deck from Drive sync:', e);
+        console.error('Error deleting deck and syncing:', e);
       }
+    }
+
+    // If we deleted from mode page, go back to deck list
+    if (mode !== null) {
+      setSelectedDeck(null);
+      setMode(null);
     }
 
     setShowDeleteConfirm(false);
@@ -591,6 +608,43 @@ function App() {
           </div>
 
           {activeTab === 'decks' ? (
+            <>
+            {/* Selection Action Bar - sticky top */}
+            {isSelectionMode && (
+              <div style={{
+                position: 'sticky', top: 0, zIndex: 200,
+                background: 'var(--glass-bg)', backdropFilter: 'blur(12px)', border: '1px solid var(--glass-border)',
+                borderRadius: '16px', padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)', justifyContent: 'space-between',
+                marginBottom: '1rem'
+              }}>
+                <button 
+                  onClick={cancelSelection} 
+                  className="btn btn-glass" 
+                  style={{ border: 'none', padding: '0.6rem 1rem', fontWeight: 'bold' }}
+                >
+                  Hủy
+                </button>
+                <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'center' }}>
+                  Đã chọn <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
+                </div>
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)} 
+                  disabled={selectedDecks.size === 0}
+                  className="btn" 
+                  style={{
+                     background: selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.1)',
+                     color: selectedDecks.size > 0 ? '#fff' : 'rgba(239, 68, 68, 0.4)',
+                     border: `1px solid ${selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.2)'}`,
+                     borderRadius: '12px', padding: '0.6rem 1rem', fontWeight: 'bold',
+                     cursor: selectedDecks.size > 0 ? 'pointer' : 'not-allowed',
+                     display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
+                  }}
+                >
+                  <Trash2 size={16} /> Xóa
+                </button>
+              </div>
+            )}
             <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
               {processedDecks.map((deck, idx) => {
                 const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
@@ -621,31 +675,29 @@ function App() {
                       }
                   }}
                 >
-                  {/* Selection Checkbox (top-left) */}
-                  {isSelectionMode && (
-                     <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 10 }}>
-                         <input 
-                           type="checkbox" 
-                           checked={selectedDecks.has(deck.deck_id || deck.name)}
-                           readOnly
-                           style={{ width: '20px', height: '20px', accentColor: '#ef4444', pointerEvents: 'none' }}
-                         />
-                     </div>
-                  )}
-
-                  {/* Pin button (top-right) */}
-                  {deck.deck_id && (
-                    <button 
-                      onClick={(e) => togglePin(deck.deck_id, e)}
-                      style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex', zIndex: 10 }}
-                      className="btn-icon pin-btn"
-                      title={isPinned ? "Unpin deck" : "Pin deck"}
-                    >
-                      {isPinned ? <Star size={24} color="#fbbf24" fill="#fbbf24" /> : <StarOff size={24} color="var(--text-muted)" />}
-                    </button>
-                  )}
+                  {/* Top-right: Checkbox + Pin */}
+                  <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 10 }}>
+                    {isSelectionMode && (
+                      <input 
+                        type="checkbox" 
+                        checked={selectedDecks.has(deck.deck_id || deck.name)}
+                        readOnly
+                        style={{ width: '20px', height: '20px', accentColor: '#ef4444', pointerEvents: 'none', cursor: 'pointer' }}
+                      />
+                    )}
+                    {deck.deck_id && (
+                      <button 
+                        onClick={(e) => togglePin(deck.deck_id, e)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex' }}
+                        className="btn-icon pin-btn"
+                        title={isPinned ? "Unpin deck" : "Pin deck"}
+                      >
+                        {isPinned ? <Star size={24} color="#fbbf24" fill="#fbbf24" /> : <StarOff size={24} color="var(--text-muted)" />}
+                      </button>
+                    )}
+                  </div>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem', marginLeft: '3rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
                     <BookOpen size={36} color="var(--primary)" />
                     {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center' }}>📌 Pinned</span>}
                   </div>
@@ -674,6 +726,7 @@ function App() {
                 </div>
               )})}
             </div>
+            </>
           ) : (
             <AIScan userLoggedIn={userLoggedIn} onScanComplete={handleScanComplete} />
           )}
@@ -783,7 +836,23 @@ function App() {
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {mode === 'home' && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, position: 'relative' }}>
+              {/* Delete this deck button (top-right) */}
+              <button
+                onClick={handleDeleteCurrentDeck}
+                className="btn-icon"
+                title="Delete this deck"
+                style={{
+                  position: 'absolute', top: '0', right: '0',
+                  background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.15)',
+                  cursor: 'pointer', padding: '0.6rem', borderRadius: '12px', display: 'flex',
+                  transition: 'all 0.2s', zIndex: 10
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.borderColor = '#ef4444'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.15)'; }}
+              >
+                <Trash2 size={20} color="#ef4444" />
+              </button>
               <h2 className="study-title" style={{ fontSize: '2rem', marginBottom: '3rem', textAlign: 'center' }}>How would you like to study today?</h2>
 
               <div className="mode-selection-container" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -892,41 +961,7 @@ function App() {
           </div>
         )}
 
-        {/* Selection Bar overlay on home */}
-        {mode === null && isSelectionMode && (
-          <div className="animate-fade-in" style={{
-            position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
-            background: 'var(--glass-bg)', backdropFilter: 'blur(12px)', border: '1px solid var(--glass-border)',
-            borderRadius: '24px', padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center', gap: '2rem',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.3)', width: '90%', maxWidth: '500px', justifyContent: 'space-between'
-          }}>
-            <button 
-              onClick={cancelSelection} 
-              className="btn btn-glass" 
-              style={{ border: 'none', padding: '0.6rem 1rem', fontWeight: 'bold' }}
-            >
-              Hủy
-            </button>
-            <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'center' }}>
-              Đã chọn <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
-            </div>
-            <button 
-              onClick={() => setShowDeleteConfirm(true)} 
-              disabled={selectedDecks.size === 0}
-              className="btn" 
-              style={{
-                 background: selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.1)',
-                 color: selectedDecks.size > 0 ? '#fff' : 'rgba(239, 68, 68, 0.4)',
-                 border: `1px solid ${selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.2)'}`,
-                 borderRadius: '12px', padding: '0.6rem 1rem', fontWeight: 'bold',
-                 cursor: selectedDecks.size > 0 ? 'pointer' : 'not-allowed',
-                 display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
-              }}
-            >
-              <Trash2 size={16} /> Xóa
-            </button>
-          </div>
-        )}
+
 
       </main>
     </>

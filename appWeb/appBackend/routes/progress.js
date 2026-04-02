@@ -152,4 +152,35 @@ router.get('/cards/:deck_id', async (req, res) => {
   }
 });
 
+// Xóa tiến trình của nhiều deck cùng lúc (Clean up when decks are deleted)
+router.post('/delete-bulk', async (req, res) => {
+  const { google_id, deck_ids } = req.body;
+
+  if (!google_id || !deck_ids || !Array.isArray(deck_ids)) {
+    return res.status(400).json({ error: 'Missing google_id or deck_ids array' });
+  }
+
+  if (deck_ids.length === 0) {
+    return res.json({ message: 'No decks to delete' });
+  }
+
+  try {
+    // Xóa từ tất cả các bảng liên quan
+    const p1 = supabase.from('progress').delete().eq('google_id', google_id).in('deck_id', deck_ids);
+    const p2 = supabase.from('quiz_sessions').delete().eq('google_id', google_id).in('deck_id', deck_ids);
+    const p3 = supabase.from('deck_progress').delete().eq('google_id', google_id).in('deck_id', deck_ids);
+
+    const results = await Promise.all([p1, p2, p3]);
+    
+    // Check for errors in any of the results
+    const firstError = results.find(r => r.error)?.error;
+    if (firstError) throw firstError;
+
+    res.json({ message: 'Database clean up successful', count: deck_ids.length });
+  } catch (error) {
+    console.error('Bulk Delete Error:', error);
+    res.status(500).json({ error: 'Lỗi dọn dẹp CSDL Supabase' });
+  }
+});
+
 module.exports = router;
