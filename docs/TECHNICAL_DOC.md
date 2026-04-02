@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.2 | **Last Updated:** 2026-04-02 | **Status:** Complete
+> **Version:** 2.3 | **Last Updated:** 2026-04-03 | **Status:** Complete
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -305,6 +305,7 @@ appWeb/
 │   │   ├── AIScan.jsx           # AI Scan orchestration UI
 │   │   ├── AddDeckModal.jsx     # Create deck via Bulk Import or Manual Entry
 │   │   ├── ApiKeyChip.jsx       # API key display chip component
+│   │   ├── ConfirmationModal.jsx# Reusable glassmorphism modal (danger/warning/info)
 │   │   ├── DeckManager.jsx      # Card viewer, editor, dedup + Share tab
 │   │   ├── FileLoader.jsx       # Import/Export decks.json
 │   │   ├── ImportSharedDeckModal.jsx # Modal to import a shared deck by ID
@@ -342,7 +343,7 @@ appWeb/
 | :--- | :--- | :--- |
 | `data` | `Deck[]` \| `null` | All loaded decks |
 | `selectedDeck` | `Deck` \| `null` | Currently open deck |
-| `mode` | `'flashcard'` \| `'quiz'` \| `null` | Current study mode |
+| `mode` | `'flashcard'` \| `'quiz'` \| `'manage'` \| `'home'` \| `null` | Current study/view mode |
 | `theme` | `'dark'` \| `'light'` | Current UI theme, persisted in `localStorage` |
 | `isHeaderCollapsed` | `boolean` | Collapsible header state (auto-collapses on scroll > 80px) |
 | `activeTab` | `'decks'` \| `'scan'` | Deck selection tab (My Decks vs AI Scan) |
@@ -351,16 +352,29 @@ appWeb/
 | `userLoggedIn` | `boolean` | Whether Google session is active |
 | `driveFileId` | `string` \| `null` | Drive file ID of `decks.json` for update calls |
 | `isSyncing` | `boolean` | Shows top progress bar during sync |
+| `isSelectionMode` | `boolean` | Whether bulk-delete selection mode is active on deck list |
+| `selectedDecks` | `Set<string>` | Set of `deck_id` values selected for bulk deletion |
+| `showDeleteConfirm` | `boolean` | Controls visibility of the deck-delete `ConfirmationModal` |
+| `isDeleting` | `boolean` | Shows loading spinner in delete modal while async deletion runs |
+| `confirmConfig` | `ConfirmConfig` | Config object driving the generic `ConfirmationModal` (title, description, type, icon, onConfirm) |
 
 **App Rendering Logic (Waterfall):**
 
 ```
-App.jsx renders:
-  1. If !data → Login Screen (FileLoader) + Header with Google Sign-in
-  2. If data && !selectedDeck → Deck Selection (DeckList + AIScan tab)
-  3. If selectedDeck && !mode → DeckDetailView (or DeckManager if manage=true)
-  4. If mode === 'flashcard' → FlashcardMode
-  5. If mode === 'quiz' → QuizMode
+App.jsx renders (single return block — three conditional branches):
+  1. !data         → Login Screen (FileLoader + Google Sign-in header)
+  2. !selectedDeck → Deck Selection (DeckList grid, search, sort, bulk-delete)
+  3. selectedDeck  → Study Mode Shell (sticky header with tabs: Modes | Manage)
+      3a. mode is null or 'home' → Mode picker (Flashcards / Quiz Mode cards)
+      3b. mode = 'flashcard'     → <FlashcardMode />
+      3c. mode = 'quiz'          → <QuizMode />
+      3d. mode = 'manage'        → <DeckManager />
+
+Globally-mounted modals (outside all branches, always in DOM):
+  - <AddDeckModal>            create deck via Bulk Import or Manual Entry
+  - <ImportSharedDeckModal>   clone a deck by shared ID
+  - <ConfirmationModal>       deck delete (showDeleteConfirm + isDeleting)
+  - <ConfirmationModal>       all other dialogs (confirmConfig object)
 ```
 
 ### 4.3 Component Reference
@@ -869,7 +883,165 @@ setMode(null);
 
 #### 4.12.5 Global Logout Button
 
-All three rendering branches in `App.jsx` (login screen, deck list, study mode) now display a `<CloudOff>` logout button in the header with `color: var(--danger)` (red), ensuring the user always has an escape route regardless of their navigation state.
+All rendering branches in `App.jsx` (login screen, deck list, study mode) now display a `<LogOut>` button in the header with `color: var(--danger)` (red), ensuring the user always has an escape route regardless of their navigation state.
+
+Clicking Logout opens a `ConfirmationModal` (type `danger`) instead of a native `window.confirm` dialog, consistent with the unified modal system described in **Section 4.13**.
+
+---
+
+### 4.13 ConfirmationModal — Unified Dialog System
+
+Added in **2026-04-02**, `ConfirmationModal.jsx` replaces all native browser dialogs (`window.confirm`, `alert`) across the entire application with a consistent, themed glassmorphism modal.
+
+#### 4.13.1 Component Props
+
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `isOpen` | `boolean` | — | Controls visibility. Gate with `if (!isOpen) return null`. |
+| `onClose` | `() => void` | — | Called when user clicks Cancel. |
+| `onConfirm` | `() => void` | — | Called when user clicks the confirm button. |
+| `title` | `string` | — | Bold heading displayed inside the modal. |
+| `description` | `string` | — | Body text (subtitle). |
+| `confirmText` | `string` | `"Confirm"` | Label for the confirm button. |
+| `cancelText` | `string` | `"Cancel"` | Label for the cancel button. |
+| `icon` | `LucideIcon` | `AlertTriangle` | Lucide icon component rendered in the colored circle. |
+| `type` | `'warning'` \| `'danger'` \| `'info'` | `'warning'` | Controls the color scheme of the modal. |
+| `isLoading` | `boolean` | `false` | Shows a `<Loader2>` spinner and disables buttons during async operations. |
+
+#### 4.13.2 Color Scheme by Type
+
+| `type` | Background Tint | Border | Button Color | Typical Use |
+| :--- | :--- | :--- | :--- | :--- |
+| `warning` | `rgba(251, 191, 36, 0.1)` | `rgba(251, 191, 36, 0.2)` | `#fbbf24` (yellow) | Discard changes, save confirmation |
+| `danger` | `rgba(239, 68, 68, 0.1)` | `rgba(239, 68, 68, 0.2)` | `#ef4444` (red) | Delete deck/card, logout |
+| `info` | `rgba(59, 130, 246, 0.1)` | `rgba(59, 130, 246, 0.2)` | `#3b82f6` (blue) | Save card edits |
+
+#### 4.13.3 Usage Patterns
+
+Two patterns are used throughout the app:
+
+**Pattern A — Dedicated boolean state** (for deck delete, which needs `isLoading`):
+
+```jsx
+// App.jsx
+const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+const [isDeleting, setIsDeleting] = useState(false);
+
+<ConfirmationModal
+  isOpen={showDeleteConfirm}
+  onClose={() => setShowDeleteConfirm(false)}
+  onConfirm={confirmDeleteDeck}       // async function, sets isDeleting
+  title={`Delete ${selectedDecks.size} Deck(s)?`}
+  description="This action cannot be undone. All cards will be lost."
+  confirmText="Delete"
+  type="danger"
+  icon={Trash2}
+  isLoading={isDeleting}
+/>
+```
+
+**Pattern B — Generic `confirmConfig` object** (for all other dialogs):
+
+```jsx
+// App.jsx — generic modal driven by confirmConfig state
+const [confirmConfig, setConfirmConfig] = useState({
+  isOpen: false, title: '', description: '',
+  confirmText: '', type: 'warning',
+  icon: AlertTriangle, onConfirm: () => {}
+});
+
+// To trigger any dialog from anywhere in App.jsx:
+setConfirmConfig({
+  isOpen: true,
+  title: "Logout / Disconnect?",
+  description: "Are you sure you want to log out?",
+  confirmText: "Logout",
+  type: "danger",
+  icon: LogOut,
+  onConfirm: () => {
+    logoutGoogle();
+    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+  }
+});
+
+// JSX at root of App return:
+<ConfirmationModal
+  isOpen={confirmConfig.isOpen}
+  onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+  onConfirm={confirmConfig.onConfirm}
+  title={confirmConfig.title}
+  description={confirmConfig.description}
+  confirmText={confirmConfig.confirmText}
+  type={confirmConfig.type}
+  icon={confirmConfig.icon}
+/>
+```
+
+> **Rule:** `ConfirmationModal` instances must be placed **outside** all conditional rendering branches (at the root level of `App.jsx`'s return block), so they remain mounted regardless of the current screen state.
+
+#### 4.13.4 Locations Replaced
+
+| Component | Old Dialog | Trigger |
+| :--- | :--- | :--- |
+| `App.jsx` | `window.confirm` (logout) | Logout button |
+| `App.jsx` | `window.confirm` (bulk delete) | Delete button in selection mode |
+| `App.jsx` | `alert` (sync failed) | Drive sync error |
+| `AddDeckModal.jsx` | `window.confirm` (discard new deck) | Cancel button |
+| `AddDeckModal.jsx` | `alert` (empty name / no cards) | Save validation |
+| `DeckManager.jsx` | `window.confirm` (delete card) | Trash icon on card |
+| `DeckManager.jsx` | `window.confirm` (discard edit) | Back arrow in edit form |
+| `DeckManager.jsx` | `alert` (invalid card data) | Save card validation |
+
+---
+
+### 4.14 Critical Bug Fix — Missing React Imports (2026-04-03)
+
+#### 4.14.1 Root Cause
+
+When `ConfirmationModal` support was added to `QuizMode.jsx`, `FlashcardMode.jsx`, and `AddDeckModal.jsx` (commit `14a27a5`), the original `import React, { useState, ... }` line in each file was accidentally removed. The files were left with only the new lucide-react and ConfirmationModal imports.
+
+```js
+// BROKEN — QuizMode.jsx after commit 14a27a5
+import { ArrowLeft, ChevronLeft, ... } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
+
+// Line 6 — crashes immediately at module evaluation:
+const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
+  //                ^^^^^^^^^^^ ReferenceError: React is not defined
+```
+
+#### 4.14.2 Why It Caused a White Screen
+
+`@vitejs/plugin-react` uses the **React 17+ automatic JSX transform**, which eliminates the need for `import React` in JSX files for JSX syntax alone. However, **it does NOT inject the `React` global**.
+
+When `App.jsx` imports `QuizMode`, the `React.memo(...)` call at module scope executes immediately during the import chain. This throws a `ReferenceError` before any component has a chance to mount. React's error boundaries cannot catch errors that occur during module evaluation — the entire app tree stays unmounted, resulting in an empty `<div id="root">` and a visually blank page with **no error shown in the console**.
+
+#### 4.14.3 Affected Files
+
+| File | Missing Imports | Usage in File |
+| :--- | :--- | :--- |
+| `QuizMode.jsx` | `React`, `useState`, `useEffect`, `useRef`, `useCallback` | `React.memo()`, all hooks |
+| `FlashcardMode.jsx` | `React`, `useState`, `useEffect`, `useRef` | All hooks |
+| `AddDeckModal.jsx` | `React`, `useState` | All hooks |
+
+#### 4.14.4 Fix Applied
+
+Added the missing import line at the top of each affected file:
+
+```js
+// QuizMode.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+// FlashcardMode.jsx
+import React, { useState, useEffect, useRef } from 'react';
+
+// AddDeckModal.jsx
+import React, { useState } from 'react';
+```
+
+#### 4.14.5 Prevention Rule
+
+> **Rule for this codebase:** While the automatic JSX transform handles `<JSX />` syntax, any file that uses `React.memo()`, `React.createContext()`, `React.forwardRef()`, or any hook (`useState`, `useEffect`, etc.) **must** explicitly import them from `'react'`. The automatic transform does NOT provide these as globals.
 
 ---
 
@@ -1518,4 +1690,4 @@ build_apk_release.bat
 
 ---
 
-*Flashcard AI — Technical Documentation | Generated: 2026-04-01 | Author: [LHB16](https://github.com/LHB16)*
+*Flashcard AI — Technical Documentation | Generated: 2026-04-03 | Author: [LHB16](https://github.com/LHB16)*
