@@ -448,14 +448,16 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
       {editingCard && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 10000, padding: '1rem'
+          background: 'var(--root-bg)', // Solid background as requested
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          zIndex: 10000, padding: '2rem 1.5rem', overflowY: 'auto' // Allow main container to scroll
         }}>
           <div className="glass-panel animate-fade-in" style={{
-            width: '100%', maxWidth: '650px', maxHeight: '90vh',
-            display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)'
+            width: '100%', maxWidth: '650px',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)',
+            background: 'var(--card-bg)', // Opaque background
+            borderRadius: '24px'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -468,7 +470,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {/* Question */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase' }}>Question Content</label>
