@@ -325,6 +325,8 @@ function App() {
   const syncTimeoutRef = useRef(null);
 
   const handleDeckModified = React.useCallback(() => {
+    // Force refresh selectedDeck reference to trigger prop update in children
+    setSelectedDeck(prev => prev ? { ...prev } : prev);
     setData(prev => prev ? [...prev] : prev);
 
     if (!userLoggedIn || !driveFileId) return;

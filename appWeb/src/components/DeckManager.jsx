@@ -43,7 +43,8 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
 
   // ─── Card Actions ───
   const handleDeleteSingle = useCallback((origIdx) => {
-    deck.cards.splice(origIdx, 1);
+    // Immutable update: create new cards array without the deleted card
+    deck.cards = deck.cards.filter((_, idx) => idx !== origIdx);
     onDeckModified();
     setDeleteConfirm(null);
     setSelectedCards(prev => { const n = new Set(prev); n.delete(origIdx); return n; });
@@ -51,8 +52,9 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
 
   const handleDeleteSelected = useCallback(() => {
     if (!selectedCards.size) return;
-    const indices = [...selectedCards].sort((a, b) => b - a);
-    indices.forEach(idx => deck.cards.splice(idx, 1));
+    const indices = new Set(selectedCards);
+    // Immutable update: filter out all cards whose indices are in the selection set
+    deck.cards = deck.cards.filter((_, idx) => !indices.has(idx));
     setSelectedCards(new Set());
     onDeckModified();
   }, [deck, selectedCards, onDeckModified]);
@@ -101,8 +103,10 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
       const pair = dedupResults[parseInt(pairIdx)];
       if (pair) indicesToDelete.add(slot === 'a' ? pair.indexA : pair.indexB);
     });
-    const sorted = [...indicesToDelete].sort((a, b) => b - a);
-    sorted.forEach(idx => deck.cards.splice(idx, 1));
+    
+    // Immutable update
+    deck.cards = deck.cards.filter((_, idx) => !indicesToDelete.has(idx));
+    
     onDeckModified();
     setDedupResults(null);
     setDedupSelected(new Set());
@@ -485,7 +489,9 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   return;
                 }
                 if (window.confirm("Save changes to this flashcard?")) {
-                  deck.cards[editingCard.index] = editingCard.data;
+                  const newCards = [...deck.cards];
+                  newCards[editingCard.index] = editingCard.data;
+                  deck.cards = newCards;
                   onDeckModified();
                   setTab('view');
                 }
