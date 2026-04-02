@@ -26,6 +26,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   const [editingCard, setEditingCard] = useState(null); // { index, data }
 
   const cards = deck?.cards || [];
+  const deckIdToSync = deck?.deck_id || deck?.title || deck?.name;
 
   // Filtered cards for view tab
   const filteredCards = useMemo(() => {
@@ -51,20 +52,20 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
     
     // Cleanup progress in DB
     if (cardToDelete && cardToDelete.card_id) {
-       notifyDeckStructureChanged(deck.deck_id, cardToDelete.card_id, 'delete');
+       notifyDeckStructureChanged(deckIdToSync, cardToDelete.card_id, 'delete');
     }
     
     onDeckModified();
     setDeleteConfirm(null);
     setSelectedCards(prev => { const n = new Set(prev); n.delete(origIdx); return n; });
-  }, [deck, onDeckModified]);
+  }, [deck, deckIdToSync, onDeckModified]);
 
   const handleDeleteSelected = useCallback(() => {
     if (!selectedCards.size) return;
     const indices = new Set(selectedCards);
     
     // Invalidate quiz sessions (too complex to surgical delete many)
-    notifyDeckStructureChanged(deck.deck_id, null, 'delete_multiple');
+    notifyDeckStructureChanged(deckIdToSync, null, 'delete_multiple');
 
     // Immutable update: filter out all cards whose indices are in the selection set
     deck.cards = deck.cards.filter((_, idx) => !indices.has(idx));
@@ -549,13 +550,13 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                   if (editingCard.isNew) {
                     newCards.push(editingCard.data);
                     // Reset quiz session
-                    notifyDeckStructureChanged(deck.deck_id, null, 'add');
+                    notifyDeckStructureChanged(deckIdToSync, null, 'add');
                   } else {
                     // Reset status to unlearned for edited cards
                     const updatedCard = { ...editingCard.data, status: 0 };
                     newCards[editingCard.index] = updatedCard;
                     // Reset progress in DB
-                    notifyDeckStructureChanged(deck.deck_id, editingCard.data.card_id, 'edit');
+                    notifyDeckStructureChanged(deckIdToSync, editingCard.data.card_id, 'edit');
                   }
                   
                   deck.cards = newCards;
