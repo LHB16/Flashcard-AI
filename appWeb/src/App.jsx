@@ -164,13 +164,8 @@ function App() {
 
   const handleDataLoaded = async (decksData, isManualUpload = false) => {
     setData(decksData);
-    if (decksData && decksData.length === 1) {
-      setSelectedDeck(decksData[0]);
-      setMode('home');
-    } else {
-      setSelectedDeck(null); // Force selection list
-      setMode(null);
-    }
+    setSelectedDeck(null); // Force selection list always
+    setMode(null);
 
     // Automatically sync to Google Drive if a user uploads manually and is logged in
     if (isManualUpload && userLoggedIn) {
