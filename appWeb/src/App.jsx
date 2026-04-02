@@ -7,7 +7,7 @@ import AIScan from './components/AIScan';
 import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
 import NotificationBell from './components/NotificationBell';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus } from 'lucide-react';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
@@ -20,8 +20,11 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [searchQuery, setSearchQuery] = useState('');
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('decks');
   const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
+  const [deckToDelete, setDeckToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [pinnedDecks, setPinnedDecks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch(e) { return []; }
@@ -232,6 +235,25 @@ function App() {
       }
       setIsSyncing(false);
     }
+  };
+
+  const confirmDeleteDeck = async () => {
+    if (!deckToDelete) return;
+    
+    setIsDeleting(true);
+    const updatedDecks = data.filter(d => (d.deck_id || d.name) !== (deckToDelete.deck_id || deckToDelete.name));
+    setData(updatedDecks);
+
+    if (userLoggedIn) {
+      try {
+        await uploadDecksToDrive(updatedDecks, driveFileId);
+      } catch (e) {
+        console.error('Error deleting deck from Drive sync:', e);
+      }
+    }
+
+    setDeckToDelete(null);
+    setIsDeleting(false);
   };
 
   const syncTimeoutRef = useRef(null);
@@ -531,10 +553,21 @@ function App() {
                   style={{ padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative' }}
                   onClick={() => { setSelectedDeck(deck); setMode('home'); }}
                 >
+                  {/* Delete button (top-left) */}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setDeckToDelete(deck); }}
+                    style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', background: 'rgba(239, 68, 68, 0.1)', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '12px', display: 'flex', transition: 'all 0.2s', zIndex: 10 }}
+                    className="btn-icon delete-deck-btn relative group"
+                    title="Delete deck permanently"
+                  >
+                    <Trash2 size={20} color="#ef4444" style={{ transition: 'all 0.2s' }} />
+                  </button>
+
+                  {/* Pin button (top-right) */}
                   {deck.deck_id && (
                     <button 
                       onClick={(e) => togglePin(deck.deck_id, e)}
-                      style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex' }}
+                      style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex', zIndex: 10 }}
                       className="btn-icon"
                       title={isPinned ? "Unpin deck" : "Pin deck"}
                     >
@@ -542,7 +575,7 @@ function App() {
                     </button>
                   )}
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem', marginLeft: '3rem' }}>
                     <BookOpen size={36} color="var(--primary)" />
                     {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center' }}>📌 Pinned</span>}
                   </div>
@@ -738,6 +771,57 @@ function App() {
           onClose={() => setIsAddDeckModalOpen(false)} 
           onDeckCreated={handleDeckCreated} 
         />
+        
+        {/* Delete Deck Confirmation Modal */}
+        {deckToDelete && (
+          <div className="animate-fade-in" style={{
+            position: 'fixed', inset: 0, zIndex: 2000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
+          }}>
+            <div className="glass-panel scale-in" style={{
+              width: '100%', maxWidth: '420px', background: 'var(--card-bg)', 
+              borderRadius: '24px', overflow: 'hidden', padding: '2rem',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column',
+              border: '1px solid rgba(239, 68, 68, 0.3)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                  <AlertTriangle size={32} color="#ef4444" />
+                </div>
+              </div>
+              <h2 style={{ fontSize: '1.25rem', textAlign: 'center', margin: '0 0 1rem', color: 'var(--text-main)' }}>Delete Deck?</h2>
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 2rem' }}>
+                Are you sure you want to permanently delete the deck <strong>"{deckToDelete.name || 'Unnamed Deck'}"</strong>? All flashcards inside will be lost. This action cannot be undone.
+              </p>
+              
+              <div style={{ display: 'flex', gap: '0.8rem' }}>
+                <button 
+                  onClick={() => setDeckToDelete(null)}
+                  disabled={isDeleting}
+                  className="btn btn-glass"
+                  style={{ flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDeleteDeck}
+                  disabled={isDeleting}
+                  className="btn"
+                  style={{ 
+                    flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold', 
+                    background: '#ef4444', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    opacity: isDeleting ? 0.7 : 1, cursor: isDeleting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
     </>
   );
