@@ -3,7 +3,7 @@ import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, Ch
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
-import ShareDeckModal from './ShareDeckModal';
+import ShareDeckView from './ShareDeckView';
 
 const CARDS_PER_PAGE = 30;
 const DEDUP_PAIRS_PER_PAGE = 15;
@@ -18,7 +18,6 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   const [page, setPage] = useState(0);
   const [selectedCards, setSelectedCards] = useState(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Dedup state
   const [dedupResults, setDedupResults] = useState(null);
@@ -162,15 +161,15 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
         </span>
         <button 
           className="btn btn-glass" 
-          onClick={() => setIsShareModalOpen(true)}
+          onClick={() => setTab('share')}
           style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '10px' }}
         >
           <Share2 size={16} color="var(--primary)" /> Share
         </button>
       </div>
 
-      {/* Tab Bar - Hidden in Edit Mode */}
-      {tab !== 'edit' && (
+      {/* Tab Bar - Hidden in Edit or Share Mode */}
+      {(tab !== 'edit' && tab !== 'share') && (
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <button
             className={`btn ${tab === 'view' ? 'btn-primary' : 'btn-glass'}`}
@@ -738,11 +737,13 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
         </div>
       )}
 
-      <ShareDeckModal 
-        isOpen={isShareModalOpen} 
-        onClose={() => setIsShareModalOpen(false)} 
-        deck={deck} 
-      />
+      {/* ─── SHARE TAB (FOCUSED VIEW) ─── */}
+      {tab === 'share' && (
+        <ShareDeckView 
+          deck={deck} 
+          onBack={() => setTab('view')} 
+        />
+      )}
     </div>
   );
 }

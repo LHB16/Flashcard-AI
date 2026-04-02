@@ -460,12 +460,26 @@ function App() {
                           <Sparkles size={18} /> AI Scan
                         </button>
                       </div>
+                      <button 
+                        className="btn btn-glass glass-panel-hover" 
+                        onClick={() => setIsImportModalOpen(true)} 
+                        style={{ padding: '1.2rem', fontSize: '1.1rem', width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <Download size={18} /> Import Shared Deck
+                      </button>
                     </div>
                   ) : (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <button className="btn btn-glass glass-panel-hover" onClick={handleLoginClick} style={{ padding: '1.5rem', fontSize: '1.2rem', width: '100%', borderColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <Cloud size={28} color="var(--primary)" />
                         Sign in with Google to experience full features
+                      </button>
+                      <button 
+                        className="btn btn-glass glass-panel-hover" 
+                        onClick={() => setIsImportModalOpen(true)} 
+                        style={{ padding: '1.2rem', fontSize: '1.1rem', width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                      >
+                        <Download size={18} /> Import Shared Deck
                       </button>
                     </div>
                   )}
@@ -502,6 +516,11 @@ function App() {
           isOpen={isAddDeckModalOpen} 
           onClose={() => setIsAddDeckModalOpen(false)} 
           onDeckCreated={handleDeckCreated} 
+        />
+        <ImportSharedDeckModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onDeckImported={handleDeckImported}
         />
       </>
     );

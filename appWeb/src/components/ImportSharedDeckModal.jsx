@@ -15,13 +15,13 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported 
     const userEmail = localStorage.getItem('g_email');
     
     if (!googleId || !userEmail) {
-      setMessage({ type: 'error', text: 'Vui lòng đăng nhập Google Drive để tải bộ thẻ được chia sẻ.' });
+      setMessage({ type: 'error', text: 'Please login to Google Drive to download the shared deck.' });
       return;
     }
 
     const trimmedId = deckId.trim();
     if (!trimmedId) {
-      setMessage({ type: 'error', text: 'Vui lòng nhập Deck ID.' });
+      setMessage({ type: 'error', text: 'Please enter a Deck ID.' });
       return;
     }
 
@@ -37,7 +37,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported 
       }
 
       if (!result.data) {
-        throw new Error('Dữ liệu bộ thẻ tải về không hợp lệ.');
+        throw new Error('Downloaded deck data is invalid.');
       }
 
       // CLONE LOGIC
@@ -49,17 +49,16 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported 
       clonedDeck.created_at = now;
       clonedDeck.updated_at = now;
 
-      // Also reset any progress-related fields safely just in case they were embedded
-      // (Though progress is usually stored in Supabase under different tables, it's good practice)
+      // Reset progress
       if (clonedDeck.cards && Array.isArray(clonedDeck.cards)) {
         clonedDeck.cards = clonedDeck.cards.map(card => ({
           ...card,
-          status: 0, // Reset to unlearned
-          card_id: card.card_id || uuidv4() // Ensure cards have uuid if missing
+          status: 0,
+          card_id: card.card_id || uuidv4()
         }));
       }
 
-      setMessage({ type: 'success', text: 'Tải bộ thẻ thành công! Đang lưu vào thư viện của bạn...' });
+      setMessage({ type: 'success', text: 'Deck downloaded successfully! Saving to your library...' });
       
       setTimeout(() => {
         onDeckImported(clonedDeck);
@@ -70,7 +69,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported 
 
     } catch (err) {
       console.error(err);
-      setMessage({ type: 'error', text: 'Có lỗi xảy ra: ' + err.message });
+      setMessage({ type: 'error', text: 'An error occurred: ' + err.message });
     } finally {
       setIsImporting(false);
     }
@@ -101,7 +100,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported 
         </h2>
         
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-          Nhập mã Deck ID đã được chia sẻ với email của bạn để tải bản sao bộ thẻ về máy.
+          Enter the Deck ID shared with your email to download a clone of the deck to your library.
         </p>
 
         {message && (
@@ -123,7 +122,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported 
           type="text"
           value={deckId}
           onChange={(e) => setDeckId(e.target.value)}
-          placeholder="Nhập ID bộ thẻ..."
+          placeholder="Enter Deck ID..."
           style={{
             width: '100%', padding: '0.8rem 1rem', borderRadius: '12px',
             background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
@@ -139,7 +138,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported 
           style={{ padding: '0.8rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isImporting ? 0.7 : 1, width: '100%' }}
         >
           {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-          {isImporting ? 'Đang tải...' : 'Tải bộ thẻ'}
+          {isImporting ? 'Downloading...' : 'Download Deck'}
         </button>
       </div>
     </div>
