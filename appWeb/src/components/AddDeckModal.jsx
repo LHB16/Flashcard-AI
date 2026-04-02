@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
  * AddDeckModal — Create a new deck via Bulk Import or Manual Entry
  * Props: isOpen, onClose, onDeckCreated
  */
-export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
+export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImport }) {
   const [deckName, setDeckName] = useState('');
   const [activeTab, setActiveTab] = useState('bulk'); // 'bulk' | 'manual'
   
@@ -161,18 +161,28 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated }) {
             </div>
             <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)', fontWeight: 'bold' }}>Create New Deck</h2>
           </div>
-          <button 
-            onClick={() => {
-              if (window.confirm("Discard changes? All input data will be lost.")) {
-                resetState();
-                onClose();
-              }
-            }} 
-            className="btn btn-glass btn-icon"
-            style={{ borderRadius: '50%' }}
-          >
-            <X size={20} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <button 
+              onClick={onOpenImport} 
+              className="btn btn-glass" 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '12px', fontSize: '0.9rem', color: 'var(--primary)' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+              Import
+            </button>
+            <button 
+              onClick={() => {
+                if (window.confirm("Discard changes? All input data will be lost.")) {
+                  resetState();
+                  onClose();
+                }
+              }} 
+              className="btn btn-glass btn-icon"
+              style={{ borderRadius: '50%' }}
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Deck Name Input */}

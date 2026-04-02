@@ -3,6 +3,14 @@ import { Bell, Check, ExternalLink } from 'lucide-react';
 
 const NOTIFICATIONS = [
   {
+    id: 'notif_share_v1',
+    date: '2026-04-02',
+    icon: '🤝',
+    title: 'New: Share & Clone Decks',
+    desc: 'You can now share decks via email! Click here to learn how it works in the guide.',
+    link: '/guide.html#share-deck'
+  },
+  {
     id: 'notif_aiscan_v1',
     date: '2026-03-31',
     title: 'New: AI Scan Feature',
