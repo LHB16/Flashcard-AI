@@ -22,7 +22,9 @@ function App() {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('decks');
   const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
-  const [deckToDelete, setDeckToDelete] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedDecks, setSelectedDecks] = useState(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [pinnedDecks, setPinnedDecks] = useState(() => {
@@ -236,11 +238,57 @@ function App() {
     }
   };
 
+  const pressTimerRef = useRef(null);
+
+  const handleDeckPressStart = (deck) => {
+    if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
+    pressTimerRef.current = setTimeout(() => {
+      setIsSelectionMode(true);
+      selectDeck(deck);
+      pressTimerRef.current = null;
+    }, 500); // 500ms long press
+  };
+
+  const handleDeckPressEnd = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  };
+
+  const selectDeck = (deck) => {
+    setSelectedDecks(prev => {
+      const next = new Set(prev);
+      const id = deck.deck_id || deck.name;
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDeckClick = (deck, e) => {
+    if (isSelectionMode) {
+      // Allow checkbox toggle on click
+      e.preventDefault();
+      e.stopPropagation();
+      selectDeck(deck);
+    } else {
+      setSelectedDeck(deck);
+      setMode('home');
+    }
+  };
+
+  const cancelSelection = () => {
+    setIsSelectionMode(false);
+    setSelectedDecks(new Set());
+  };
+
   const confirmDeleteDeck = async () => {
-    if (!deckToDelete) return;
-    
     setIsDeleting(true);
-    const updatedDecks = data.filter(d => (d.deck_id || d.name) !== (deckToDelete.deck_id || deckToDelete.name));
+    const updatedDecks = data.filter(d => {
+        const id = d.deck_id || d.name;
+        return !selectedDecks.has(id);
+    });
     setData(updatedDecks);
 
     if (userLoggedIn) {
@@ -251,8 +299,9 @@ function App() {
       }
     }
 
-    setDeckToDelete(null);
+    setShowDeleteConfirm(false);
     setIsDeleting(false);
+    cancelSelection();
   };
 
   const syncTimeoutRef = useRef(null);
@@ -548,26 +597,48 @@ function App() {
                 return (
                 <div
                   key={deck.deck_id || idx}
-                  className="glass-panel glass-panel-hover"
-                  style={{ padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative' }}
-                  onClick={() => { setSelectedDeck(deck); setMode('home'); }}
+                  className={`glass-panel glass-panel-hover ${isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'selected' : ''}`}
+                  style={{ 
+                     padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative',
+                     transition: 'all 0.2s',
+                     border: isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? '1px solid #ef4444' : undefined,
+                     background: isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'rgba(239, 68, 68, 0.05)' : undefined
+                  }}
+                  onMouseDown={(e) => {
+                     // Only trigger long press if not clicking the pin button
+                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck);
+                  }}
+                  onMouseUp={() => !isSelectionMode && handleDeckPressEnd()}
+                  onMouseLeave={() => !isSelectionMode && handleDeckPressEnd()}
+                  onTouchStart={(e) => {
+                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck);
+                  }}
+                  onTouchEnd={() => !isSelectionMode && handleDeckPressEnd()}
+                  onClick={(e) => handleDeckClick(deck, e)}
+                  onContextMenu={(e) => {
+                      if (!isSelectionMode) {
+                          e.preventDefault(); // Prevent right click context menu if it helps mobile long press
+                      }
+                  }}
                 >
-                  {/* Delete button (top-left) */}
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setDeckToDelete(deck); }}
-                    style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', background: 'rgba(239, 68, 68, 0.1)', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '12px', display: 'flex', transition: 'all 0.2s', zIndex: 10 }}
-                    className="btn-icon delete-deck-btn relative group"
-                    title="Delete deck permanently"
-                  >
-                    <Trash2 size={20} color="#ef4444" style={{ transition: 'all 0.2s' }} />
-                  </button>
+                  {/* Selection Checkbox (top-left) */}
+                  {isSelectionMode && (
+                     <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 10 }}>
+                         <input 
+                           type="checkbox" 
+                           checked={selectedDecks.has(deck.deck_id || deck.name)}
+                           readOnly
+                           style={{ width: '20px', height: '20px', accentColor: '#ef4444', pointerEvents: 'none' }}
+                         />
+                     </div>
+                  )}
 
                   {/* Pin button (top-right) */}
                   {deck.deck_id && (
                     <button 
                       onClick={(e) => togglePin(deck.deck_id, e)}
                       style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', display: 'flex', zIndex: 10 }}
-                      className="btn-icon"
+                      className="btn-icon pin-btn"
                       title={isPinned ? "Unpin deck" : "Pin deck"}
                     >
                       {isPinned ? <Star size={24} color="#fbbf24" fill="#fbbf24" /> : <StarOff size={24} color="var(--text-muted)" />}
@@ -772,9 +843,9 @@ function App() {
         />
         
         {/* Delete Deck Confirmation Modal */}
-        {deckToDelete && (
+        {showDeleteConfirm && (
           <div className="animate-fade-in" style={{
-            position: 'fixed', inset: 0, zIndex: 2000,
+            position: 'fixed', inset: 0, zIndex: 3000,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
           }}>
@@ -789,14 +860,14 @@ function App() {
                   <AlertTriangle size={32} color="#ef4444" />
                 </div>
               </div>
-              <h2 style={{ fontSize: '1.25rem', textAlign: 'center', margin: '0 0 1rem', color: 'var(--text-main)' }}>Delete Deck?</h2>
+              <h2 style={{ fontSize: '1.25rem', textAlign: 'center', margin: '0 0 1rem', color: 'var(--text-main)' }}>Delete {selectedDecks.size} Deck{selectedDecks.size > 1 ? 's' : ''}?</h2>
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 2rem' }}>
-                Are you sure you want to permanently delete the deck <strong>"{deckToDelete.name || 'Unnamed Deck'}"</strong>? All flashcards inside will be lost. This action cannot be undone.
+                Are you sure you want to permanently delete the selected decks? All flashcards inside will be lost. This action cannot be undone.
               </p>
               
               <div style={{ display: 'flex', gap: '0.8rem' }}>
                 <button 
-                  onClick={() => setDeckToDelete(null)}
+                  onClick={() => setShowDeleteConfirm(false)}
                   disabled={isDeleting}
                   className="btn btn-glass"
                   style={{ flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold' }}
@@ -818,6 +889,42 @@ function App() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Selection Bar overlay on home */}
+        {mode === null && isSelectionMode && (
+          <div className="animate-fade-in" style={{
+            position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 1000,
+            background: 'var(--glass-bg)', backdropFilter: 'blur(12px)', border: '1px solid var(--glass-border)',
+            borderRadius: '24px', padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center', gap: '2rem',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.3)', width: '90%', maxWidth: '500px', justifyContent: 'space-between'
+          }}>
+            <button 
+              onClick={cancelSelection} 
+              className="btn btn-glass" 
+              style={{ border: 'none', padding: '0.6rem 1rem', fontWeight: 'bold' }}
+            >
+              Hủy
+            </button>
+            <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'center' }}>
+              Đã chọn <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
+            </div>
+            <button 
+              onClick={() => setShowDeleteConfirm(true)} 
+              disabled={selectedDecks.size === 0}
+              className="btn" 
+              style={{
+                 background: selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.1)',
+                 color: selectedDecks.size > 0 ? '#fff' : 'rgba(239, 68, 68, 0.4)',
+                 border: `1px solid ${selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.2)'}`,
+                 borderRadius: '12px', padding: '0.6rem 1rem', fontWeight: 'bold',
+                 cursor: selectedDecks.size > 0 ? 'pointer' : 'not-allowed',
+                 display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
+              }}
+            >
+              <Trash2 size={16} /> Xóa
+            </button>
           </div>
         )}
 
