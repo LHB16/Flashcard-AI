@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash } from 'lucide-react';
 import { findDuplicateQuestions } from '../services/dedupService';
 
 const CARDS_PER_PAGE = 30;
@@ -21,6 +21,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   const [dedupRunning, setDedupRunning] = useState(false);
   const [dedupPage, setDedupPage] = useState(0);
   const [dedupSelected, setDedupSelected] = useState(new Set());
+  const [editingCard, setEditingCard] = useState(null); // { index, data }
 
   const cards = deck?.cards || [];
 
@@ -259,14 +260,24 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                     ><X size={14} /></button>
                   </div>
                 ) : (
-                  <button
-                    className="btn-glass btn-icon"
-                    onClick={() => setDeleteConfirm(card._origIdx)}
-                    title="Delete card"
-                    style={{ color: '#ef4444', flexShrink: 0, padding: '0.4rem' }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flexShrink: 0 }}>
+                    <button
+                      className="btn-glass btn-icon"
+                      onClick={() => setDeleteConfirm(card._origIdx)}
+                      title="Delete card"
+                      style={{ color: '#ef4444', padding: '0.4rem' }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <button
+                      className="btn-glass btn-icon"
+                      onClick={() => setEditingCard({ index: card._origIdx, data: JSON.parse(JSON.stringify(deck.cards[card._origIdx])) })}
+                      title="Edit card"
+                      style={{ color: 'var(--primary)', padding: '0.4rem' }}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -431,6 +442,208 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
               )}
             </>
           )}
+        </div>
+      )}
+      {/* ─── EDIT MODAL ─── */}
+      {editingCard && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 10000, padding: '1rem'
+        }}>
+          <div className="glass-panel animate-fade-in" style={{
+            width: '100%', maxWidth: '650px', maxHeight: '90vh',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)'
+          }}>
+            {/* Modal Header */}
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Pencil size={20} color="var(--primary)" /> Edit Flashcard
+              </h3>
+              <button className="btn btn-glass btn-icon" onClick={() => {
+                if (window.confirm("Discard unsaved changes?")) setEditingCard(null);
+              }} style={{ padding: '0.4rem' }}><X size={20} /></button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Question */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase' }}>Question Content</label>
+                <textarea
+                  value={editingCard.data.question}
+                  onChange={e => setEditingCard(prev => ({ ...prev, data: { ...prev.data, question: e.target.value } }))}
+                  style={{
+                    width: '100%', minHeight: '100px', padding: '0.8rem', borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)',
+                    color: 'var(--text-main)', fontSize: '0.95rem', outline: 'none', resize: 'vertical'
+                  }}
+                  placeholder="Enter question text..."
+                />
+              </div>
+
+              {/* Type Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Question Type</span>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    const isMulti = editingCard.data.question_type === 'multiple_choice';
+                    const newData = { ...editingCard.data, question_type: isMulti ? 'single_choice' : 'multiple_choice' };
+                    // If switching to single, keep only the first correct answer if many exist
+                    if (isMulti && newData.correct_answers?.length > 1) {
+                      newData.correct_answers = [newData.correct_answers[0]];
+                    }
+                    setEditingCard(prev => ({ ...prev, data: newData }));
+                  }}
+                  style={{
+                    padding: '0.5rem 1.2rem', borderRadius: '10px', fontSize: '0.85rem',
+                    background: editingCard.data.question_type === 'multiple_choice' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                    color: editingCard.data.question_type === 'multiple_choice' ? '#f59e0b' : 'var(--success)',
+                    border: `1px solid ${editingCard.data.question_type === 'multiple_choice' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
+                  }}
+                >
+                  {editingCard.data.question_type === 'multiple_choice' ? 'Multiple Choice' : 'Single Choice'}
+                </button>
+              </div>
+
+              {/* Options */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Answers & Options</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {(editingCard.data.options || []).map((opt, idx) => {
+                    const letter = String.fromCharCode(65 + idx);
+                    const isCorrect = editingCard.data.correct_answers?.includes(letter);
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {/* Correct Selector */}
+                        <div
+                          onClick={() => {
+                            let newCorrect = [...(editingCard.data.correct_answers || [])];
+                            if (editingCard.data.question_type === 'multiple_choice') {
+                              if (isCorrect) newCorrect = newCorrect.filter(c => c !== letter);
+                              else newCorrect.push(letter);
+                            } else {
+                              newCorrect = [letter];
+                            }
+                            setEditingCard(prev => ({ ...prev, data: { ...prev.data, correct_answers: newCorrect } }));
+                          }}
+                          style={{
+                            width: '24px', height: '24px', borderRadius: '6px', border: '2px solid var(--glass-border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                            background: isCorrect ? 'var(--success)' : 'transparent',
+                            borderColor: isCorrect ? 'var(--success)' : 'var(--glass-border)',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {isCorrect && <CheckCircle2 size={16} color="white" />}
+                        </div>
+
+                        {/* Letter Prefix */}
+                        <span style={{ fontWeight: 700, color: 'var(--text-muted)', minWidth: '20px' }}>{letter}.</span>
+
+                        {/* Input */}
+                        <input
+                          type="text"
+                          value={opt.replace(/^[A-Z]\.\s+/, '')}
+                          onChange={e => {
+                            const newOpts = [...editingCard.data.options];
+                            newOpts[idx] = `${letter}. ${e.target.value}`;
+                            setEditingCard(prev => ({ ...prev, data: { ...prev.data, options: newOpts } }));
+                          }}
+                          style={{
+                            flex: 1, padding: '0.65rem 0.8rem', borderRadius: '10px',
+                            background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)',
+                            color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none'
+                          }}
+                        />
+
+                        {/* Delete Option */}
+                        {editingCard.data.options.length > 2 && (
+                          <button
+                            onClick={() => {
+                              const newOpts = editingCard.data.options.filter((_, i) => i !== idx);
+                              // Re-assign letters
+                              const finalOpts = newOpts.map((o, i) => `${String.fromCharCode(65 + i)}. ${o.replace(/^[A-Z]\.\s+/, '')}`);
+                              // Update correct answers (since letters shifted)
+                              // This is tricky — if we delete B, C becomes B.
+                              // For simplicity, we just keep the letters of remaining ones index-based
+                              const newCorrect = [];
+                              editingCard.data.correct_answers.forEach(c => {
+                                const oldIdx = c.charCodeAt(0) - 65;
+                                if (oldIdx < idx) newCorrect.push(c);
+                                else if (oldIdx > idx) newCorrect.push(String.fromCharCode(c.charCodeAt(0) - 1));
+                              });
+
+                              setEditingCard(prev => ({
+                                ...prev,
+                                data: { ...prev.data, options: finalOpts, correct_answers: newCorrect }
+                              }));
+                            }}
+                            className="btn btn-glass"
+                            style={{ padding: '0.5rem', color: '#f87171' }}
+                          >
+                            <Trash size={16} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Add Option Button */}
+                  {editingCard.data.options.length < 26 && (
+                    <button
+                      onClick={() => {
+                        const nextLetter = String.fromCharCode(65 + editingCard.data.options.length);
+                        const newOpts = [...editingCard.data.options, `${nextLetter}. `];
+                        setEditingCard(prev => ({ ...prev, data: { ...prev.data, options: newOpts } }));
+                      }}
+                      className="btn btn-glass"
+                      style={{
+                        padding: '0.65rem', borderRadius: '10px', borderStyle: 'dashed',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                        transition: 'all 0.2s', width: '100%' // sizing same as input layout basically
+                      }}
+                    >
+                      <Plus size={20} /> Add Option
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn-glass"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to discard changes?")) setEditingCard(null);
+                }}
+                style={{ padding: '0.7rem 1.5rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  if (!editingCard.data.question.trim()) {
+                    alert("Question content cannot be empty!");
+                    return;
+                  }
+                  if (window.confirm("Save changes to this flashcard?")) {
+                    deck.cards[editingCard.index] = editingCard.data;
+                    onDeckModified();
+                    setEditingCard(null);
+                  }
+                }}
+                style={{ padding: '0.7rem 2rem' }}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
