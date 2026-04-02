@@ -5,6 +5,7 @@ import QuizMode from './components/QuizMode';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import AIScan from './components/AIScan';
 import DeckManager from './components/DeckManager';
+import AddDeckModal from './components/AddDeckModal';
 import NotificationBell from './components/NotificationBell';
 import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive } from './services/driveSync';
@@ -20,6 +21,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('decks');
+  const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
 
   const [pinnedDecks, setPinnedDecks] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch(e) { return []; }
@@ -207,6 +209,29 @@ function App() {
 
     // Switch to decks tab
     setActiveTab('decks');
+  };
+
+  const handleDeckCreated = async (newDeck) => {
+    const updated = data ? [...data, newDeck] : [newDeck];
+    setData(updated);
+    
+    // Auto-select the newly created deck
+    setSelectedDeck(newDeck);
+    setMode('home');
+    
+    // Sync to Drive
+    if (userLoggedIn) {
+      setIsSyncing(true);
+      try {
+        const res = await uploadDecksToDrive(updated, driveFileId);
+        if (!driveFileId && res && res.id) {
+          setDriveFileId(res.id);
+        }
+      } catch (e) {
+        console.error('Error syncing new deck to Drive:', e);
+      }
+      setIsSyncing(false);
+    }
   };
 
   const syncTimeoutRef = useRef(null);
@@ -422,6 +447,19 @@ function App() {
                   title={!userLoggedIn ? 'Login to Google Drive first' : ''}
                 >
                   <Sparkles size={16} /> AI Scan
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setIsAddDeckModalOpen(true)}
+                  style={{ 
+                    padding: '0.4rem 1.25rem', 
+                    fontSize: '0.85rem', 
+                    height: '36px',
+                    marginLeft: 'auto',
+                    borderRadius: '10px'
+                  }}
+                >
+                  <Plus size={16} /> Add Deck
                 </button>
               </div>
 
@@ -685,6 +723,11 @@ function App() {
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
           {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
         </div>
+        <AddDeckModal 
+          isOpen={isAddDeckModalOpen} 
+          onClose={() => setIsAddDeckModalOpen(false)} 
+          onDeckCreated={handleDeckCreated} 
+        />
       </main>
     </>
   );
