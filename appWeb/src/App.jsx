@@ -585,21 +585,6 @@ function App() {
                   <Sparkles size={16} /> AI Scan
                 </button>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                  {userLoggedIn && (
-                    <button
-                      className="btn btn-glass"
-                      onClick={() => setIsImportModalOpen(true)}
-                      style={{ 
-                        padding: '0.4rem 1rem', 
-                        fontSize: '0.85rem', 
-                        height: '36px',
-                        borderRadius: '10px'
-                      }}
-                      title="Import a shared deck"
-                    >
-                      <Download size={16} /> Import
-                    </button>
-                  )}
                   <button
                     className="btn btn-primary"
                     onClick={() => setIsAddDeckModalOpen(true)}
