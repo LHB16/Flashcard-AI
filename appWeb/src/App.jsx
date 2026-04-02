@@ -569,9 +569,14 @@ function App() {
                 </div>
                 <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   {userLoggedIn && (
-                    <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Cloud size={14} /> Synced {displayName && `(${displayName})`}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Cloud size={14} /> Synced {displayName && `(${displayName})`}
+                      </span>
+                      <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ padding: '0.4rem', border: 'none', color: 'var(--danger)' }} title="Logout">
+                        <CloudOff size={16} />
+                      </button>
+                    </div>
                   )}
                   <NotificationBell />
                   <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
@@ -912,17 +917,22 @@ function App() {
               </div>
               <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 {userLoggedIn && (
-                  <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
+                    </span>
+                    <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ padding: '0.4rem', border: 'none', color: 'var(--danger)' }} title="Logout">
+                      <CloudOff size={16} />
+                    </button>
+                  </div>
                 )}
                 <NotificationBell />
                 <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                   {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
-                {data && data.length > 1 && (
+                {data && (
                   <button className="btn btn-glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => { setSelectedDeck(null); setMode(null); }}>
-                    Switch Deck
+                    {data.length > 1 ? 'Switch Deck' : 'My Decks'}
                   </button>
                 )}
               </div>
