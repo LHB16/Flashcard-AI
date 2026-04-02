@@ -159,17 +159,10 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           {cards.length} cards · {multiCount} multi · {singleCount} single
         </span>
-        <button 
-          className="btn btn-glass" 
-          onClick={() => setTab('share')}
-          style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '10px' }}
-        >
-          <Share2 size={16} color="var(--primary)" /> Share
-        </button>
       </div>
 
-      {/* Tab Bar - Hidden in Edit or Share Mode */}
-      {(tab !== 'edit' && tab !== 'share') && (
+      {/* Tab Bar - Hidden in Edit Mode only */}
+      {(tab !== 'edit') && (
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <button
             className={`btn ${tab === 'view' ? 'btn-primary' : 'btn-glass'}`}
@@ -184,6 +177,13 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
           >
             🔍 Check Duplicates
+          </button>
+          <button
+            className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
+            onClick={() => setTab('share')}
+            style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            🤝 Share Deck
           </button>
         </div>
       )}

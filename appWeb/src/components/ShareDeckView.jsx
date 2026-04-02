@@ -74,28 +74,11 @@ export default function ShareDeckView({ deck, onBack }) {
   };
 
   return (
-    <div className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div className="glass-panel" style={{ 
-        padding: '1rem 1.5rem', borderRadius: '24px', 
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--card-bg)' 
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button 
-            className="btn btn-glass btn-icon" 
-            onClick={onBack}
-            title="Back to list"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h3 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Send size={20} color="var(--primary)" /> Share "{deck?.name}"
-          </h3>
-        </div>
-      </div>
-
-      <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column' }}>
+    <div className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Send size={20} color="var(--primary)" /> Share "{deck?.name}"
+        </h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
           Recipients will receive a standalone clone of this deck. Their future changes will not affect your original deck.
         </p>
