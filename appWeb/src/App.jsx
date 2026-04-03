@@ -571,6 +571,16 @@ function App() {
           onClose={() => setIsImportModalOpen(false)}
           onDeckImported={handleDeckImported}
         />
+        <ConfirmationModal
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmConfig.onConfirm}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          confirmText={confirmConfig.confirmText}
+          type={confirmConfig.type}
+          icon={confirmConfig.icon}
+        />
       </>
     );
   }
@@ -1121,6 +1131,16 @@ function App() {
 
 
       </main>
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        icon={confirmConfig.icon}
+      />
     </>
   );
 }
