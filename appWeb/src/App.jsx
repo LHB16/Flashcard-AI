@@ -700,7 +700,7 @@ function App() {
             <div style={{ 
               display: 'flex', 
               justifyContent: 'center', 
-              marginTop: isHeaderCollapsed ? '0' : '-32px',
+              marginTop: isHeaderCollapsed ? '0' : '-16px',
               zIndex: 106,
               position: 'relative',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -974,7 +974,7 @@ function App() {
           <div style={{ 
             display: 'flex', 
             justifyContent: 'center', 
-            marginTop: isHeaderCollapsed ? '0' : '-32px',
+            marginTop: isHeaderCollapsed ? '0' : '-16px',
             zIndex: 106,
             position: 'relative',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
