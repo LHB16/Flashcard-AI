@@ -410,35 +410,27 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
     const pct = total > 0 ? Math.round((known / total) * 100) : 0;
 
     return (
-      <>
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', padding: '1rem 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%', marginBottom: '1.5rem' }}>
-            <button className="btn btn-glass" onClick={onBack}>
-              <ArrowLeft size={18} /> Select Deck
-            </button>
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', padding: '1rem 0' }}>
+        <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', width: '100%', maxWidth: '500px' }}>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', color: 'var(--text-main)' }}>Results</h2>
+          <div style={{ fontSize: '4rem', margin: '1rem 0' }}>
+            {pct >= 70 ? '🎉' : pct >= 50 ? '😐' : '😓'}
           </div>
-
-          <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', width: '100%', maxWidth: '500px' }}>
-            <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', color: 'var(--text-main)' }}>Results</h2>
-            <div style={{ fontSize: '4rem', margin: '1rem 0' }}>
-              {pct >= 70 ? '🎉' : pct >= 50 ? '😐' : '😓'}
-            </div>
-            <div style={{ fontSize: '3.5rem', fontWeight: '900', color: pct >= 70 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)', marginBottom: '1rem' }}>
-              {pct}%
-            </div>
-            <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
-              ✅ Known: <strong style={{ color: 'var(--success)', fontSize: '1.2rem' }}>{known}</strong> &nbsp;  ❌ Unknown: <strong style={{ color: 'var(--danger)', fontSize: '1.2rem' }}>{unknown}</strong>
-            </p>
-
-            <button className="btn" style={{ background: 'var(--primary)', color: 'white', padding: '1rem', width: '100%', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', cursor: 'pointer' }} onClick={restartStudy}>
-              🔄 Study again
-            </button>
-            <button className="btn btn-glass" style={{ width: '100%', padding: '1rem' }} onClick={onBack}>
-              🏠 Go Back
-            </button>
+          <div style={{ fontSize: '3.5rem', fontWeight: '900', color: pct >= 70 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)', marginBottom: '1rem' }}>
+            {pct}%
           </div>
+          <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
+            ✅ Known: <strong style={{ color: 'var(--success)', fontSize: '1.2rem' }}>{known}</strong> &nbsp;  ❌ Unknown: <strong style={{ color: 'var(--danger)', fontSize: '1.2rem' }}>{unknown}</strong>
+          </p>
+
+          <button className="btn" style={{ background: 'var(--primary)', color: 'white', padding: '1rem', width: '100%', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', cursor: 'pointer' }} onClick={restartStudy}>
+            Try again
+          </button>
+          <button className="btn btn-glass" style={{ width: '100%', padding: '1rem' }} onClick={onBack}>
+            Choose Another Mode
+          </button>
         </div>
-      </>
+      </div>
     );
   }
 

@@ -440,7 +440,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig })
     const pct = cards.length > 0 ? Math.round((score / cards.length) * 100) : 0;
     return (
       <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center', maxWidth: '600px', margin: '4rem auto' }}>
-        <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem' }} className="text-gradient">Quiz Completed!</h2>
+        <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem' }} className="text-gradient">Results</h2>
         <div style={{ fontSize: '4rem', margin: '1rem 0' }}>
           {pct >= 70 ? '🎉' : pct >= 50 ? '😐' : '😓'}
         </div>
@@ -451,8 +451,8 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig })
           ✅ Correct: <strong style={{ color: 'var(--success)' }}>{score}</strong> &nbsp; ❌ Wrong: <strong style={{ color: 'var(--danger)' }}>{wrongCount}</strong> &nbsp; / &nbsp; {cards.length} questions
         </p>
         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
-          <button className="btn btn-glass" onClick={resetQuiz}>Study again</button>
-          <button className="btn btn-primary" onClick={onBack}>Go to Home</button>
+          <button className="btn btn-glass" onClick={resetQuiz}>Try again</button>
+          <button className="btn btn-primary" onClick={onBack}>Choose Another Mode</button>
         </div>
       </div>
     );
