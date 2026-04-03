@@ -1020,39 +1020,53 @@ return (
 
 ---
 
-### 4.14 Critical Stability & Sync Fixes (2026-04-03)
+### 4.14 Frontend Developer Guidelines & Pitfalls
 
-#### 4.14.1 Root Cause A — Missing React Hooks Imports
+This section documents critical development rules established on **2026-04-03** to ensure application stability and proper cross-device synchronization.
 
-When `ConfirmationModal` support was added to `QuizMode.jsx`, `FlashcardMode.jsx`, and `AddDeckModal.jsx` (commit `14a27a5`), the original `import React, { useState, ... }` line in each file was accidentally removed or truncated.
+#### 4.14.1 Explicit Hook Imports (Avoiding "White Screen" Crashes)
 
-- **The White Screen**: `React.memo()` or hooks used at module/component scope threw a `ReferenceError: React is not defined` immediately during import.
-- **Affected Files & Hooks**:
-  - `QuizMode.jsx`: Missing `useCallback`.
-  - `FlashcardMode.jsx`: Missing `useCallback`.
-  - `AddDeckModal.jsx`: Missing `useState`.
+While the automatic JSX transform handles `<JSX />` syntax without requiring `import React`, it **does not** provide React's globals or hooks.
 
-#### 4.14.2 Root Cause B — Missing Modals in Result Screens
+- **The Pitfall**: Using `React.memo()`, `useState`, `useEffect`, `useRef`, or `useCallback` without an explicit import from the `'react'` package. This causes a `ReferenceError` at module evaluation scope, crashing the entire React tree before it can mount (resulting in a blank page with no errors in the console).
+- **The Rule**: Every component file **must** include an explicit import for every React feature it uses:
+  ```js
+  import React, { useState, useEffect, useCallback, useRef } from 'react';
+  ```
 
-Both `QuizMode` and `FlashcardMode` use an "early return" pattern to show the results screen when `isFinished` or `done` is true.
+#### 4.14.2 Modal Placement in Conditional/Early Returns
 
-- **The Bug**: The `<ConfirmationModal />` was only placed in the *main* return block of the component. When the component returned the results screen early, the modal was not rendered in the DOM.
-- **Symptom**: Clicking "Study again" (which calls `resetQuiz` → opens modal) did nothing visually because the modal component wasn't there to receive the `isOpen` state.
-- **Fix**: Wrapped the results screen in a React Fragment (`<>...</>`) and added the `<ConfirmationModal />` instance to the bottom of the fragment.
+The application uses an "Early Return" pattern to show specialized states (e.g., the Quiz/Flashcard results screens).
 
-#### 4.14.3 Root Cause C — Persistent Session Recovery
+- **The Pitfall**: Placing global UI elements like `<ConfirmationModal />` only in the main return block. If the component returns a different UI branch early, the modal will not be rendered in the DOM, making functions that depend on it (like "Study Again" confirmation) completely unresponsive.
+- **The Rule**: Global modals must either be placed in a high-level wrapper or duplicated into every possible return path using React Fragments (`<>...</>`):
+  ```jsx
+  if (isFinished) {
+    return (
+      <>
+        <ResultsUI />
+        <ConfirmationModal {...props} />
+      </>
+    );
+  }
+  ```
 
-The `resetQuiz` function originally only cleared local state (`score`, `answers`, etc.).
+#### 4.14.3 Study Session Reset Logic (Sync Integrity)
 
-- **The Bug**: If a user finished a quiz (all answers saved to Supabase) and clicked "Study again", the local state reset. However, upon refreshing the page, the `useEffect` would fetch the existing (finished) session from the backend. Since `answers.length >= cards.length`, it would immediately set `isFinished(true)`, preventing the user from actually restarting the quiz.
-- **Fix**: Updated `resetQuiz` to call `POST /progress/deck/on-modified` with `action: 'reset'`. This deletes the `quiz_sessions` row for that user/deck on the server, ensuring a clean start.
+Clearing local state is insufficient for features that rely on persistent backend synchronization (Supabase).
 
-#### 4.14.4 Prevention Rules
+- **The Pitfall**: Resetting only the local state variables when the user restarts a study session. Upon page refresh, the component will re-fetch the previous (completed) session from the database and immediately lock the user back into the "Finished" state.
+- **The Rule**: When resetting a study session, you **must** call the backend reset endpoint to clear the remote record:
+  ```js
+  // Example in QuizMode.jsx resetQuiz()
+  fetch(`${BACKEND_URL}/progress/deck/on-modified`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ google_id, deck_id, action: 'reset' })
+  });
+  ```
 
-> [!IMPORTANT]
-> **Hook Import Rule**: Any file using `React.memo()`, `React.createContext()`, or any hook (`useState`, `useEffect`, `useCallback`, etc.) **must** explicitly import them from `'react'`.
->
-> **Modal Rule**: If a component uses an early return for a specific state (like results), the `ConfirmationModal` **must** be rendered in *both* the early return block and the main block (or placed in a wrapper) to ensure it stays mounted and functional.
+---
 
 ---
 
