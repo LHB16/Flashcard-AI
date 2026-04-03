@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.3 | **Last Updated:** 2026-04-03 | **Status:** Complete
+> **Version:** 2.4 | **Last Updated:** 2026-04-03 | **Status:** Stable
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -977,7 +977,31 @@ setConfirmConfig({
 />
 ```
 
-> **Rule:** `ConfirmationModal` instances must be placed **outside** all conditional rendering branches (at the root level of `App.jsx`'s return block), so they remain mounted regardless of the current screen state.
+**Pattern C — Early Return Fragment** (used in `QuizMode.jsx` and `FlashcardMode.jsx`):
+
+Because these components return a completely different screen when the study session is finished, the `ConfirmationModal` must be rendered within a fragment alongside both the main UI and the results screen.
+
+```jsx
+// QuizMode.jsx simplified
+if (isFinished) {
+  return (
+    <>
+      <ResultsUI score={score} onReset={resetQuiz} />
+      <ConfirmationModal {...confirmConfig} />
+    </>
+  );
+}
+
+return (
+  <>
+    <StudyUI onReset={resetQuiz} />
+    <ConfirmationModal {...confirmConfig} />
+  </>
+);
+```
+
+> [!WARNING]
+> **Modal Rule**: `ConfirmationModal` instances must be mounted at the root level of the component's (or app's) return block. For components with early returns (like `QuizMode`), the modal **must** be duplicated in both return paths or wrapped in a higher-order fragment to ensure it remains functional.
 
 #### 4.13.4 Locations Replaced
 
@@ -991,57 +1015,46 @@ setConfirmConfig({
 | `DeckManager.jsx` | `window.confirm` (delete card) | Trash icon on card |
 | `DeckManager.jsx` | `window.confirm` (discard edit) | Back arrow in edit form |
 | `DeckManager.jsx` | `alert` (invalid card data) | Save card validation |
+| `QuizMode.jsx` | `window.confirm` | Reset / Study again |
+| `FlashcardMode.jsx` | `window.confirm` | Reset / Study again |
 
 ---
 
-### 4.14 Critical Bug Fix — Missing React Imports (2026-04-03)
+### 4.14 Critical Stability & Sync Fixes (2026-04-03)
 
-#### 4.14.1 Root Cause
+#### 4.14.1 Root Cause A — Missing React Hooks Imports
 
-When `ConfirmationModal` support was added to `QuizMode.jsx`, `FlashcardMode.jsx`, and `AddDeckModal.jsx` (commit `14a27a5`), the original `import React, { useState, ... }` line in each file was accidentally removed. The files were left with only the new lucide-react and ConfirmationModal imports.
+When `ConfirmationModal` support was added to `QuizMode.jsx`, `FlashcardMode.jsx`, and `AddDeckModal.jsx` (commit `14a27a5`), the original `import React, { useState, ... }` line in each file was accidentally removed or truncated.
 
-```js
-// BROKEN — QuizMode.jsx after commit 14a27a5
-import { ArrowLeft, ChevronLeft, ... } from 'lucide-react';
-import ConfirmationModal from './ConfirmationModal';
+- **The White Screen**: `React.memo()` or hooks used at module/component scope threw a `ReferenceError: React is not defined` immediately during import.
+- **Affected Files & Hooks**:
+  - `QuizMode.jsx`: Missing `useCallback`.
+  - `FlashcardMode.jsx`: Missing `useCallback`.
+  - `AddDeckModal.jsx`: Missing `useState`.
 
-// Line 6 — crashes immediately at module evaluation:
-const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
-  //                ^^^^^^^^^^^ ReferenceError: React is not defined
-```
+#### 4.14.2 Root Cause B — Missing Modals in Result Screens
 
-#### 4.14.2 Why It Caused a White Screen
+Both `QuizMode` and `FlashcardMode` use an "early return" pattern to show the results screen when `isFinished` or `done` is true.
 
-`@vitejs/plugin-react` uses the **React 17+ automatic JSX transform**, which eliminates the need for `import React` in JSX files for JSX syntax alone. However, **it does NOT inject the `React` global**.
+- **The Bug**: The `<ConfirmationModal />` was only placed in the *main* return block of the component. When the component returned the results screen early, the modal was not rendered in the DOM.
+- **Symptom**: Clicking "Study again" (which calls `resetQuiz` → opens modal) did nothing visually because the modal component wasn't there to receive the `isOpen` state.
+- **Fix**: Wrapped the results screen in a React Fragment (`<>...</>`) and added the `<ConfirmationModal />` instance to the bottom of the fragment.
 
-When `App.jsx` imports `QuizMode`, the `React.memo(...)` call at module scope executes immediately during the import chain. This throws a `ReferenceError` before any component has a chance to mount. React's error boundaries cannot catch errors that occur during module evaluation — the entire app tree stays unmounted, resulting in an empty `<div id="root">` and a visually blank page with **no error shown in the console**.
+#### 4.14.3 Root Cause C — Persistent Session Recovery
 
-#### 4.14.3 Affected Files
+The `resetQuiz` function originally only cleared local state (`score`, `answers`, etc.).
 
-| File | Missing Imports | Usage in File |
-| :--- | :--- | :--- |
-| `QuizMode.jsx` | `React`, `useState`, `useEffect`, `useRef`, `useCallback` | `React.memo()`, all hooks |
-| `FlashcardMode.jsx` | `React`, `useState`, `useEffect`, `useRef` | All hooks |
-| `AddDeckModal.jsx` | `React`, `useState` | All hooks |
+- **The Bug**: If a user finished a quiz (all answers saved to Supabase) and clicked "Study again", the local state reset. However, upon refreshing the page, the `useEffect` would fetch the existing (finished) session from the backend. Since `answers.length >= cards.length`, it would immediately set `isFinished(true)`, preventing the user from actually restarting the quiz.
+- **Fix**: Updated `resetQuiz` to call `POST /progress/deck/on-modified` with `action: 'reset'`. This deletes the `quiz_sessions` row for that user/deck on the server, ensuring a clean start.
 
-#### 4.14.4 Fix Applied
+#### 4.14.4 Prevention Rules
 
-Added the missing import line at the top of each affected file:
+> [!IMPORTANT]
+> **Hook Import Rule**: Any file using `React.memo()`, `React.createContext()`, or any hook (`useState`, `useEffect`, `useCallback`, etc.) **must** explicitly import them from `'react'`.
+>
+> **Modal Rule**: If a component uses an early return for a specific state (like results), the `ConfirmationModal` **must** be rendered in *both* the early return block and the main block (or placed in a wrapper) to ensure it stays mounted and functional.
 
-```js
-// QuizMode.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-
-// FlashcardMode.jsx
-import React, { useState, useEffect, useRef } from 'react';
-
-// AddDeckModal.jsx
-import React, { useState } from 'react';
-```
-
-#### 4.14.5 Prevention Rule
-
-> **Rule for this codebase:** While the automatic JSX transform handles `<JSX />` syntax, any file that uses `React.memo()`, `React.createContext()`, `React.forwardRef()`, or any hook (`useState`, `useEffect`, etc.) **must** explicitly import them from `'react'`. The automatic transform does NOT provide these as globals.
+---
 
 ---
 
