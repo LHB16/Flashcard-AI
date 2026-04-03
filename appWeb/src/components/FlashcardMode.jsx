@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw, Check, X } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 
 const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
@@ -498,7 +498,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
       {/* Score Pills */}
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '2rem', alignItems: 'center', padding: '0 1rem' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--glass-bg)', padding: '0.4rem 1rem', borderRadius: '20px' }}>
-          <span style={{ fontSize: '1.1rem' }}>❌</span>
+          <X size={20} color="var(--danger)" strokeWidth={2.5} />
           <span style={{ color: 'var(--danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{unknown}</span>
         </div>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', flex: 1, textAlign: 'center' }}>
@@ -506,7 +506,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
         </span>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--glass-bg)', padding: '0.4rem 1rem', borderRadius: '20px' }}>
           <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.2rem' }}>{known}</span>
-          <span style={{ fontSize: '1.1rem' }}>✅</span>
+          <Check size={20} color="var(--success)" strokeWidth={2.5} />
         </div>
       </div>
 
@@ -573,14 +573,14 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', width: '100%' }}>
-        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
-          <span style={{ fontSize: '2rem', display: 'block' }}>❌</span>
+        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
+          <X size={32} color="var(--danger)" strokeWidth={3} />
         </button>
         <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Previous Card (R)">
           <RotateCcw size={24} />
         </button>
-        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
-          <span style={{ fontSize: '2rem', display: 'block' }}>✅</span>
+        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
+          <Check size={32} color="var(--success)" strokeWidth={3} />
         </button>
       </div>
 

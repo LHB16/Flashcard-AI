@@ -503,8 +503,8 @@ function App() {
                   {userLoggedIn ? (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', borderColor: 'rgba(16, 185, 129, 0.4)', position: 'relative' }}>
-                        <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ position: 'absolute', right: '1rem', top: '1rem', padding: '0.5rem', border: 'none', color: 'var(--danger)' }} title="Logout">
-                          <CloudOff size={18} />
+                        <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ position: 'absolute', right: '1rem', top: '1rem', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
+                          <CloudOff size={18} strokeWidth={2} />
                         </button>
                         <Check size={48} color="var(--success)" style={{ marginBottom: '1.5rem', margin: '0 auto' }} />
                         <h3 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>Connected to Google Drive</h3>
@@ -631,8 +631,8 @@ function App() {
                       <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <Cloud size={14} /> Synced {displayName && `(${displayName})`}
                       </span>
-                      <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ padding: '0.4rem', border: 'none', color: 'var(--danger)' }} title="Logout">
-                        <CloudOff size={16} />
+                      <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
+                        <CloudOff size={16} strokeWidth={2} />
                       </button>
                     </div>
                   )}
@@ -950,8 +950,8 @@ function App() {
                     <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
                     </span>
-                    <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ padding: '0.4rem', border: 'none', color: 'var(--danger)' }} title="Logout">
-                      <CloudOff size={16} />
+                    <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
+                      <CloudOff size={16} strokeWidth={2} />
                     </button>
                   </div>
                 )}
