@@ -13,7 +13,7 @@ const DEDUP_PAIRS_PER_PAGE = 15;
  * DeckManager — View/Delete cards + Check Duplicates
  * Props: deck, onBack, onDeckModified
  */
-export default function DeckManager({ deck, onBack, onDeckModified }) {
+export default function DeckManager({ deck, onBack, onDeckModified, setConfirmConfig }) {
   const [tab, setTab] = useState('view'); // 'view' | 'dedup'
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -26,15 +26,6 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
   const [dedupPage, setDedupPage] = useState(0);
   const [dedupSelected, setDedupSelected] = useState(new Set());
   const [editingCard, setEditingCard] = useState(null); // { index, data }
-  const [confirmConfig, setConfirmConfig] = useState({ 
-    isOpen: false, 
-    title: '', 
-    description: '', 
-    confirmText: '', 
-    type: 'warning', 
-    icon: AlertTriangle, 
-    onConfirm: () => {} 
-  });
 
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
@@ -75,16 +66,23 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
 
   const handleDeleteSelected = useCallback(() => {
     if (!selectedCards.size) return;
-    const indices = new Set(selectedCards);
-    
-    // Invalidate quiz sessions (too complex to surgical delete many)
-    notifyDeckStructureChanged(deckIdToSync, null, 'delete_multiple');
-
-    // Immutable update: filter out all cards whose indices are in the selection set
-    deck.cards = deck.cards.filter((_, idx) => !indices.has(idx));
-    setSelectedCards(new Set());
-    onDeckModified();
-  }, [deck, selectedCards, onDeckModified]);
+    setConfirmConfig({
+      isOpen: true,
+      title: `Delete ${selectedCards.size} Card${selectedCards.size > 1 ? 's' : ''}?`,
+      description: `Are you sure you want to delete ${selectedCards.size} selected card${selectedCards.size > 1 ? 's' : ''}? This action cannot be undone.`,
+      confirmText: 'Delete',
+      type: 'danger',
+      icon: Trash2,
+      onConfirm: () => {
+        const indices = new Set(selectedCards);
+        notifyDeckStructureChanged(deckIdToSync, null, 'delete_multiple');
+        deck.cards = deck.cards.filter((_, idx) => !indices.has(idx));
+        setSelectedCards(new Set());
+        onDeckModified();
+        closeConfirm();
+      }
+    });
+  }, [deck, selectedCards, onDeckModified, deckIdToSync]);
 
   const toggleSelectCard = useCallback((origIdx) => {
     setSelectedCards(prev => {
@@ -268,20 +266,14 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
               <div
                 key={card._origIdx}
                 className="glass-panel"
+                onClick={() => toggleSelectCard(card._origIdx)}
                 style={{
                   padding: '0.8rem 1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.8rem',
                   borderColor: selectedCards.has(card._origIdx) ? 'rgba(239, 68, 68, 0.5)' : undefined,
                   background: selectedCards.has(card._origIdx) ? 'rgba(239, 68, 68, 0.05)' : undefined,
+                  cursor: 'pointer', transition: 'all 0.15s',
                 }}
               >
-                {/* Checkbox */}
-                <input
-                  type="checkbox"
-                  checked={selectedCards.has(card._origIdx)}
-                  onChange={() => toggleSelectCard(card._origIdx)}
-                  style={{ marginTop: '0.3rem', cursor: 'pointer', accentColor: '#ef4444' }}
-                />
-
                 {/* Badge */}
                 <div style={{
                   minWidth: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -294,6 +286,14 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                 {/* Content */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                    {/* Checkbox before question */}
+                    <input
+                      type="checkbox"
+                      checked={selectedCards.has(card._origIdx)}
+                      onChange={(e) => { e.stopPropagation(); toggleSelectCard(card._origIdx); }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ cursor: 'pointer', accentColor: '#ef4444' }}
+                    />
                     <span style={{
                       fontSize: '0.7rem', padding: '0.1rem 0.5rem', borderRadius: '4px', fontWeight: 600,
                       background: card.question_type === 'multiple_choice' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
@@ -586,7 +586,8 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
                     const newCards = [...deck.cards];
                     if (isNew) {
                       newCards.push(editingCard.data);
-                      await notifyDeckStructureChanged(deckIdToSync, null, 'add');
+                      // Don't reset quiz progress — new cards are appended at the end
+                      // and don't affect existing answer indices
                     } else {
                       const updatedCard = { ...editingCard.data, status: 0 };
                       newCards[editingCard.index] = updatedCard;
@@ -770,17 +771,7 @@ export default function DeckManager({ deck, onBack, onDeckModified }) {
           onBack={() => setTab('view')} 
         />
       )}
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={confirmConfig.isOpen}
-        onClose={closeConfirm}
-        onConfirm={confirmConfig.onConfirm}
-        title={confirmConfig.title}
-        description={confirmConfig.description}
-        confirmText={confirmConfig.confirmText}
-        type={confirmConfig.type}
-        icon={confirmConfig.icon}
-      />
+
     </div>
   );
 }

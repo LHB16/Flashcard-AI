@@ -165,7 +165,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
       description: "Are you sure you want to reset all progress for this deck? This action cannot be undone.",
       confirmText: "Reset",
       type: "danger",
-      icon: RotateCw,
+      icon: RotateCcw,
       onConfirm: () => {
         cards.forEach(c => c.status = 0);
         if (onDeckModified) onDeckModified();
