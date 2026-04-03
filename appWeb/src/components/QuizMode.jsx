@@ -4,7 +4,7 @@ import ConfirmationModal from './ConfirmationModal';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
+const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig }) => {
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -18,16 +18,6 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [isLoading, setIsLoading] = useState(true);
   const [focusedIdx, setFocusedIdx] = useState(-1);
-
-  const [confirmConfig, setConfirmConfig] = useState({
-    isOpen: false,
-    title: '',
-    description: '',
-    confirmText: '',
-    type: 'warning',
-    icon: AlertTriangle,
-    onConfirm: () => {}
-  });
 
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
@@ -722,16 +712,6 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
         </div>
       )}
       {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={confirmConfig.isOpen}
-        onClose={closeConfirm}
-        onConfirm={confirmConfig.onConfirm}
-        title={confirmConfig.title}
-        description={confirmConfig.description}
-        confirmText={confirmConfig.confirmText}
-        type={confirmConfig.type}
-        icon={confirmConfig.icon}
-      />
     </div>
   );
 });

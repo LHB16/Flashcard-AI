@@ -565,6 +565,7 @@ function App() {
           onClose={() => setIsAddDeckModalOpen(false)} 
           onDeckCreated={handleDeckCreated} 
           onOpenImport={() => { setIsAddDeckModalOpen(false); setIsImportModalOpen(true); }}
+          setConfirmConfig={setConfirmConfig}
         />
         <ImportSharedDeckModal
           isOpen={isImportModalOpen}
@@ -869,6 +870,7 @@ function App() {
           onClose={() => setIsAddDeckModalOpen(false)} 
           onDeckCreated={handleDeckCreated} 
           onOpenImport={() => { setIsAddDeckModalOpen(false); setIsImportModalOpen(true); }}
+          setConfirmConfig={setConfirmConfig}
         />
         <ImportSharedDeckModal
           isOpen={isImportModalOpen}
@@ -1067,8 +1069,8 @@ function App() {
             </div>
           )}
 
-          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
-          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
+          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
+          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
           {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} />}
         </div>
@@ -1076,6 +1078,7 @@ function App() {
           isOpen={isAddDeckModalOpen} 
           onClose={() => setIsAddDeckModalOpen(false)} 
           onDeckCreated={handleDeckCreated} 
+          setConfirmConfig={setConfirmConfig}
         />
         
         {/* Delete Deck Confirmation Modal */}

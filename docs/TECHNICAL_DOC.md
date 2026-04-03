@@ -1034,22 +1034,12 @@ While the automatic JSX transform handles `<JSX />` syntax without requiring `im
   import React, { useState, useEffect, useCallback, useRef } from 'react';
   ```
 
-#### 4.14.2 Modal Placement in Conditional/Early Returns
+#### 4.14.2 Modal Awareness Across UI Branches
 
-The application uses an "Early Return" pattern to show specialized states (e.g., the Quiz/Flashcard results screens).
+The application uses multiple top-level `return` branches (e.g., for Login, Deck List, and Study Modes).
 
-- **The Pitfall**: Placing global UI elements like `<ConfirmationModal />` only in the main return block. If the component returns a different UI branch early, the modal will not be rendered in the DOM, making functions that depend on it (like "Study Again" confirmation) completely unresponsive.
-- **The Rule**: Global modals must either be placed in a high-level wrapper or duplicated into every possible return path using React Fragments (`<>...</>`):
-  ```jsx
-  if (isFinished) {
-    return (
-      <>
-        <ResultsUI />
-        <ConfirmationModal {...props} />
-      </>
-    );
-  }
-  ```
+- **The Pitfall**: Global UI elements like `<ConfirmationModal />` (confirmConfig) must be rendered in **every** branch to remain functional. In earlier versions, clicking "Logout" in a study mode did nothing because the modal was only rendered in the "Select a Deck" branch.
+- **The Rule**: Any global modal state (Logout, bulk delete, etc.) **must** have its component instances duplicated across all main `return` fragments of `App.jsx`. This ensures the modal animates correctly over the *current* active screen instead of requiring a transition back to the home screen.
 
 #### 4.14.3 Study Session Reset Logic (Sync Integrity)
 

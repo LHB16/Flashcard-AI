@@ -7,7 +7,7 @@ import ConfirmationModal from './ConfirmationModal';
  * AddDeckModal — Create a new deck via Bulk Import or Manual Entry
  * Props: isOpen, onClose, onDeckCreated
  */
-export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImport }) {
+export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImport, setConfirmConfig }) {
   const [deckName, setDeckName] = useState('');
   const [activeTab, setActiveTab] = useState('bulk'); // 'bulk' | 'manual'
   
@@ -21,16 +21,6 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
     options: ['A. ', 'B. '],
     correct_answers: ['A'],
     question_type: 'single_choice'
-  });
-
-  const [confirmConfig, setConfirmConfig] = useState({
-    isOpen: false,
-    title: '',
-    description: '',
-    confirmText: '',
-    type: 'warning',
-    icon: AlertTriangle,
-    onConfirm: () => {}
   });
 
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
@@ -509,17 +499,6 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
           </button>
         </div>
 
-        {/* Confirmation Modal */}
-        <ConfirmationModal
-          isOpen={confirmConfig.isOpen}
-          onClose={closeConfirm}
-          onConfirm={confirmConfig.onConfirm}
-          title={confirmConfig.title}
-          description={confirmConfig.description}
-          confirmText={confirmConfig.confirmText}
-          type={confirmConfig.type}
-          icon={confirmConfig.icon}
-        />
       </div>
     </div>
   );

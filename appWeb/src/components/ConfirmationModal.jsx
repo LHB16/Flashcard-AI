@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, LogOut, Save, X, Loader2 } from 'lucide-react';
 
 const ConfirmationModal = ({ 
@@ -47,7 +48,7 @@ const ConfirmationModal = ({
 
   const colors = getColors();
 
-  return (
+  return createPortal(
     <div className="animate-fade-in" style={{
       position: 'fixed', inset: 0, zIndex: 10000,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -99,7 +100,8 @@ const ConfirmationModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw, Check, X } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 
-const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
+const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
   const cards = deck?.cards || [];
 
   const [index, setIndex] = useState(0);
@@ -20,16 +20,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
   const touchStartX = useRef(null);
   const isAnimating = useRef(false);
   const cardRef = useRef(null);
-
-  const [confirmConfig, setConfirmConfig] = useState({
-    isOpen: false,
-    title: '',
-    description: '',
-    confirmText: '',
-    type: 'warning',
-    icon: AlertTriangle,
-    onConfirm: () => {}
-  });
 
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
@@ -448,16 +438,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
             </button>
           </div>
         </div>
-        <ConfirmationModal
-          isOpen={confirmConfig.isOpen}
-          onClose={closeConfirm}
-          onConfirm={confirmConfig.onConfirm}
-          title={confirmConfig.title}
-          description={confirmConfig.description}
-          confirmText={confirmConfig.confirmText}
-          type={confirmConfig.type}
-          icon={confirmConfig.icon}
-        />
       </>
     );
   }
@@ -583,18 +563,6 @@ const FlashcardMode = ({ deck, onBack, onDeckModified }) => {
           <Check size={32} color="var(--success)" strokeWidth={3} />
         </button>
       </div>
-
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={confirmConfig.isOpen}
-        onClose={closeConfirm}
-        onConfirm={confirmConfig.onConfirm}
-        title={confirmConfig.title}
-        description={confirmConfig.description}
-        confirmText={confirmConfig.confirmText}
-        type={confirmConfig.type}
-        icon={confirmConfig.icon}
-      />
     </div>
   );
 };
