@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 

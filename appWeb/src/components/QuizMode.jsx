@@ -409,12 +409,15 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified }) => {
         setIsFinished(false);
         setAnswers({});
 
-        saveToBackend({
-          current_index: 0,
-          answers: {},
-          correct_count: 0,
-          wrong_count: 0
-        });
+        // Xóa session trên backend để lần reload sau không bị restore lại trạng thái cũ
+        if (googleId) {
+          fetch(`${BACKEND_URL}/progress/deck/on-modified`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ google_id: googleId, deck_id: deckId, action: 'reset' })
+          }).catch(e => console.warn('Reset session failed:', e));
+        }
+
         closeConfirm();
       }
     });
