@@ -6,6 +6,8 @@ const authRoutes = require('./routes/auth');
 const progressRoutes = require('./routes/progress');
 const scanRoutes = require('./routes/scan');
 const shareRoutes = require('./routes/share');
+const adminRoutes = require('./routes/admin');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +29,8 @@ app.use('/auth', authRoutes);
 app.use('/progress', progressRoutes);
 app.use('/scan', scanRoutes);
 app.use('/share', shareRoutes);
+app.use('/admin', adminRoutes);
+app.use('/chat', chatRoutes);
 
 app.listen(PORT, () => {
   console.log(`Backend Server đang chạy tại cổng: ${PORT}`);
