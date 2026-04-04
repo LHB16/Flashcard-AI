@@ -134,7 +134,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig })
   // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (!currentCard || e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') return;
+      if (!currentCard || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
       const options = currentCard?.options || [];
       const showSubmit = multiChoice && !isAnswered && selectedMulti.length > 0;

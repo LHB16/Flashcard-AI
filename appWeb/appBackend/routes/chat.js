@@ -1,111 +1,86 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
-
-const SETTINGS_FILE = path.join(__dirname, '../settings.json');
+const supabase = require('../supabaseClient');
 
 /**
  * POST /chat/ask
- * Handles AI Tutor responses based on card context.
+ * AI Chat Assistant proxy
  */
 router.post('/ask', async (req, res) => {
+  const { user_question, card_context, system_prompt } = req.body;
+
   try {
-    const { question, cardContext } = req.body;
-    if (!question) return res.status(400).json({ error: 'Missing question' });
+    // 1. Lấy danh sách API Keys từ Database
+    const { data: settings, error: settingsError } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'api_keys')
+      .single();
 
-    // 1. Get API Key strategy:
-    // First, check if there's a Groq Key configured via Admin Dashboard.
-    // If not, fallback to server-side GEMINI_API_KEY from .env.
-    let apiKey = process.env.GEMINI_API_KEY;
-    let apiProvider = 'gemini';
-    
-    if (fs.existsSync(SETTINGS_FILE)) {
-      try {
-        const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
-        if (settings.groq_keys && settings.groq_keys.length > 0) {
-          apiKey = settings.groq_keys[0]; // Round-robin could be implemented here
-          apiProvider = 'groq';
-        }
-      } catch (e) {
-        console.error("Failed to read settings.json for chat:", e);
-      }
+    let groqKeys = [];
+    if (settings && settings.value) {
+      groqKeys = settings.value;
     }
-
-    if (!apiKey) {
-      return res.status(500).json({ error: 'Server AI Key missing. Please configure Groq Keys in Admin Dashboard or set GEMINI_API_KEY in .env' });
-    }
-
-    const systemPrompt = `You are "AI Tutor", a senior educator specialized in active recall and flashcard learning.
-Explain the concepts clearly, concisely, and provide helpful examples.
-
-Current Flashcard Context:
-- Question: ${cardContext.question}
-- Options: ${cardContext.options?.join(', ') || 'None'}
-- Correct Answer: ${cardContext.correct_answer || 'None'}
-- Additional Notes: ${cardContext.notes || 'None'}
-
-User is asking about this card: "${question}"`;
-
-    let answer = "";
     
-    if (apiProvider === 'groq') {
-       // Groq API Call
-       const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-           'Authorization': `Bearer ${apiKey}`
-         },
-         body: JSON.stringify({
-           model: "llama-3.3-70b-versatile",
-           messages: [
-             { role: "system", content: systemPrompt },
-             { role: "user", content: question }
-           ],
-           temperature: 0.7,
-           max_completion_tokens: 1000
-         })
-       });
+    // 2. Chọn API Key (xoay vòng hoặc chọn ngẫu nhiên)
+    let selectedKey = null;
+    let provider = 'gemini'; // Mặc định là Gemini
 
-       if (!groqRes.ok) {
-         const err = await groqRes.text();
-         throw new Error(`Groq API Error (${groqRes.status}): ${err}`);
-       }
-
-       const data = await groqRes.json();
-       answer = data.choices?.[0]?.message?.content || "AI was unable to provide an answer.";
+    if (groqKeys.length > 0) {
+      selectedKey = groqKeys[Math.floor(Math.random() * groqKeys.length)];
+      provider = 'groq';
     } else {
-       // Google Gemini API Call
-       const model = 'gemini-1.5-flash';
-       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-       const geminiRes = await fetch(geminiUrl, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           contents: [{ 
-             parts: [{ text: `${systemPrompt}\n\nHelpful Explanation:` }]
-           }],
-           generationConfig: {
-             temperature: 0.7,
-             maxOutputTokens: 1000
-           }
-         })
-       });
-
-       if (!geminiRes.ok) {
-         const err = await geminiRes.text();
-         throw new Error(`Gemini API Error (${geminiRes.status}): ${err}`);
-       }
-
-       const data = await geminiRes.json();
-       answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI was unable to provide an answer.";
+      selectedKey = process.env.GEMINI_API_KEY;
     }
 
-    res.json({ answer });
+    if (!selectedKey) {
+      return res.status(500).json({ error: 'Chưa cấu hình API Key (Groq hoặc Gemini)' });
+    }
+
+    // 3. Gọi API tương ứng
+    let aiResponse = '';
+    
+    if (provider === 'groq') {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${selectedKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: system_prompt },
+            { role: 'user', content: user_question }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+      
+      const data = await response.json();
+      aiResponse = data.choices?.[0]?.message?.content || 'Xin lỗi, Groq không phản hồi.';
+    } else {
+      // Fallback: Gemini 1.5 Flash
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${selectedKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `${system_prompt}\n\nUser Question: ${user_question}` }]
+          }]
+        })
+      });
+      
+      const data = await response.json();
+      aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Xin lỗi, Gemini không phản hồi.';
+    }
+
+    res.json({ reply: aiResponse, provider });
+
   } catch (err) {
-    console.error("Chat Tutor Request Failed:", err);
-    res.status(500).json({ error: err.message });
+    console.error('Chat API Error:', err);
+    res.status(500).json({ error: 'Lỗi khi kết nối với AI Service' });
   }
 });
 

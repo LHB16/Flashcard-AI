@@ -1,91 +1,86 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../supabaseClient');
-const fs = require('fs');
-const path = require('path');
 
-const SETTINGS_FILE = path.join(__dirname, '../settings.json');
-
-// Helper to check admin
+// Middleware xác thực Admin
 const isAdmin = (req, res, next) => {
-  const email = req.headers['x-user-email'];
-  if (email === 'binhlhce200315@gmail.com') {
+  const userEmail = req.headers['x-user-email'];
+  const ADMIN_EMAIL = 'binhlhce200315@gmail.com';
+  
+  if (userEmail === ADMIN_EMAIL) {
     next();
   } else {
-    res.status(403).json({ error: 'Access denied' });
+    res.status(403).json({ error: 'Unauthorized: Admin access only' });
   }
 };
 
-/**
- * GET /admin/dashboard
- * Returns overall system stats and current Groq API keys.
- */
+// Lấy thông tin Dashboard
 router.get('/dashboard', isAdmin, async (req, res) => {
   try {
-    // 1. Get stats from Supabase
+    // 1. Đếm số lượng User
     const { count: userCount, error: userError } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true });
-      
-    const { count: deckCount, error: deckError } = await supabase
+
+    // 2. Lấy danh sách Decks và thông tin chi tiết
+    const { data: deckList, error: deckError } = await supabase
       .from('shared_decks')
-      .select('*', { count: 'exact', head: true });
+      .select('deck_id, deck_name, owner_id, cards, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(50);
 
-    if (userError) console.error("User stats error:", userError);
-    if (deckError) console.error("Deck stats error:", deckError);
+    // 3. Đọc API Keys từ Database
+    const { data: settings, error: settingsError } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'api_keys')
+      .single();
 
-    // 2. Load API keys from settings file
-    let apiKeys = [];
-    if (fs.existsSync(SETTINGS_FILE)) {
-      try {
-        const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
-        apiKeys = settings.groq_keys || [];
-      } catch (e) {
-        console.error("Failed to parse settings.json:", e);
-      }
-    }
+    const apiKeys = settings ? settings.value : [];
+
+    // Chuyển đổi dữ liệu deck để phù hợp với Frontend
+    const formattedDecks = (deckList || []).map(d => ({
+      deck_id: d.deck_id,
+      deck_name: d.deck_name,
+      owner_id: d.owner_id,
+      card_count: d.cards ? d.cards.length : 0,
+      last_studied_at: d.updated_at
+    }));
 
     res.json({
       stats: {
-        totalUsers: userCount || 0,
-        totalDecks: deckCount || 0,
+        total_users: userCount || 0,
+        decks: formattedDecks
       },
       apiKeys: apiKeys
     });
   } catch (err) {
-    console.error("Admin Dashboard error:", err);
-    res.status(500).json({ error: err.message });
+    console.error('Admin Dashboard error:', err);
+    res.status(500).json({ error: 'Lỗi server khi tải dữ liệu dashboard' });
   }
 });
 
-/**
- * POST /admin/settings/keys
- * Saves the Groq API keys to settings.json.
- */
+// Lưu danh sách API Keys vào Database
 router.post('/settings/keys', isAdmin, async (req, res) => {
+  const { keys } = req.body;
+  if (!Array.isArray(keys)) {
+    return res.status(400).json({ error: 'Dữ liệu không hợp lệ' });
+  }
+
   try {
-    const { keys } = req.body;
-    if (!Array.isArray(keys)) {
-      return res.status(400).json({ error: 'Keys must be an array' });
-    }
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ 
+        key: 'api_keys', 
+        value: keys,
+        updated_at: new Date().toISOString()
+      });
 
-    let settings = {};
-    if (fs.existsSync(SETTINGS_FILE)) {
-      try {
-        settings = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
-      } catch (e) {
-        // Ignore parse error, start fresh
-      }
-    }
-
-    settings.groq_keys = keys;
-    settings.updated_at = new Date().toISOString();
-
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    res.json({ success: true, message: 'Settings saved successfully' });
+    if (error) throw error;
+    res.json({ success: true, message: 'Đã lưu API Keys vào database' });
   } catch (err) {
-    console.error("Save keys error:", err);
-    res.status(500).json({ error: err.message });
+    console.error('Save API Keys error:', err);
+    res.status(500).json({ error: 'Không thể lưu API Keys vào database' });
   }
 });
 

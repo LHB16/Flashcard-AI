@@ -186,6 +186,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.repeat) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       if (done) {
         if (e.key === 'r' || e.key === 'R') restartStudy();

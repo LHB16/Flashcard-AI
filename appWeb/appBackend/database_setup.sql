@@ -75,3 +75,15 @@ CREATE TABLE IF NOT EXISTS deck_invites (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (deck_id, receiver_email)
 );
+
+-- 8. Tạo bảng System Settings để lưu API Keys và cấu hình toàn cục
+CREATE TABLE IF NOT EXISTS system_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Thêm các giá trị mặc định nếu chưa có
+INSERT INTO system_settings (key, value)
+VALUES ('api_keys', '[]'::jsonb)
+ON CONFLICT (key) DO NOTHING;
