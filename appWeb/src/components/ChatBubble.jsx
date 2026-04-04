@@ -5,25 +5,14 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const ChatBubble = ({ currentCard }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(true);
   const [messages, setMessages] = useState([
     { role: 'bot', content: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!' }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Dragging state
-  const [position, setPosition] = useState({ 
-    x: window.innerWidth - 80, 
-    y: window.innerHeight - 100 
-  });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [snappedEdge, setSnappedEdge] = useState('right');
-
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const chatWindowRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -31,46 +20,6 @@ const ChatBubble = ({ currentCard }) => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
-
-  // Dragging logic
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      
-      const newX = e.clientX - dragOffset.x;
-      const newY = e.clientY - dragOffset.y;
-      
-      // Keep within bounds
-      const boundedX = Math.max(0, Math.min(newX, window.innerWidth - 60));
-      const boundedY = Math.max(0, Math.min(newY, window.innerHeight - 60));
-      
-      setPosition({ x: boundedX, y: boundedY });
-    };
-
-    const handleMouseUp = () => {
-      if (!isDragging) return;
-      setIsDragging(false);
-      
-      // Snap to nearest edge (bám sát viền, không ẩn 2/3 nữa)
-      const threshold = window.innerWidth / 2;
-      if (position.x < threshold) {
-        setSnappedEdge('left');
-        setPosition(prev => ({ ...prev, x: 0 }));
-      } else {
-        setSnappedEdge('right');
-        setPosition(prev => ({ ...prev, x: window.innerWidth - 60 }));
-      }
-    };
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragOffset, position]);
 
   // Focus input when chat opens
   useEffect(() => {
@@ -88,7 +37,6 @@ const ChatBubble = ({ currentCard }) => {
     const correctAnswers = currentCard.correct_answers || [];
     const notes = currentCard.notes || '';
 
-    // Full context for AI system prompt
     let cardContext = `CURRENT FLASHCARD ON SCREEN:\n`;
     cardContext += `Question: ${question}\n`;
 
@@ -113,7 +61,6 @@ const ChatBubble = ({ currentCard }) => {
     const trimmed = inputValue.trim();
     if (!trimmed || isLoading) return;
 
-    // Add user message
     const userMsg = { role: 'user', content: trimmed };
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
@@ -163,32 +110,10 @@ YOUR ROLE:
   };
 
   const handleKeyDown = (e) => {
-    e.stopPropagation(); // Avoid triggering parent shortcuts
+    e.stopPropagation(); // Prevent triggering parent shortcuts (Space, Arrow, etc.)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
-    }
-  };
-
-  const startDrag = (e) => {
-    if (isOpen) return; // Prevent dragging when open
-    setIsDragging(true);
-    setDragOffset({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
-    });
-  };
-
-  const toggleChat = () => {
-    if (isOpen) {
-      setIsOpen(false);
-      // Snap back to edge if closing
-      if (snappedEdge === 'left') setPosition(prev => ({ ...prev, x: 0 }));
-      else setPosition(prev => ({ ...prev, x: window.innerWidth - 60 }));
-    } else {
-      setIsOpen(true);
-      // Center or move window to readable area
-      setPosition({ x: window.innerWidth - 400, y: window.innerHeight - 550 });
     }
   };
 
@@ -198,16 +123,7 @@ YOUR ROLE:
     : 'No card selected';
 
   return (
-    <div 
-      className="chat-container-wrapper" 
-      style={{ 
-        position: 'fixed', 
-        left: position.x, 
-        top: position.y, 
-        zIndex: 9999,
-        transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-      }}
-    >
+    <>
       {/* Chat Window */}
       <div className={`chat-window ${isOpen ? 'chat-window--open' : ''}`}>
         {/* Header */}
@@ -223,14 +139,14 @@ YOUR ROLE:
           </div>
           <button
             className="chat-close-btn"
-            onClick={toggleChat}
+            onClick={() => setIsOpen(false)}
             title="Close chat"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Card Context Bar - shows what card AI is seeing */}
+        {/* Card Context Bar */}
         <div className="chat-context-bar-v2">
           <div className="chat-context-inner">
             <span className="chat-context-label">📖 Viewing:</span>
@@ -284,24 +200,15 @@ YOUR ROLE:
         </div>
       </div>
 
-      {/* Toggle Button (Minimized State) */}
-      {!isOpen && (
-        <button
-          className={`chat-toggle-btn-v2 ${isDragging ? 'dragging' : ''}`}
-          onMouseDown={startDrag}
-          onClick={(e) => {
-            if (!isDragging) toggleChat();
-          }}
-          title="Open AI Chat"
-          style={{
-            opacity: isDragging ? 0.8 : 1,
-            transform: isDragging ? 'scale(1.1)' : 'none',
-          }}
-        >
-          <MessageCircle size={24} />
-        </button>
-      )}
-    </div>
+      {/* Toggle Button — always bottom-right via CSS */}
+      <button
+        className={`chat-toggle-btn ${isOpen ? 'chat-toggle-btn--hidden' : ''}`}
+        onClick={() => setIsOpen(true)}
+        title="Open AI Chat"
+      >
+        <MessageCircle size={24} />
+      </button>
+    </>
   );
 };
 

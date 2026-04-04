@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Shield, ArrowLeft, Users, Layers, Plus, Trash2, Save, Loader2, Key, AlertTriangle } from 'lucide-react';
+import { Shield, ArrowLeft, Users, Plus, Trash2, Save, Loader2, Key, AlertTriangle } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const AdminDashboard = ({ onBack }) => {
   const adminEmail = localStorage.getItem('g_email');
 
-  const [stats, setStats] = useState({ total_users: 0, decks: [] });
+  const [stats, setStats] = useState({ total_users: 0 });
   const [apiKeys, setApiKeys] = useState([]);
   const [newKey, setNewKey] = useState('');
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' }); // type: 'success' | 'error' | 'loading'
@@ -36,8 +36,7 @@ const AdminDashboard = ({ onBack }) => {
 
         const data = await res.json();
         setStats({
-          total_users: data.total_users || 0,
-          decks: data.decks || []
+          total_users: data.total_users || 0
         });
         setApiKeys(data.api_keys || []);
       } catch (err) {
@@ -158,16 +157,6 @@ const AdminDashboard = ({ onBack }) => {
             <span className="admin-stat-label">Total Users</span>
           </div>
         </div>
-
-        <div className="admin-stat-card glass-panel">
-          <div className="admin-stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
-            <Layers size={28} color="var(--success)" />
-          </div>
-          <div className="admin-stat-info">
-            <span className="admin-stat-value">{stats.decks.length}</span>
-            <span className="admin-stat-label">Total Decks</span>
-          </div>
-        </div>
       </div>
 
       {/* API Key Management */}
@@ -228,52 +217,6 @@ const AdminDashboard = ({ onBack }) => {
           {isSavingKeys ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
           Save API Keys
         </button>
-      </div>
-
-      {/* Decks Table */}
-      <div className="admin-section glass-panel">
-        <div className="admin-section-header">
-          <Layers size={20} color="var(--secondary)" />
-          <h3>All Decks</h3>
-          <span className="admin-badge">{stats.decks.length}</span>
-        </div>
-
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Deck Name</th>
-                <th>Owner ID</th>
-                <th>Cards</th>
-                <th>Last Studied</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.decks.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="admin-table-empty">No decks found.</td>
-                </tr>
-              ) : (
-                stats.decks.map((deck, idx) => (
-                  <tr key={deck.deck_id || idx}>
-                    <td className="admin-table-index">{idx + 1}</td>
-                    <td className="admin-table-name">{deck.deck_name || 'Unnamed'}</td>
-                    <td className="admin-table-owner">
-                      <code>{deck.owner_id || '—'}</code>
-                    </td>
-                    <td className="admin-table-count">{deck.card_count ?? '—'}</td>
-                    <td className="admin-table-date">
-                      {deck.last_studied_at
-                        ? new Date(deck.last_studied_at).toLocaleString()
-                        : '—'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   );

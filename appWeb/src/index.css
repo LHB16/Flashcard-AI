@@ -1080,42 +1080,7 @@ body {
   transform: none;
 }
 
-/* ─── Draggable Chat Wrapper ─── */
-.chat-container-wrapper {
-  touch-action: none;
-  user-select: none;
-}
-
-.chat-toggle-btn-v2 {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 1px solid var(--glass-border);
-  background: var(--primary);
-  color: white;
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
-  z-index: 10000;
-}
-
-.chat-toggle-btn-v2:active {
-  cursor: grabbing;
-}
-
-.chat-toggle-btn-v2:hover {
-  background: var(--secondary);
-  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
-}
-
-.chat-toggle-btn-v2.dragging {
-  cursor: grabbing;
-  opacity: 0.9;
-}
-
+/* ─── Chat Context Bar (Viewing indicator) ─── */
 .chat-context-bar-v2 {
   padding: 0.5rem 1rem;
   background: transparent;
@@ -1147,14 +1112,6 @@ body {
 }
 
 @media (max-width: 480px) {
-  .chat-container-wrapper {
-    left: 0 !important;
-    top: 0 !important;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
-  
   .chat-window {
     bottom: 0;
     right: 0;
@@ -1164,14 +1121,14 @@ body {
     height: 100%;
     max-height: 100%;
     border-radius: 0;
-    pointer-events: auto;
+    transform-origin: bottom center;
   }
 
-  .chat-toggle-btn-v2 {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    pointer-events: auto;
+  .chat-toggle-btn {
+    bottom: 1rem;
+    right: 1rem;
+    width: 50px;
+    height: 50px;
   }
 }
 
