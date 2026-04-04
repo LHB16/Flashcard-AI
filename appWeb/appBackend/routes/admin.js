@@ -17,10 +17,10 @@ const isAdmin = (req, res, next) => {
 // Lấy thông tin Dashboard
 router.get('/dashboard', isAdmin, async (req, res) => {
   try {
-    // 1. Đếm số lượng User
+    // 1. Đếm số lượng User (Dùng google_id làm khóa đếm)
     const { count: userCount, error: userError } = await supabase
       .from('users')
-      .select('*', { count: 'exact', head: true });
+      .select('google_id', { count: 'exact', head: true });
 
     // 2. Lấy danh sách Decks và thông tin chi tiết
     const { data: deckList, error: deckError } = await supabase
@@ -38,7 +38,7 @@ router.get('/dashboard', isAdmin, async (req, res) => {
 
     const apiKeys = settings ? settings.value : [];
 
-    // Chuyển đổi dữ liệu deck để phù hợp với Frontend
+    // Chuyển đổi dữ liệu deck để phù hợp với Frontend (snake_case)
     const formattedDecks = (deckList || []).map(d => ({
       deck_id: d.deck_id,
       deck_name: d.deck_name,
@@ -48,11 +48,9 @@ router.get('/dashboard', isAdmin, async (req, res) => {
     }));
 
     res.json({
-      stats: {
-        total_users: userCount || 0,
-        decks: formattedDecks
-      },
-      apiKeys: apiKeys
+      total_users: userCount || 0,
+      decks: formattedDecks,
+      api_keys: apiKeys
     });
   } catch (err) {
     console.error('Admin Dashboard error:', err);
@@ -74,7 +72,7 @@ router.post('/settings/keys', isAdmin, async (req, res) => {
         key: 'api_keys', 
         value: keys,
         updated_at: new Date().toISOString()
-      });
+      }, { onConflict: 'key' });
 
     if (error) throw error;
     res.json({ success: true, message: 'Đã lưu API Keys vào database' });

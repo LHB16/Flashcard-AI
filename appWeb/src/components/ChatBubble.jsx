@@ -13,7 +13,10 @@ const ChatBubble = ({ currentCard }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Dragging state
-  const [position, setPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 100 });
+  const [position, setPosition] = useState({ 
+    x: window.innerWidth - 80, 
+    y: window.innerHeight - 100 
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [snappedEdge, setSnappedEdge] = useState('right');
@@ -48,14 +51,14 @@ const ChatBubble = ({ currentCard }) => {
       if (!isDragging) return;
       setIsDragging(false);
       
-      // Snap to nearest edge
+      // Snap to nearest edge (bám sát viền, không ẩn 2/3 nữa)
       const threshold = window.innerWidth / 2;
       if (position.x < threshold) {
         setSnappedEdge('left');
-        setPosition(prev => ({ ...prev, x: -40 })); // Tuck 2/3 (assuming 60px width)
+        setPosition(prev => ({ ...prev, x: 0 }));
       } else {
         setSnappedEdge('right');
-        setPosition(prev => ({ ...prev, x: window.innerWidth - 20 }));
+        setPosition(prev => ({ ...prev, x: window.innerWidth - 60 }));
       }
     };
 
@@ -180,8 +183,8 @@ YOUR ROLE:
     if (isOpen) {
       setIsOpen(false);
       // Snap back to edge if closing
-      if (snappedEdge === 'left') setPosition(prev => ({ ...prev, x: -40 }));
-      else setPosition(prev => ({ ...prev, x: window.innerWidth - 20 }));
+      if (snappedEdge === 'left') setPosition(prev => ({ ...prev, x: 0 }));
+      else setPosition(prev => ({ ...prev, x: window.innerWidth - 60 }));
     } else {
       setIsOpen(true);
       // Center or move window to readable area

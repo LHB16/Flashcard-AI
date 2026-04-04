@@ -67,6 +67,7 @@ const AdminDashboard = ({ onBack }) => {
 
   // Remove a key locally
   const handleRemoveKey = (index) => {
+    if (!window.confirm('🚨 CẢNH BÁO: Bạn có chắc chắn muốn xóa API Key này không? Bạn cần nhấn nút "Save API Keys" bên dưới để lưu thay đổi thực tế vào hệ thống.')) return;
     setApiKeys(prev => prev.filter((_, i) => i !== index));
     setStatusMsg({ text: 'Key removed locally. Remember to save!', type: 'success' });
   };
