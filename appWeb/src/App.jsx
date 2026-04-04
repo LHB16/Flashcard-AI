@@ -464,6 +464,28 @@ function App() {
   }, [userLoggedIn, driveFileId, selectedDeck?.deck_id]);
 
 
+  // Prioritize Admin Dashboard render (even if no data)
+  if (mode === 'admin') {
+    return (
+      <>
+        {isSyncing && <div className="top-progress-bar"></div>}
+        <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+          <AdminDashboard onBack={() => { setSelectedDeck(null); setMode(null); }} />
+        </main>
+        <ConfirmationModal
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmConfig.onConfirm}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          confirmText={confirmConfig.confirmText}
+          type={confirmConfig.type}
+          icon={confirmConfig.icon}
+        />
+      </>
+    );
+  }
+
   // 1. Render file selection & Login first
   if (!data) {
     return (
@@ -490,6 +512,16 @@ function App() {
             </div>
             <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <NotificationBell />
+              {userEmail === 'binhlhce200315@gmail.com' && (
+                <button
+                  className="btn btn-glass btn-icon"
+                  onClick={() => { setSelectedDeck(null); setMode('admin'); }}
+                  title="Admin Dashboard"
+                  style={{ color: 'var(--warning)' }}
+                >
+                  <Shield size={18} />
+                </button>
+              )}
               <button className="btn btn-glass btn-icon" onClick={toggleTheme} title="Switch Theme">
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>
@@ -1096,7 +1128,6 @@ function App() {
           {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
           {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
-          {mode === 'admin' && <AdminDashboard onBack={() => { setSelectedDeck(null); setMode(null); }} />}
         </div>
         <AddDeckModal
           isOpen={isAddDeckModalOpen}
