@@ -29,7 +29,7 @@ function App() {
   const [selectedDecks, setSelectedDecks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Generic confirmation modal state
   const [confirmConfig, setConfirmConfig] = useState({
     isOpen: false,
@@ -38,11 +38,11 @@ function App() {
     confirmText: '',
     type: 'warning',
     icon: AlertTriangle,
-    onConfirm: () => {}
+    onConfirm: () => { }
   });
 
   const [pinnedDecks, setPinnedDecks] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch(e) { return []; }
+    try { return JSON.parse(localStorage.getItem('pinned_decks')) || []; } catch (e) { return []; }
   });
   const [sortOrder, setSortOrder] = useState(() => {
     return localStorage.getItem('deck_sort_order') || 'none';
@@ -69,7 +69,7 @@ function App() {
   const processedDecks = React.useMemo(() => {
     if (!data) return [];
     let filtered = data.filter(deck => (deck.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     if (sortOrder === 'asc') {
       filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     } else if (sortOrder === 'desc') {
@@ -78,7 +78,7 @@ function App() {
 
     const pinned = filtered.filter(deck => deck.deck_id && pinnedDecks.includes(deck.deck_id));
     const unpinned = filtered.filter(deck => !deck.deck_id || !pinnedDecks.includes(deck.deck_id));
-    
+
     return [...pinned, ...unpinned];
   }, [data, searchQuery, sortOrder, pinnedDecks]);
 
@@ -172,19 +172,19 @@ function App() {
         handleDataLoaded(result.data, false);
       } else {
         if (goToScan) {
-           // New account, no desks.json. Setup empty environment for them to create decks.
-           setData([]);
-           setSelectedDeck(null);
+          // New account, no desks.json. Setup empty environment for them to create decks.
+          setData([]);
+          setSelectedDeck(null);
         } else {
-           setConfirmConfig({
-             isOpen: true,
-             title: "No data found",
-             description: "No desk.json found on this Google Drive. Please upload a file manually or use AI Scan to create one.",
-             confirmText: "Close",
-             type: "warning",
-             icon: AlertTriangle,
-             onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
-           });
+          setConfirmConfig({
+            isOpen: true,
+            title: "No data found",
+            description: "No desk.json found on this Google Drive. Please upload a file manually or use AI Scan to create one.",
+            confirmText: "Close",
+            type: "warning",
+            icon: AlertTriangle,
+            onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+          });
         }
       }
 
@@ -260,11 +260,11 @@ function App() {
   const handleDeckCreated = async (newDeck) => {
     const updated = data ? [...data, newDeck] : [newDeck];
     setData(updated);
-    
+
     // Auto-select the newly created deck
     setSelectedDeck(newDeck);
     setMode('home');
-    
+
     // Sync to Drive
     if (userLoggedIn) {
       setIsSyncing(true);
@@ -283,11 +283,11 @@ function App() {
   const handleDeckImported = async (clonedDeck) => {
     const updated = data ? [...data, clonedDeck] : [clonedDeck];
     setData(updated);
-    
+
     // Auto-select the newly imported deck
     setSelectedDeck(clonedDeck);
     setMode('home');
-    
+
     // Sync to Drive
     if (userLoggedIn) {
       setIsSyncing(true);
@@ -308,7 +308,7 @@ function App() {
 
   const handleDeckPressStart = (deck, e) => {
     if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
-    
+
     // Store initial touch coordinates to detect scrolling
     if (e && e.touches && e.touches[0]) {
       touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -325,7 +325,7 @@ function App() {
 
   const handleDeckTouchMove = (e) => {
     if (!pressTimerRef.current) return;
-    
+
     // If user moves more than 10px, it's a scroll or swipe, not a long press
     if (e.touches && e.touches[0]) {
       const moveX = Math.abs(e.touches[0].clientX - touchStartPosRef.current.x);
@@ -382,8 +382,8 @@ function App() {
     setIsDeleting(true);
     const deckIdsToDelete = Array.from(selectedDecks);
     const updatedDecks = (data || []).filter(d => {
-        const id = d.deck_id || d.name;
-        return !selectedDecks.has(id);
+      const id = d.deck_id || d.name;
+      return !selectedDecks.has(id);
     });
     setData(updatedDecks);
 
@@ -468,16 +468,16 @@ function App() {
       <>
         {isSyncing && <div className="top-progress-bar"></div>}
         <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-          <header className="app-header" style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '4rem', 
+          <header className="app-header" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '4rem',
             marginTop: '2rem',
-            padding: '1rem 2rem', 
-            background: 'var(--glass-bg)', 
-            backdropFilter: 'blur(10px)', 
-            borderRadius: '16px', 
+            padding: '1rem 2rem',
+            background: 'var(--glass-bg)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
             border: '1px solid var(--glass-border)',
             position: 'relative',
             zIndex: 200
@@ -514,9 +514,9 @@ function App() {
                         <button className="btn btn-primary" onClick={() => handleSyncFromDrive(false)} style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px' }}>
                           ▶ Start
                         </button>
-                        <button 
-                          className="btn btn-glass glass-panel-hover" 
-                          onClick={() => handleSyncFromDrive(true)} 
+                        <button
+                          className="btn btn-glass glass-panel-hover"
+                          onClick={() => handleSyncFromDrive(true)}
                           style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                         >
                           <Sparkles size={18} /> AI Scan
@@ -560,10 +560,10 @@ function App() {
 
           <Footer />
         </main>
-        <AddDeckModal 
-          isOpen={isAddDeckModalOpen} 
-          onClose={() => setIsAddDeckModalOpen(false)} 
-          onDeckCreated={handleDeckCreated} 
+        <AddDeckModal
+          isOpen={isAddDeckModalOpen}
+          onClose={() => setIsAddDeckModalOpen(false)}
+          onDeckCreated={handleDeckCreated}
           onOpenImport={() => { setIsAddDeckModalOpen(false); setIsImportModalOpen(true); }}
           setConfirmConfig={setConfirmConfig}
         />
@@ -608,15 +608,15 @@ function App() {
               pointerEvents: isHeaderCollapsed ? 'none' : 'auto',
               position: 'relative'
             }}>
-              <header className="app-header" style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                marginBottom: '1.5rem', 
-                padding: '1rem 2rem', 
-                background: 'var(--glass-bg)', 
-                backdropFilter: 'blur(10px)', 
-                borderRadius: '16px', 
+              <header className="app-header" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.5rem',
+                padding: '1rem 2rem',
+                background: 'var(--glass-bg)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
                 border: '1px solid var(--glass-border)',
                 position: 'relative',
                 zIndex: 200,
@@ -665,9 +665,9 @@ function App() {
                   <button
                     className="btn btn-primary"
                     onClick={() => setIsAddDeckModalOpen(true)}
-                    style={{ 
-                      padding: '0.4rem 1.25rem', 
-                      fontSize: '0.85rem', 
+                    style={{
+                      padding: '0.4rem 1.25rem',
+                      fontSize: '0.85rem',
                       height: '36px',
                       borderRadius: '10px'
                     }}
@@ -697,15 +697,15 @@ function App() {
             </div>
 
             {/* Toggle Button as a Tab - Rectangular with 4 rounded corners and higher transparency */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
               marginTop: isHeaderCollapsed ? '0' : '-16px',
               zIndex: 106,
               position: 'relative',
               transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
-              <button 
+              <button
                 onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
                 className="btn-glass"
                 style={{
@@ -731,144 +731,145 @@ function App() {
 
           {activeTab === 'decks' ? (
             <>
-            {/* Selection Action Bar - sticky top */}
-            {isSelectionMode && (
-              <div style={{
-                position: 'sticky', top: 0, zIndex: 200,
-                background: 'var(--glass-bg)', backdropFilter: 'blur(12px)', border: '1px solid var(--glass-border)',
-                borderRadius: '16px', padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)', justifyContent: 'space-between',
-                marginBottom: '1rem'
-              }}>
-                <button 
-                  onClick={cancelSelection} 
-                  className="btn btn-glass" 
-                  style={{ border: 'none', padding: '0.6rem 1rem', fontWeight: 'bold' }}
-                >
-                  Cancel
-                </button>
-                <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'center' }}>
-                  Selected <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
+              {/* Selection Action Bar - sticky top */}
+              {isSelectionMode && (
+                <div style={{
+                  position: 'sticky', top: 0, zIndex: 200,
+                  background: 'var(--glass-bg)', backdropFilter: 'blur(12px)', border: '1px solid var(--glass-border)',
+                  borderRadius: '16px', padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)', justifyContent: 'space-between',
+                  marginBottom: '1rem'
+                }}>
+                  <button
+                    onClick={cancelSelection}
+                    className="btn btn-glass"
+                    style={{ border: 'none', padding: '0.6rem 1rem', fontWeight: 'bold' }}
+                  >
+                    Cancel
+                  </button>
+                  <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'center' }}>
+                    Selected <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
+                  </div>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={selectedDecks.size === 0}
+                    className="btn"
+                    style={{
+                      background: selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.1)',
+                      color: selectedDecks.size > 0 ? '#fff' : 'rgba(239, 68, 68, 0.4)',
+                      border: `1px solid ${selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.2)'}`,
+                      borderRadius: '12px', padding: '0.6rem 1rem', fontWeight: 'bold',
+                      cursor: selectedDecks.size > 0 ? 'pointer' : 'not-allowed',
+                      display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
+                    }}
+                  >
+                    <Trash2 size={16} /> Delete
+                  </button>
                 </div>
-                <button 
-                  onClick={() => setShowDeleteConfirm(true)} 
-                  disabled={selectedDecks.size === 0}
-                  className="btn" 
-                  style={{
-                     background: selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.1)',
-                     color: selectedDecks.size > 0 ? '#fff' : 'rgba(239, 68, 68, 0.4)',
-                     border: `1px solid ${selectedDecks.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.2)'}`,
-                     borderRadius: '12px', padding: '0.6rem 1rem', fontWeight: 'bold',
-                     cursor: selectedDecks.size > 0 ? 'pointer' : 'not-allowed',
-                     display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
-                  }}
-                >
-                  <Trash2 size={16} /> Delete
-                </button>
-              </div>
-            )}
-            <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-              {processedDecks.map((deck, idx) => {
-                const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
-                return (
-                <div
-                  key={deck.deck_id || idx}
-                  className={`glass-panel glass-panel-hover ${isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'selected' : ''}`}
-                  style={{ 
-                     padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative',
-                     transition: 'all 0.2s',
-                     border: isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? '1px solid #ef4444' : undefined,
-                     background: isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'rgba(239, 68, 68, 0.05)' : undefined
-                  }}
-                  onMouseDown={(e) => {
-                     // Only trigger long press if not clicking the pin button
-                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck, e);
-                  }}
-                  onMouseUp={() => !isSelectionMode && handleDeckPressEnd()}
-                  onMouseLeave={() => !isSelectionMode && handleDeckPressEnd()}
-                  onTouchStart={(e) => {
-                     if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck, e);
-                  }}
-                  onTouchMove={handleDeckTouchMove}
-                  onTouchEnd={() => !isSelectionMode && handleDeckPressEnd()}
-                  onClick={(e) => handleDeckClick(deck, e)}
-                  onContextMenu={(e) => {
-                      if (!isSelectionMode) {
+              )}
+              <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                {processedDecks.map((deck, idx) => {
+                  const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
+                  return (
+                    <div
+                      key={deck.deck_id || idx}
+                      className={`glass-panel glass-panel-hover ${isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'selected' : ''}`}
+                      style={{
+                        padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative',
+                        transition: 'all 0.2s',
+                        border: isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? '1px solid #ef4444' : undefined,
+                        background: isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'rgba(239, 68, 68, 0.05)' : undefined
+                      }}
+                      onMouseDown={(e) => {
+                        // Only trigger long press if not clicking the pin button
+                        if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck, e);
+                      }}
+                      onMouseUp={() => !isSelectionMode && handleDeckPressEnd()}
+                      onMouseLeave={() => !isSelectionMode && handleDeckPressEnd()}
+                      onTouchStart={(e) => {
+                        if (!e.target.closest('.pin-btn') && !isSelectionMode) handleDeckPressStart(deck, e);
+                      }}
+                      onTouchMove={handleDeckTouchMove}
+                      onTouchEnd={() => !isSelectionMode && handleDeckPressEnd()}
+                      onClick={(e) => handleDeckClick(deck, e)}
+                      onContextMenu={(e) => {
+                        if (!isSelectionMode) {
                           e.preventDefault(); // Prevent right click context menu if it helps mobile long press
-                      }
-                  }}
-                >
-                  {/* Top-right: Checkbox + Pin */}
-                  <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 10 }}>
-                    {isSelectionMode && (
-                      <input 
-                        type="checkbox" 
-                        checked={selectedDecks.has(deck.deck_id || deck.name)}
-                        readOnly
-                        style={{ width: '20px', height: '20px', accentColor: '#ef4444', pointerEvents: 'none', cursor: 'pointer' }}
-                      />
-                    )}
-                    {deck.deck_id && (
-                      <button 
-                        onClick={(e) => !isSelectionMode && togglePin(deck.deck_id, e)}
-                        disabled={isSelectionMode}
-                        style={{ 
-                          background: 'none', 
-                          border: 'none', 
-                          cursor: isSelectionMode ? 'not-allowed' : 'pointer', 
-                          padding: '0.5rem', 
-                          borderRadius: '50%', 
-                          display: 'flex',
-                          opacity: isSelectionMode ? 0.3 : 1,
-                          transition: 'opacity 0.2s'
-                        }}
-                        className="btn-icon pin-btn"
-                        title={isSelectionMode ? "Disabled in selection mode" : (isPinned ? "Unpin deck" : "Pin deck")}
-                      >
-                        {isPinned ? <Star size={24} color="#fbbf24" strokeWidth={2.5} /> : <Star size={24} color="var(--text-muted)" strokeWidth={1.5} />}
-                      </button>
-                    )}
-                  </div>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
-                    <BookOpen size={36} color="var(--primary)" />
-                    {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(251, 191, 36, 0.2)' }}><Star size={12} color="#fbbf24" strokeWidth={2.5} /> Pinned</span>}
-                  </div>
-                  
-                  <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
-                  {deck.cards && (
-                    <div style={{ marginTop: 'auto' }}>
-                      <div style={{ width: '100%', height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.5rem' }}>
-                        <div 
-                          style={{ 
-                            width: `${(deck.cards.filter(c => c.status === 2).length / deck.cards.length) * 100}%`, 
-                            height: '100%', 
-                            background: 'var(--success)', 
-                            transition: 'width 0.3s ease' 
-                          }}
-                        ></div>
+                        }
+                      }}
+                    >
+                      {/* Top-right: Checkbox + Pin */}
+                      <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 10 }}>
+                        {isSelectionMode && (
+                          <input
+                            type="checkbox"
+                            checked={selectedDecks.has(deck.deck_id || deck.name)}
+                            readOnly
+                            style={{ width: '20px', height: '20px', accentColor: '#ef4444', pointerEvents: 'none', cursor: 'pointer' }}
+                          />
+                        )}
+                        {deck.deck_id && (
+                          <button
+                            onClick={(e) => !isSelectionMode && togglePin(deck.deck_id, e)}
+                            disabled={isSelectionMode}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: isSelectionMode ? 'not-allowed' : 'pointer',
+                              padding: '0.5rem',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              opacity: isSelectionMode ? 0.3 : 1,
+                              transition: 'opacity 0.2s'
+                            }}
+                            className="btn-icon pin-btn"
+                            title={isSelectionMode ? "Disabled in selection mode" : (isPinned ? "Unpin deck" : "Pin deck")}
+                          >
+                            {isPinned ? <Star size={24} color="#fbbf24" strokeWidth={2.5} /> : <Star size={24} color="var(--text-muted)" strokeWidth={1.5} />}
+                          </button>
+                        )}
                       </div>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Progress:</span>
-                        <strong style={{ color: 'var(--primary)' }}>
-                          {deck.cards.filter(c => c.status === 2).length} / {deck.cards.length}
-                        </strong>
-                      </p>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
+                        <BookOpen size={36} color="var(--primary)" />
+                        {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(251, 191, 36, 0.2)' }}><Star size={12} color="#fbbf24" strokeWidth={2.5} /> Pinned</span>}
+                      </div>
+
+                      <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
+                      {deck.cards && (
+                        <div style={{ marginTop: 'auto' }}>
+                          <div style={{ width: '100%', height: '4px', background: 'var(--glass-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.5rem' }}>
+                            <div
+                              style={{
+                                width: `${(deck.cards.filter(c => c.status === 2).length / deck.cards.length) * 100}%`,
+                                height: '100%',
+                                background: 'var(--success)',
+                                transition: 'width 0.3s ease'
+                              }}
+                            ></div>
+                          </div>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Progress:</span>
+                            <strong style={{ color: 'var(--primary)' }}>
+                              {deck.cards.filter(c => c.status === 2).length} / {deck.cards.length}
+                            </strong>
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )})}
-            </div>
+                  )
+                })}
+              </div>
             </>
           ) : (
             <AIScan userLoggedIn={userLoggedIn} onScanComplete={handleScanComplete} />
           )}
           <Footer />
         </main>
-        <AddDeckModal 
-          isOpen={isAddDeckModalOpen} 
-          onClose={() => setIsAddDeckModalOpen(false)} 
-          onDeckCreated={handleDeckCreated} 
+        <AddDeckModal
+          isOpen={isAddDeckModalOpen}
+          onClose={() => setIsAddDeckModalOpen(false)}
+          onDeckCreated={handleDeckCreated}
           onOpenImport={() => { setIsAddDeckModalOpen(false); setIsImportModalOpen(true); }}
           setConfirmConfig={setConfirmConfig}
         />
@@ -926,15 +927,15 @@ function App() {
             pointerEvents: 'none',
             position: 'relative'
           }}>
-            <header className="app-header" style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              marginBottom: '2rem', 
-              padding: '1rem 2rem', 
-              background: 'var(--glass-bg)', 
-              backdropFilter: 'blur(10px)', 
-              borderRadius: '16px', 
+            <header className="app-header" style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '2rem',
+              padding: '1rem 2rem',
+              background: 'var(--glass-bg)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
               border: '1px solid var(--glass-border)',
               position: 'relative',
               zIndex: 200,
@@ -971,15 +972,15 @@ function App() {
           </div>
 
           {/* Toggle Button as a Tab - Centered and Dynamic In/Out position */}
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            marginTop: isHeaderCollapsed ? '0' : '-16px',
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: isHeaderCollapsed ? '0' : '-32px',
             zIndex: 106,
             position: 'relative',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
           }}>
-            <button 
+            <button
               onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
               className="btn-glass"
               style={{
@@ -1074,13 +1075,13 @@ function App() {
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
           {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
         </div>
-        <AddDeckModal 
-          isOpen={isAddDeckModalOpen} 
-          onClose={() => setIsAddDeckModalOpen(false)} 
-          onDeckCreated={handleDeckCreated} 
+        <AddDeckModal
+          isOpen={isAddDeckModalOpen}
+          onClose={() => setIsAddDeckModalOpen(false)}
+          onDeckCreated={handleDeckCreated}
           setConfirmConfig={setConfirmConfig}
         />
-        
+
         {/* Delete Deck Confirmation Modal */}
         {showDeleteConfirm && (
           <div className="animate-fade-in" style={{
@@ -1089,7 +1090,7 @@ function App() {
             padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
           }}>
             <div className="glass-panel scale-in" style={{
-              width: '100%', maxWidth: '420px', background: 'var(--card-bg)', 
+              width: '100%', maxWidth: '420px', background: 'var(--card-bg)',
               borderRadius: '24px', overflow: 'hidden', padding: '2rem',
               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column',
               border: '1px solid rgba(239, 68, 68, 0.3)'
@@ -1103,9 +1104,9 @@ function App() {
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 2rem' }}>
                 Are you sure you want to permanently delete the selected decks? All flashcards inside will be lost. This action cannot be undone.
               </p>
-              
+
               <div style={{ display: 'flex', gap: '0.8rem' }}>
-                <button 
+                <button
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={isDeleting}
                   className="btn btn-glass"
@@ -1113,12 +1114,12 @@ function App() {
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={confirmDeleteDeck}
                   disabled={isDeleting}
                   className="btn"
-                  style={{ 
-                    flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold', 
+                  style={{
+                    flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold',
                     background: '#ef4444', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                     opacity: isDeleting ? 0.7 : 1, cursor: isDeleting ? 'not-allowed' : 'pointer'
                   }}
