@@ -8,7 +8,9 @@ import DeckManager from './components/DeckManager';
 import AddDeckModal from './components/AddDeckModal';
 import ImportSharedDeckModal from './components/ImportSharedDeckModal';
 import NotificationBell from './components/NotificationBell';
-import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard, LogOut } from 'lucide-react';
+import ChatBubble from './components/ChatBubble';
+import AdminDashboard from './components/AdminDashboard';
+import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard, LogOut, Shield } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive, deleteDecksProgress } from './services/driveSync';
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
@@ -638,6 +640,16 @@ function App() {
                     </div>
                   )}
                   <NotificationBell />
+                  {userEmail === 'binhlhce200315@gmail.com' && (
+                    <button
+                      className="btn btn-glass btn-icon"
+                      onClick={() => { setSelectedDeck(null); setMode('admin'); }}
+                      title="Admin Dashboard"
+                      style={{ color: 'var(--warning)' }}
+                    >
+                      <Shield size={18} />
+                    </button>
+                  )}
                   <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                     {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                   </button>
@@ -959,6 +971,16 @@ function App() {
                   </div>
                 )}
                 <NotificationBell />
+                {userEmail === 'binhlhce200315@gmail.com' && (
+                  <button
+                    className="btn btn-glass btn-icon"
+                    onClick={() => { setSelectedDeck(null); setMode('admin'); }}
+                    title="Admin Dashboard"
+                    style={{ color: 'var(--warning)' }}
+                  >
+                    <Shield size={18} />
+                  </button>
+                )}
                 <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                   {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -1074,6 +1096,7 @@ function App() {
           {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
           {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
+          {mode === 'admin' && <AdminDashboard onBack={() => { setSelectedDeck(null); setMode(null); }} />}
         </div>
         <AddDeckModal
           isOpen={isAddDeckModalOpen}
@@ -1131,7 +1154,6 @@ function App() {
             </div>
           </div>
         )}
-
 
 
       </main>

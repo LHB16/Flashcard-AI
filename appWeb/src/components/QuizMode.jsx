@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2, Hourglass, AlertTriangle, RotateCcw } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
+import ChatBubble from './ChatBubble';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -700,6 +701,8 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig })
         </div>
       )}
       {/* Confirmation Modal */}
+
+      <ChatBubble currentCard={currentCard} />
     </div>
   );
 });

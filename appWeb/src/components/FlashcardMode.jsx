@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw, Check, X } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
+import ChatBubble from './ChatBubble';
 
 const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
   const cards = deck?.cards || [];
@@ -555,6 +556,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
           <Check size={32} color="var(--success)" strokeWidth={3} />
         </button>
       </div>
+
+      <ChatBubble currentCard={currentCard} />
     </div>
   );
 };
