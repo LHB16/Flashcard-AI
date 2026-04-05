@@ -1,6 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../supabaseClient');
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_NOTIFY,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 // Chia sẻ deck (Share Deck)
 router.post('/create', async (req, res) => {
@@ -11,7 +20,7 @@ router.post('/create', async (req, res) => {
   }
 
   try {
-    // 1. Lưu nội dung deck vào bảng shared_decks (Upsert)
+    // [existing Supabase logic preserved]
     const { error: deckError } = await supabase
       .from('shared_decks')
       .upsert({
@@ -23,8 +32,6 @@ router.post('/create', async (req, res) => {
 
     if (deckError) throw deckError;
 
-    // 2. Cập nhật danh sách invites (những email được phép truy cập)
-    // Để an toàn, xóa toàn bộ email cũ của deck này trước, sau đó insert array email mới.
     const { error: deleteError } = await supabase
       .from('deck_invites')
       .delete()
@@ -32,9 +39,7 @@ router.post('/create', async (req, res) => {
 
     if (deleteError) throw deleteError;
 
-    // Nếu có email để thêm, ta insert vào
     if (receiver_emails && Array.isArray(receiver_emails) && receiver_emails.length > 0) {
-      // Chuẩn bị dữ liệu để insert multi-row
       const inviteData = receiver_emails.map((email) => ({
         deck_id,
         receiver_email: email,
@@ -47,7 +52,77 @@ router.post('/create', async (req, res) => {
       if (inviteError) throw inviteError;
     }
 
-    res.json({ message: 'Deck shared successfully' });
+    // Extract deck name
+    const deckName = deck_data.name;
+
+    // Fetch sender email from Supabase
+    const { data: senderData, error: senderError } = await supabase
+      .from('users')
+      .select('email')
+      .eq('google_id', google_id)
+      .single();
+
+    if (senderError || !senderData) {
+      console.error('Sender lookup failed:', senderError);
+      return res.status(404).json({ error: 'Sender not found' });
+    }
+
+    const senderEmail = senderData.email;
+
+    // Build and send invitation email
+    const mailOptions = {
+      from: `"Flashcard AI" <${process.env.EMAIL_NOTIFY}>`,
+      to: receiver_emails.join(', '),
+      subject: `${senderEmail} shared the Flashcard Deck "${deckName}" with you`,
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e5e7eb;">
+          <!-- Header Banner -->
+          <div style="background: #2563eb; padding: 24px; text-align: center;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">📖 Flashcard AI</h1>
+            <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">You've been invited to study a new deck!</p>
+          </div>
+
+          <!-- Body -->
+          <div style="background: #ffffff; padding: 28px 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 16px; color: #111827;">Hi there,</p>
+
+            <p style="margin: 0 0 12px 0; font-size: 15px; color: #374151; line-height: 1.6;">
+              You've received an invitation to study a new Flashcard deck, shared by <strong style="color: #111827;">${senderEmail}</strong>.
+            </p>
+
+            <p style="margin: 0 0 20px 0; font-size: 15px; color: #374151; line-height: 1.6;">
+              📚 <strong>Deck Name:</strong> ${deckName}
+            </p>
+
+            <!-- Deck ID Highlight Box -->
+            <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 14px 20px; margin-bottom: 20px;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">🔑 Deck ID</p>
+              <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 20px; color: #1d4ed8; letter-spacing: 1px; font-weight: 600; word-break: break-all;">${deck_id}</p>
+            </div>
+
+            <p style="margin: 0; font-size: 14px; color: #374151; font-style: italic; line-height: 1.5;">
+              To get started, open Flashcard AI, tap "Add Deck" → "Import", and paste the Deck ID above.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="padding: 20px 32px; background: #f9fafb;">
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 16px 0;" />
+            <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.5;">
+              This invitation was sent via Flashcard AI. If you didn't expect this email, you can safely ignore it.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    // Fire-and-forget sendMail (không block response)
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) console.error('Mail error:', error);
+      else console.log('Mail sent:', info.response);
+    });
+
+    res.json({ message: 'Deck shared and invites sent successfully!' });
   } catch (error) {
     console.error('Share Deck Error:', error);
     res.status(500).json({ error: 'Failed to share deck to Supabase' });
@@ -64,7 +139,6 @@ router.get('/view/:deck_id', async (req, res) => {
   }
 
   try {
-    // 1. Kiểm tra xem email có nằm trong danh sách được mời của deck này không
     const { data: inviteData, error: inviteError } = await supabase
       .from('deck_invites')
       .select('*')
@@ -72,14 +146,12 @@ router.get('/view/:deck_id', async (req, res) => {
       .eq('receiver_email', email)
       .single();
 
-    // PGRST116 là mã lỗi không tìm thấy dòng nào (No rows found)
     if (inviteError && inviteError.code !== 'PGRST116') throw inviteError;
 
     if (!inviteData) {
       return res.status(403).json({ error: 'Access denied. This email is not authorized to view the deck.' });
     }
 
-    // 2. Lấy dữ liệu deck
     const { data: deckRecord, error: deckError } = await supabase
       .from('shared_decks')
       .select('deck_data')
@@ -100,3 +172,4 @@ router.get('/view/:deck_id', async (req, res) => {
 });
 
 module.exports = router;
+
