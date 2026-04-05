@@ -846,6 +846,13 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
       )}
 
       {/* ─── SHARE TAB (FOCUSED VIEW) ─── */}
+      {tab === 'share' && userLoggedIn && (
+        <ShareDeckView 
+          deck={deck} 
+          onBack={() => setTab('view')} 
+        />
+      )}
+
       {/* ─── MERGE DECK MODAL ─── */}
       {isMergeModalOpen && (
         <div className="animate-fade-in" style={{
