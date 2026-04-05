@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Shield, ArrowLeft, Users, Plus, Trash2, Save, Loader2, Key, AlertTriangle, X, Clock, Globe } from 'lucide-react';
+import { Shield, ArrowLeft, Users, Plus, Trash2, Loader2, Key, AlertTriangle, Clock, Globe } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -34,12 +35,12 @@ const AdminDashboard = ({ onBack }) => {
   const [newKey, setNewKey] = useState('');
   const [isSavingKeys, setIsSavingKeys] = useState(false);
   const [keysUpdatedAt, setKeysUpdatedAt] = useState(null);
-  const [deletingIndex, setDeletingIndex] = useState(null); // index being deleted on server
+  const [deletingIndex, setDeletingIndex] = useState(null);
   const newKeyInputRef = useRef(null);
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalKeyIndex, setModalKeyIndex] = useState(null);
+  // Confirmation modal state (reuse global pattern)
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false });
+  const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
   // Auto-dismiss status messages
   useEffect(() => {
@@ -159,21 +160,27 @@ const AdminDashboard = ({ onBack }) => {
     }
   };
 
-  // Open delete confirmation modal
+  // Open delete confirmation modal using ConfirmationModal
   const openDeleteModal = (index) => {
-    setModalKeyIndex(index);
-    setModalOpen(true);
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete API Key?',
+      description: `This action will permanently delete API Key #${index + 1} from the server. This cannot be undone.`,
+      confirmText: 'Delete',
+      type: 'danger',
+      icon: Trash2,
+      onConfirm: () => confirmDeleteKey(index)
+    });
   };
 
   // Confirm delete — server-side
-  const confirmDeleteKey = async () => {
-    if (modalKeyIndex === null) return;
-    setModalOpen(false);
-    setDeletingIndex(modalKeyIndex);
+  const confirmDeleteKey = async (index) => {
+    closeConfirm();
+    setDeletingIndex(index);
     setStatusMsg({ text: 'Deleting key...', type: 'loading' });
 
     try {
-      const res = await fetch(`${BACKEND_URL}/admin/settings/keys/${modalKeyIndex}`, {
+      const res = await fetch(`${BACKEND_URL}/admin/settings/keys/${index}`, {
         method: 'DELETE',
         headers: { 'x-user-email': adminEmail }
       });
@@ -188,7 +195,6 @@ const AdminDashboard = ({ onBack }) => {
       setStatusMsg({ text: err.message || 'Failed to delete key.', type: 'error' });
     } finally {
       setDeletingIndex(null);
-      setModalKeyIndex(null);
     }
   };
 
@@ -383,31 +389,17 @@ const AdminDashboard = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {modalOpen && (
-        <div className="admin-modal-overlay" onClick={() => setModalOpen(false)}>
-          <div className="admin-modal animate-fade-in" onClick={(e) => e.stopPropagation()}>
-            <button className="admin-modal-close" onClick={() => setModalOpen(false)}>
-              <X size={18} />
-            </button>
-            <div className="admin-modal-icon">
-              <AlertTriangle size={32} color="var(--danger)" />
-            </div>
-            <h3 className="admin-modal-title">Delete API Key?</h3>
-            <p className="admin-modal-desc">
-              This action will <strong>permanently delete</strong> API Key <strong>#{modalKeyIndex + 1}</strong> from the server. This cannot be undone.
-            </p>
-            <div className="admin-modal-actions">
-              <button className="btn btn-glass" onClick={() => setModalOpen(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-danger" onClick={confirmDeleteKey}>
-                <Trash2 size={16} /> Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Global Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmConfig.isOpen}
+        onClose={closeConfirm}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        confirmText={confirmConfig.confirmText}
+        type={confirmConfig.type}
+        icon={confirmConfig.icon}
+      />
     </div>
   );
 };

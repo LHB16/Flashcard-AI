@@ -29,6 +29,18 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
 
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
 
+  const showAlert = (title, description, type = 'warning') => {
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      description,
+      confirmText: "OK",
+      type,
+      icon: AlertTriangle,
+      onConfirm: closeConfirm
+    });
+  };
+
   const cards = deck?.cards || [];
   const deckIdToSync = deck?.deck_id || deck?.title || deck?.name;
 
@@ -556,21 +568,21 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
               className="btn btn-primary"
               onClick={async () => {
                 if (!editingCard.data.question.trim()) {
-                  alert("Question content cannot be empty!");
+                  showAlert("Empty Question", "Question content cannot be empty!");
                   return;
                 }
                 
                 const correctCount = editingCard.data.correct_answers?.length || 0;
                 if (correctCount === 0) {
-                  alert("Please select at least one correct answer!");
+                  showAlert("No Correct Answer", "Please select at least one correct answer!");
                   return;
                 }
                 if (editingCard.data.question_type === 'single_choice' && correctCount !== 1) {
-                  alert("Single Choice questions must have exactly 1 correct answer!");
+                  showAlert("Invalid Answer", "Single Choice questions must have exactly 1 correct answer!");
                   return;
                 }
                 if (editingCard.data.question_type === 'multiple_choice' && correctCount < 2) {
-                  alert("Multiple Choice questions must have at least 2 correct answers!");
+                  showAlert("Invalid Answers", "Multiple Choice questions must have at least 2 correct answers!");
                   return;
                 }
 
