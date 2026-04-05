@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save, Layers } from 'lucide-react';
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
@@ -875,7 +875,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
               </p>
               
               {allDecks
-                .filter(d => (d.deck_id || d.name) !== (deck.deck_id || deck.name))
+                .filter(d => (d.deck_id || d.name) !== (deck?.deck_id || deck?.name))
                 .map(source => (
                 <div 
                   key={source.deck_id || source.name}
@@ -894,7 +894,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                 </div>
               ))}
               
-              {allDecks.filter(d => (d.deck_id || d.name) !== (deck.deck_id || deck.name)).length === 0 && (
+              {allDecks.filter(d => (d.deck_id || d.name) !== (deck?.deck_id || deck?.name)).length === 0 && (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                   No other decks available to import from.
                 </div>
