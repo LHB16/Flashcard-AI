@@ -130,4 +130,45 @@ router.delete('/settings/keys/:index', isAdmin, async (req, res) => {
   }
 });
 
+// Lấy danh sách Notifications (dùng cho Admin)
+router.get('/settings/notifications', isAdmin, async (req, res) => {
+  try {
+    const { data: settings, error } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'notifications')
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    res.json({ notifications: settings ? settings.value : [] });
+  } catch (err) {
+    console.error('Admin get notifications error:', err);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// Lưu danh sách Notifications vào Database
+router.post('/settings/notifications', isAdmin, async (req, res) => {
+  const { notifications } = req.body;
+  if (!Array.isArray(notifications)) {
+    return res.status(400).json({ error: 'Invalid data format' });
+  }
+
+  try {
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ 
+        key: 'notifications', 
+        value: notifications,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Notifications saved successfully' });
+  } catch (err) {
+    console.error('Save notifications error:', err);
+    res.status(500).json({ error: 'Failed to save notifications' });
+  }
+});
+
 module.exports = router;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Shield, ArrowLeft, Users, Plus, Trash2, Loader2, Key, AlertTriangle, Clock, Globe } from 'lucide-react';
+import { Shield, ArrowLeft, Users, Plus, Trash2, Loader2, Key, AlertTriangle, Clock, Globe, Bell, Pencil } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
@@ -17,6 +17,7 @@ const TIMEZONE_OPTIONS = [
 const NAV_ITEMS = [
   { id: 'users', label: 'User Management', icon: Users },
   { id: 'keys', label: 'Groq API Keys', icon: Key },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
 ];
 
 const AdminDashboard = ({ onBack }) => {
@@ -41,6 +42,12 @@ const AdminDashboard = ({ onBack }) => {
   // Confirmation modal state (reuse global pattern)
   const [confirmConfig, setConfirmConfig] = useState({ isOpen: false });
   const closeConfirm = () => setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+
+  // Notifications state
+  const [notifications, setNotifications] = useState([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+  const [isEditingNotification, setIsEditingNotification] = useState(false);
+  const [editingNotif, setEditingNotif] = useState(null); // null = add new, object = edit
 
   // Auto-dismiss status messages
   useEffect(() => {
@@ -123,7 +130,31 @@ const AdminDashboard = ({ onBack }) => {
     if (activeTab === 'users' && users.length === 0) {
       fetchUsers();
     }
-  }, [activeTab]);
+  }, [activeTab, fetchUsers, users.length]);
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    setIsLoadingNotifications(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/admin/settings/notifications`, {
+        headers: { 'x-user-email': adminEmail }
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      setNotifications(data.notifications || []);
+    } catch (err) {
+      console.error('Fetch notifications error:', err);
+      setStatusMsg({ text: 'Failed to load notifications.', type: 'error' });
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, [adminEmail]);
+
+  useEffect(() => {
+    if (activeTab === 'notifications' && notifications.length === 0) {
+      fetchNotifications();
+    }
+  }, [activeTab, fetchNotifications, notifications.length]);
 
   // ── Key Management ──
 
@@ -339,13 +370,146 @@ const AdminDashboard = ({ onBack }) => {
     </div>
   );
 
+  // ── Notification Management ──
+  const handleSaveNotification = async (updatedNotifs) => {
+    setIsLoadingNotifications(true);
+    setStatusMsg({ text: 'Saving notifications...', type: 'loading' });
+    try {
+      const res = await fetch(`${BACKEND_URL}/admin/settings/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-email': adminEmail },
+        body: JSON.stringify({ notifications: updatedNotifs })
+      });
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      setNotifications(updatedNotifs);
+      setStatusMsg({ text: 'Notifications saved!', type: 'success' });
+    } catch (err) {
+      console.error('Save notifications err:', err);
+      setStatusMsg({ text: err.message || 'Failed to save notifications', type: 'error' });
+    } finally {
+      setIsLoadingNotifications(false);
+      setIsEditingNotification(false);
+      setEditingNotif(null);
+    }
+  };
+
+  const submitEditNotif = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const newNotif = {
+      id: editingNotif?.id || `notif_${Date.now()}`,
+      title: formData.get('title'),
+      desc: formData.get('desc'),
+      date: formData.get('date'),
+      icon: formData.get('icon'),
+      link: formData.get('link'),
+    };
+    
+    let updated;
+    if (editingNotif?.id) {
+       updated = notifications.map(n => n.id === editingNotif.id ? newNotif : n);
+    } else {
+       updated = [newNotif, ...notifications];
+    }
+    handleSaveNotification(updated);
+  };
+
+  const openDeleteNotifModal = (id) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Notification?',
+      description: 'This action will permanently delete this notification.',
+      confirmText: 'Delete',
+      type: 'danger',
+      icon: Trash2,
+      onConfirm: () => {
+         const updated = notifications.filter(n => n.id !== id);
+         handleSaveNotification(updated);
+         closeConfirm();
+      }
+    });
+  };
+
+  const renderNotificationsTab = () => (
+    <div className="admin-tab-content animate-fade-in">
+      <div className="admin-content-header">
+         <h3>Manage Notifications</h3>
+         {!isEditingNotification && (
+           <button className="btn btn-primary" onClick={() => { setEditingNotif(null); setIsEditingNotification(true); }} style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+             <Plus size={16} /> Add Notification
+           </button>
+         )}
+      </div>
+
+      {isLoadingNotifications && !isEditingNotification ? (
+        <div className="admin-loading" style={{ padding: '3rem 1rem' }}>
+          <Loader2 size={28} className="animate-spin" color="var(--primary)" />
+          <span>Loading notifications...</span>
+        </div>
+      ) : isEditingNotification ? (
+        <form onSubmit={submitEditNotif} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+           <div>
+             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Title</label>
+             <input type="text" name="title" defaultValue={editingNotif?.title || ''} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
+           </div>
+           <div>
+             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Description</label>
+             <textarea name="desc" defaultValue={editingNotif?.desc || ''} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white', minHeight: '80px', resize: 'vertical' }} />
+           </div>
+           <div style={{ display: 'flex', gap: '1rem' }}>
+             <div style={{ flex: 1 }}>
+               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Date (YYYY-MM-DD)</label>
+               <input type="date" name="date" defaultValue={editingNotif?.date || new Date().toISOString().split('T')[0]} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
+             </div>
+             <div style={{ flex: 0.5 }}>
+               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Icon (Emoji)</label>
+               <input type="text" name="icon" defaultValue={editingNotif?.icon || ''} placeholder="Ex: 📖" style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
+             </div>
+           </div>
+           <div>
+             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Link (Optional)</label>
+             <input type="text" name="link" defaultValue={editingNotif?.link || ''} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
+           </div>
+           
+           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+             <button type="button" className="btn btn-glass" onClick={() => setIsEditingNotification(false)} style={{ flex: 1, padding: '0.8rem', fontWeight: 'bold' }}>Cancel</button>
+             <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.8rem', fontWeight: 'bold' }} disabled={isLoadingNotifications}>{isLoadingNotifications ? 'Saving...' : 'Save Notification'}</button>
+           </div>
+        </form>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+           {notifications.length === 0 ? (
+             <p className="admin-key-empty">No notifications found.</p>
+           ) : (
+             notifications.map(n => (
+               <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 0.3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>{n.icon} {n.title}</h4>
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{n.desc}</p>
+                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--primary)' }}>
+                      <span>{n.date}</span>
+                      {n.link && <span>🔗 Has Link</span>}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                    <button onClick={() => { setEditingNotif(n); setIsEditingNotification(true); }} className="btn btn-glass btn-icon" style={{ padding: '0.5rem', width: 'auto', height: 'auto', borderRadius: '8px' }}><Pencil size={14} /></button>
+                    <button onClick={() => openDeleteNotifModal(n.id)} className="btn btn-glass btn-icon" style={{ padding: '0.5rem', width: 'auto', height: 'auto', borderRadius: '8px', color: 'var(--danger)', borderColor: 'var(--danger)' }}><Trash2 size={14} /></button>
+                  </div>
+               </div>
+             ))
+           )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="admin-dashboard animate-fade-in">
       {/* Header */}
       <div className="admin-header">
-        <div className="admin-header-left">
-          <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px' }} onClick={onBack}>
-            <ArrowLeft size={18} /> Back
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <button onClick={onBack} className="btn-glass btn-icon" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'auto', padding: '0.5rem 1rem', borderRadius: '12px', border: 'none' }}>
+            <ArrowLeft size={18} /> Exit Admin
           </button>
           <div className="admin-title-group">
             <Shield size={24} color="var(--primary)" />
@@ -386,6 +550,7 @@ const AdminDashboard = ({ onBack }) => {
         <div className="admin-content glass-panel">
           {activeTab === 'users' && renderUsersTab()}
           {activeTab === 'keys' && renderKeysTab()}
+          {activeTab === 'notifications' && renderNotificationsTab()}
         </div>
       </div>
 

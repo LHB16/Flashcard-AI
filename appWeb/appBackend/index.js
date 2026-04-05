@@ -24,6 +24,24 @@ app.get('/ping', (req, res) => {
   res.status(200).send('Pong! Render is alive.');
 });
 
+// Route Public lấy Notifications từ Database
+const supabase = require('./supabaseClient');
+app.get('/notifications', async (req, res) => {
+  try {
+    const { data: settings, error } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'notifications')
+      .single();
+    
+    if (error && error.code !== 'PGRST116') throw error; // ignore no rows error
+    res.json(settings ? settings.value : []);
+  } catch (err) {
+    console.error('Fetch notifications error:', err);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
 // Gắn bộ định tuyến
 app.use('/auth', authRoutes);
 app.use('/progress', progressRoutes);

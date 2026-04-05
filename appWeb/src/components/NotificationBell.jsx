@@ -1,51 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, ExternalLink } from 'lucide-react';
 
-const NOTIFICATIONS = [
-  {
-    id: 'notif_share_v1',
-    date: '2026-04-02',
-    title: 'New: Share & Clone Decks',
-    desc: 'You can now share decks via email! Click here to learn how it works in the guide.',
-    link: '/guide.html#share-deck'
-  },
-  {
-    id: 'notif_aiscan_v1',
-    date: '2026-03-31',
-    title: 'New: AI Scan Feature',
-    desc: 'Upload a folder of images to auto-generate flashcard decks using Gemini AI.'
-  },
-  {
-    id: 'notif_quiz_nav_v1',
-    date: '2026-03-30',
-    title: 'New: Quiz Navigation',
-    desc: 'Use ← → buttons to review previous answers or skip questions in Quiz Mode.'
-  },
-  {
-    id: 'notif_pin_sort_v1',
-    date: '2026-03-29',
-    title: 'New: Pin & Sort Decks',
-    desc: 'Pin your favorite decks to the top and sort A-Z or Z-A.'
-  },
-  {
-    id: 'notif_progress_v1',
-    date: '2026-03-29',
-    title: 'New: Cloud Progress Sync',
-    desc: 'Your flashcard progress is now synced to the cloud via Supabase.'
-  },
-  {
-    id: 'notif_guide_v1',
-    date: '2026-03-28',
-    icon: '📖',
-    title: 'User Guide Available',
-    desc: 'Check out the full guide to get started. Click here to view.',
-    link: '/guide.html'
-  }
-];
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 export default function NotificationBell() {
   const [showNotif, setShowNotif] = useState(false);
   const [readNotifs, setReadNotifs] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const notifRef = useRef(null);
 
   useEffect(() => {
@@ -57,6 +18,21 @@ export default function NotificationBell() {
     } catch (e) {
       console.error('Error loading read notifications:', e);
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/notifications`);
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch notifications:', err);
+      }
+    };
+    fetchNotifications();
   }, []);
 
   useEffect(() => {
@@ -92,12 +68,12 @@ export default function NotificationBell() {
   };
 
   const markAllAsRead = () => {
-    const allIds = NOTIFICATIONS.map(n => n.id);
+    const allIds = notifications.map(n => n.id);
     setReadNotifs(allIds);
     localStorage.setItem('read_notifications', JSON.stringify(allIds));
   };
 
-  const unreadCount = NOTIFICATIONS.filter(n => !readNotifs.includes(n.id)).length;
+  const unreadCount = notifications.filter(n => !readNotifs.includes(n.id)).length;
 
   return (
     <div className="relative" ref={notifRef} style={{ position: 'relative' }}>
@@ -137,12 +113,12 @@ export default function NotificationBell() {
 
           {/* List */}
           <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
-            {NOTIFICATIONS.length === 0 ? (
+            {notifications.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                 No notifications
               </div>
             ) : (
-              NOTIFICATIONS.map(notif => {
+              notifications.map(notif => {
                 const isRead = readNotifs.includes(notif.id);
                 return (
                   <div 
