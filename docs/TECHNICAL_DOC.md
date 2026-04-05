@@ -279,9 +279,9 @@ CREATE TABLE shared_decks (
 **Table: `deck_invites`** — Maps recipient emails to shared deck access
 
 ```sql
-CREATE TABLE deck_invites (
-  deck_id        TEXT  REFERENCES shared_decks(deck_id) ON DELETE CASCADE,
-  receiver_email TEXT  NOT NULL,
+CREATE TABLE IF NOT EXISTS deck_invites (
+  deck_id        TEXT REFERENCES shared_decks(deck_id) ON DELETE CASCADE,
+  receiver_email TEXT,
   created_at     TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (deck_id, receiver_email)
 );
