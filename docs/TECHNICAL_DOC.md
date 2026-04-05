@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.5 | **Last Updated:** 2026-04-05 | **Status:** Stable
+> **Version:** 2.6 | **Last Updated:** 2026-04-05 | **Status:** Stable
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -393,11 +393,13 @@ Globally-mounted modals (outside all branches, always in DOM):
 
 #### `AdminDashboard.jsx`
 
-- **Purpose:** Securely manage global settings and monitor usage (Total Users).
-- **Key Features:**
-  - Integrated via `system_settings` table in Supabase.
-  - Manages global Gemini API keys.
-  - Hidden behind the `/admin` path and a hardcoded developer password prompt.
+- **Purpose:** Securely manage global settings, monitor user growth, and configure system-level API rotation.
+- **Layout:** Redesigned on **2026-04-05** to a **Sidebar + Content Area** layout for better scalability.
+- **Tabs:**
+  - **User Management**: Displays a paginated table of all registered users (`google_id`, `email`, `created_at`, `updated_at`). Includes a **Timezone Selector** (supports auto-detect or manual select) to format timestamps correctly for local admin review.
+  - **Groq API Keys**: Manages the pool of keys used by `ChatBubble.jsx`. Features masked key display, "Last Updated" timestamps, and direct server-side deletion.
+- **Security:** Access is gated by the `isAdmin` middleware on the backend, which strictly validates the requester's identity via the `x-user-email` header against a hardcoded developer whitelist (`binhlhce200315@gmail.com`).
+- **UI/UX:** Uses the global `ConfirmationModal` for all destructive actions (deleting keys). The admin's own email is hidden from the header to maintain a clean, professional management interface.
 
 #### `ChatBubble.jsx`
 
@@ -539,6 +541,17 @@ const halfB = imgs.slice(mid);
 | :--- | :--- | :--- | :--- | :--- |
 | GET | `/scan/validate` | `x-gemini-key` | — | `{ valid: bool, msg: string }` |
 | POST | `/scan/process` | `x-gemini-key` | `{ pdf_base64, batch_index, total_batches, page_count, model_index }` | `{ cards[], batch_index, model_used, parse_error }` |
+
+**`/admin` routes**
+
+Gated by `isAdmin` middleware (Identity check via `x-user-email` header).
+
+| Method | Path | Request Body | Response | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/admin/dashboard` | — | `{ total_users, api_keys, keys_updated_at }` | Overview stats and keys |
+| GET | `/admin/users` | — | `{ users: [ {google_id, email, created_at, updated_at}, ... ] }` | Full user list, sorted by Newest |
+| POST | `/admin/settings/keys` | `{ keys: string[] }` | `{ success: true }` | Upsert full API key list |
+| DELETE | `/admin/settings/keys/:idx`| — | `{ success, api_keys, keys_updated_at }` | Server-side deletion of a specific key index |
 
 > The `/scan/process` endpoint uses a 4-layer JSON recovery strategy:
 > 1. Direct `JSON.parse()`
@@ -1039,11 +1052,13 @@ return (
 | `App.jsx` | `window.confirm` (logout) | Logout button |
 | `App.jsx` | `window.confirm` (bulk delete) | Delete button in selection mode |
 | `App.jsx` | `alert` (sync failed) | Drive sync error |
+| `AdminDashboard.jsx` | `window.confirm` | Deleting a Groq API key |
 | `AddDeckModal.jsx` | `window.confirm` (discard new deck) | Cancel button |
-| `AddDeckModal.jsx` | `alert` (empty name / no cards) | Save validation |
+| `AddDeckModal.jsx` | `alert` (empty name / no cards) | Save validation (e.g. "Missing Name") |
+| `AddDeckModal.jsx` | `alert` (empty card question) | Manual entry - "Empty Question" |
 | `DeckManager.jsx` | `window.confirm` (delete card) | Trash icon on card |
 | `DeckManager.jsx` | `window.confirm` (discard edit) | Back arrow in edit form |
-| `DeckManager.jsx` | `alert` (invalid card data) | Save card validation |
+| `DeckManager.jsx` | `alert` (invalid card data) | Multiple validations (Empty Question, No Correct Answer, etc.) |
 | `QuizMode.jsx` | `window.confirm` | Reset / Study again |
 | `FlashcardMode.jsx` | `window.confirm` | Reset / Study again |
 
