@@ -178,15 +178,9 @@ function App() {
           setData([]);
           setSelectedDeck(null);
         } else {
-          setConfirmConfig({
-            isOpen: true,
-            title: "No data found",
-            description: "No desk.json found on this Google Drive. Please upload a file manually or use AI Scan to create one.",
-            confirmText: "Close",
-            type: "warning",
-            icon: AlertTriangle,
-            onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
-          });
+          // Allow entering the dashboard with an empty deck list automatically
+          setDriveFileId(null);
+          handleDataLoaded([], false);
         }
       }
 
@@ -706,18 +700,20 @@ function App() {
                   <Sparkles size={16} /> AI Scan
                 </button>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => setIsAddDeckModalOpen(true)}
-                    style={{
-                      padding: '0.4rem 1.25rem',
-                      fontSize: '0.85rem',
-                      height: '36px',
-                      borderRadius: '10px'
-                    }}
-                  >
-                    <Plus size={16} /> Add Deck
-                  </button>
+                  {userLoggedIn && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setIsAddDeckModalOpen(true)}
+                      style={{
+                        padding: '0.4rem 1.25rem',
+                        fontSize: '0.85rem',
+                        height: '36px',
+                        borderRadius: '10px'
+                      }}
+                    >
+                      <Plus size={16} /> Add Deck
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1124,10 +1120,10 @@ function App() {
             </div>
           )}
 
-          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
-          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
+          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
+          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
-          {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} />}
+          {mode === 'manage' && <DeckManager deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
         </div>
         <AddDeckModal
           isOpen={isAddDeckModalOpen}

@@ -5,7 +5,7 @@ import ChatBubble from './ChatBubble';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig }) => {
+const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn }) => {
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -702,7 +702,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig })
       )}
       {/* Confirmation Modal */}
 
-      <ChatBubble currentCard={currentCard} />
+      {userLoggedIn && <ChatBubble currentCard={currentCard} />}
     </div>
   );
 });

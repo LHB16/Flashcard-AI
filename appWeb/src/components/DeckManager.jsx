@@ -13,7 +13,7 @@ const DEDUP_PAIRS_PER_PAGE = 15;
  * DeckManager — View/Delete cards + Check Duplicates
  * Props: deck, onBack, onDeckModified
  */
-export default function DeckManager({ deck, onBack, onDeckModified, setConfirmConfig }) {
+export default function DeckManager({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn }) {
   const [tab, setTab] = useState('view'); // 'view' | 'dedup'
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -189,13 +189,15 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
           >
             Check Duplicates
           </button>
-          <button
-            className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
-            onClick={() => setTab('share')}
-            style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <Share2 size={18} /> Share Deck
-          </button>
+          {userLoggedIn && (
+            <button
+              className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
+              onClick={() => setTab('share')}
+              style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Share2 size={18} /> Share Deck
+            </button>
+          )}
         </div>
       )}
 
@@ -765,7 +767,7 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
       )}
 
       {/* ─── SHARE TAB (FOCUSED VIEW) ─── */}
-      {tab === 'share' && (
+      {tab === 'share' && userLoggedIn && (
         <ShareDeckView 
           deck={deck} 
           onBack={() => setTab('view')} 

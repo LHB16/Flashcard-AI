@@ -3,7 +3,7 @@ import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw, Check, X } from
 import ConfirmationModal from './ConfirmationModal';
 import ChatBubble from './ChatBubble';
 
-const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
+const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn }) => {
   const cards = deck?.cards || [];
 
   const [index, setIndex] = useState(0);
@@ -558,7 +558,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig }) => {
         </button>
       </div>
 
-      <ChatBubble currentCard={currentCard} />
+      {userLoggedIn && <ChatBubble currentCard={currentCard} />}
     </div>
   );
 };
