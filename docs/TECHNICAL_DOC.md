@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.4 | **Last Updated:** 2026-04-03 | **Status:** Stable
+> **Version:** 2.5 | **Last Updated:** 2026-04-05 | **Status:** Stable
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -545,6 +545,14 @@ const halfB = imgs.slice(mid);
 > 2. Regex extract `[...array...]`
 > 3. Auto-fix (trailing commas, missing brackets)
 > 4. Partial object extraction (regex on individual `{...}` objects)
+
+**`/chat` routes**
+
+| Method | Path | Request Body | Response | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| POST | `/chat/ask` | `{ user_question, card_context, system_prompt }` | `{ reply: string, provider: 'groq' \| 'gemini' }` | Uses rotated Groq keys. Fallback to Gemini if all keys fail. |
+
+> The `/chat/ask` endpoint features an **automatic API key rotation and fallback system**. It pulls an array of Groq API keys from the Supabase `system_settings` table, shuffles them randomly for load balancing, and iterates through them until one succeeds. If all Groq keys fail (e.g., due to rate limits), it gracefully falls back to the server's local `GEMINI_API_KEY`.
 
 **`/progress` routes**
 
