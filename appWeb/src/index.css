@@ -860,8 +860,7 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 6px 24px rgba(139, 92, 246, 0.45);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: chat-btn-pulse 2s ease-in-out infinite;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .chat-toggle-btn:hover {

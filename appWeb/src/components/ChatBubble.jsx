@@ -5,6 +5,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const ChatBubble = ({ currentCard }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAwake, setIsAwake] = useState(false); // false = mờ, true = rõ
   const [messages, setMessages] = useState([
     { role: 'bot', content: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!' }
   ]);
@@ -13,6 +14,7 @@ const ChatBubble = ({ currentCard }) => {
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fadeTimerRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -200,11 +202,31 @@ YOUR ROLE:
         </div>
       </div>
 
-      {/* Toggle Button — always bottom-right via CSS */}
+      {/* Toggle Button — idle-fade behavior */}
       <button
         className={`chat-toggle-btn ${isOpen ? 'chat-toggle-btn--hidden' : ''}`}
-        onClick={() => setIsOpen(true)}
-        title="Open AI Chat"
+        style={{
+          opacity: isAwake ? 1 : 0.3,
+          transition: 'opacity 0.4s ease, transform 0.3s, box-shadow 0.3s',
+        }}
+        onClick={() => {
+          // Clear any existing fade timer
+          if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+
+          if (!isAwake) {
+            // Click 1: wake up (become fully visible)
+            setIsAwake(true);
+            // Auto-fade after 3s if not clicked again
+            fadeTimerRef.current = setTimeout(() => {
+              setIsAwake(false);
+            }, 3000);
+          } else {
+            // Click 2: open the chat
+            setIsOpen(true);
+            setIsAwake(false); // reset for next time
+          }
+        }}
+        title={isAwake ? 'Click to open chat' : 'Click to activate'}
       >
         <MessageCircle size={24} />
       </button>
