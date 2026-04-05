@@ -253,12 +253,14 @@ function App() {
     setActiveTab('decks');
   };
 
-  const handleDeckCreated = async (newDeck) => {
-    const updated = data ? [...data, newDeck] : [newDeck];
+  const handleDeckCreated = async (newDeckData) => {
+    const isArray = Array.isArray(newDeckData);
+    const newDecks = isArray ? newDeckData : [newDeckData];
+    const updated = data ? [...data, ...newDecks] : [...newDecks];
     setData(updated);
 
-    // Auto-select the newly created deck
-    setSelectedDeck(newDeck);
+    // Auto-select the first newly created deck
+    setSelectedDeck(newDecks[0]);
     setMode('home');
 
     // Sync to Drive

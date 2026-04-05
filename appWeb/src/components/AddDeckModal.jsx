@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash, BookOpen, Layers, AlertTriangle, ArrowRight, Trash2, Pencil, LogOut } from 'lucide-react';
+import { X, Plus, Trash, BookOpen, Layers, AlertTriangle, ArrowRight, Trash2, Pencil, LogOut, FileJson } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -84,6 +84,38 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
       correct_answers: ['A'],
       question_type: 'single_choice'
     });
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const jsonData = JSON.parse(event.target.result);
+        const decksToAdd = Array.isArray(jsonData) ? jsonData : (jsonData.cards ? [jsonData] : []);
+        
+        if (decksToAdd.length === 0) {
+          showAlert("Invalid File", "Could not find any valid decks in the uploaded file.", "danger");
+          return;
+        }
+
+        // Add proper IDs to any decks missing them
+        const processedDecks = decksToAdd.map(deck => ({
+          ...deck,
+          deck_id: deck.deck_id || Date.now().toString() + Math.random().toString(36).substr(2, 5)
+        }));
+
+        onDeckCreated(processedDecks);
+        resetState();
+        onClose();
+      } catch (err) {
+        showAlert("Error", "Cannot read JSON file. Please check again.", "danger");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input to allow uploading same file again
   };
 
   const parseBulkText = (text) => {
@@ -177,6 +209,14 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
             <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)', fontWeight: 'bold' }}>Create New Deck</h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <label 
+              className="btn btn-glass" 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '12px', fontSize: '0.9rem', color: 'var(--primary)', cursor: 'pointer', margin: 0 }}
+            >
+              <FileJson size={16} />
+              Upload JSON
+              <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileUpload} />
+            </label>
             <button 
               onClick={onOpenImport} 
               className="btn btn-glass" 
