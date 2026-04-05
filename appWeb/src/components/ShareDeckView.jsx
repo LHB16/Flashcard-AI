@@ -125,6 +125,7 @@ export default function ShareDeckView({ deck, onBack }) {
 
       if (result.newlySharedCount === 0) {
         setMessage({ type: 'error', text: result.message });
+        fetchInvites();
       } else {
         setMessage({ type: 'success', text: result.message || `Successfully shared!` });
         setEmails('');
@@ -217,7 +218,7 @@ export default function ShareDeckView({ deck, onBack }) {
         </div>
 
         <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.8rem', display: 'block', textTransform: 'uppercase' }}>
-          Recipient Emails / Email người nhận
+          Recipient Emails
         </label>
         <textarea
           value={emails}
