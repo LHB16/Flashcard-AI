@@ -302,9 +302,11 @@ appWeb/
 │   ├── index.css                # Global design system (CSS vars, components)
 │   ├── main.jsx                 # React entry point
 │   ├── components/
+│   │   ├── AdminDashboard.jsx   # Admin panel for API keys and stats
 │   │   ├── AIScan.jsx           # AI Scan orchestration UI
 │   │   ├── AddDeckModal.jsx     # Create deck via Bulk Import or Manual Entry
 │   │   ├── ApiKeyChip.jsx       # API key display chip component
+│   │   ├── ChatBubble.jsx       # Floating AI chat assistant
 │   │   ├── ConfirmationModal.jsx# Reusable glassmorphism modal (danger/warning/info)
 │   │   ├── DeckManager.jsx      # Card viewer, editor, dedup + Share tab
 │   │   ├── FileLoader.jsx       # Import/Export decks.json
@@ -388,6 +390,25 @@ Globally-mounted modals (outside all branches, always in DOM):
   2. User selects a folder → images filtered (jpg/png/webp/bmp)
   3. On "Start AI Scan": validate all keys in parallel → generate PDFs → process via Worker Pool
   4. On complete: call `onScanComplete(newDeck)` which triggers Drive upload
+
+#### `AdminDashboard.jsx`
+
+- **Purpose:** Securely manage global settings and monitor usage (Total Users).
+- **Key Features:**
+  - Integrated via `system_settings` table in Supabase.
+  - Manages global Gemini API keys.
+  - Hidden behind the `/admin` path and a hardcoded developer password prompt.
+
+#### `ChatBubble.jsx`
+
+- **Props:** `currentCard: Card`, `userLoggedIn: boolean`
+- **Purpose:** Provides a floating AI chat assistant for explaining flashcards and answering card-specific questions.
+- **Idle-Fade Pattern:**
+  - Defaults to `0.3` opacity (visually unobtrusive) when idle.
+  - Click 1: Wakes up to `1.0` opacity. Automatically returns to `0.3` after 3 seconds if untouched.
+  - Click 2: Expands into a full chat window.
+- **State:** Passes context of the currently active card (`currentCard.question` and `currentCard.options`) in system prompts to `/scan/chat` endpoint.
+- Disabled via CSS and tooltip if `userLoggedIn === false`.
 
 #### `DeckManager.jsx`
 
@@ -1057,6 +1078,34 @@ Clearing local state is insufficient for features that rely on persistent backen
   ```
 
 ---
+
+### 4.15 Access Control & Guest (Offline) Mode
+
+Added on **2026-04-05**, the app shifted from a strict login gate to a permissive, offline-friendly access model. 
+
+#### 4.15.1 Null-Deck Initialization
+Previously, if an authenticated user had no `decks.json` in their Google Drive, they were met with an error message and stopped at the Landing screen. Now, the `handleSyncFromDrive` logic intercepts a `null` file result and explicitly triggers `handleDataLoaded([], false)` instead of throwing an error. This drops users directly into an empty Dashboard where they can begin working.
+
+#### 4.15.2 Feature Restrictions (`userLoggedIn: false`)
+A user can access the app offline (Guest mode) by uploading a JSON file via the FileLoader on the Landing Screen. Since they cannot sync changes to Google Drive without an OAuth token, modifying the deck structure visually causes data sync divergence.
+
+To safely accommodate offline access while protecting data integrity, core deck mutations and external features are **disabled** (rendered with `opacity: 0.5` and `cursor: not-allowed` instead of completely hidden to manage user expectations):
+
+| Feature | Component | Condition | Rule |
+| :--- | :--- | :--- | :--- |
+| **Add Deck** | `App.jsx` (Header) | `!userLoggedIn` | Disabled. Prevents users from drafting decks that will be lost on refresh. |
+| **Share Deck** | `DeckManager.jsx` (Tab btn) | `!userLoggedIn` | Disabled. Sharing requires inserting data into Supabase bound to a Google ID. |
+| **AI Chat** | `ChatBubble.jsx` (Toggle) | `!userLoggedIn` | Disabled. Chat history and AI API requests are tied to user session continuity. |
+| **AI Scan** | `App.jsx` (Tab btn) | `!userLoggedIn` | Disabled. Requires Drive authentication for API key resolution. |
+
+When disabled, all restricted buttons display a standard HTML title tooltip: *"Login to Google Drive first"*.
+
+#### 4.15.3 The Empty State Dashboard
+When `processedDecks.length === 0` (e.g., brand new users, or users who have cleared their account), the dashboard clears the Grid display and drops an explicit inline CTA:
+
+> *"You don't have any decks yet. Try clicking the **+ Add Deck** or **AI Scan** button to get started!"*
+
+This ensures users aren't left staring at a blank UI while awaiting structure creation.
 
 ---
 
