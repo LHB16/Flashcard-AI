@@ -7,7 +7,7 @@ router.post('/create', async (req, res) => {
   const { google_id, deck_id, deck_data, receiver_emails } = req.body;
 
   if (!google_id || !deck_id || !deck_data) {
-    return res.status(400).json({ error: 'Thiếu tham số bắt buộc để chia sẻ bộ thẻ' });
+    return res.status(400).json({ error: 'Missing required parameters to share deck' });
   }
 
   try {
@@ -47,10 +47,10 @@ router.post('/create', async (req, res) => {
       if (inviteError) throw inviteError;
     }
 
-    res.json({ message: 'Chia sẻ bộ thẻ thành công' });
+    res.json({ message: 'Deck shared successfully' });
   } catch (error) {
     console.error('Share Deck Error:', error);
-    res.status(500).json({ error: 'Lỗi khi lưu bộ thẻ chia sẻ lên Supabase' });
+    res.status(500).json({ error: 'Failed to share deck to Supabase' });
   }
 });
 
@@ -76,7 +76,7 @@ router.get('/view/:deck_id', async (req, res) => {
     if (inviteError && inviteError.code !== 'PGRST116') throw inviteError;
 
     if (!inviteData) {
-      return res.status(403).json({ error: 'Truy cập bị từ chối. Email này không được cấp quyền xem bộ thẻ.' });
+      return res.status(403).json({ error: 'Access denied. This email is not authorized to view the deck.' });
     }
 
     // 2. Lấy dữ liệu deck
@@ -89,13 +89,13 @@ router.get('/view/:deck_id', async (req, res) => {
     if (deckError && deckError.code !== 'PGRST116') throw deckError;
 
     if (!deckRecord) {
-      return res.status(404).json({ error: 'Bộ thẻ chia sẻ không tồn tại hoặc đã bị xóa.' });
+      return res.status(404).json({ error: 'Shared deck does not exist or has been deleted.' });
     }
 
     res.json({ data: deckRecord.deck_data });
   } catch (error) {
     console.error('View Shared Deck Error:', error);
-    res.status(500).json({ error: 'Lỗi tải bộ thẻ chia sẻ từ Backend Supabase' });
+    res.status(500).json({ error: 'Failed to fetch shared deck from Supabase' });
   }
 });
 

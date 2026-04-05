@@ -5,7 +5,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.warn("⚠️ Cảnh báo: Thiếu SUPABASE_URL hoặc SUPABASE_SERVICE_KEY trong file .env!");
+    console.warn("⚠️ Warning: Missing SUPABASE_URL or SUPABASE_SERVICE_KEY in .env file!");
 }
 
 const supabase = createClient(supabaseUrl || 'https://mock.supabase.co', supabaseKey || 'mock_key');

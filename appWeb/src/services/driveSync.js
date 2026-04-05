@@ -34,10 +34,10 @@ export const initGoogleIdentity = async (onSuccess, onError) => {
       const token = await getValidToken();
       if (token && onSuccess) onSuccess(token);
     } catch (err) {
-      if (onError) onError(err.message || 'Hết hạn phiên đăng nhập');
+      if (onError) onError(err.message || 'Session expired');
     }
   } else {
-    if (onError) onError('Bạn chưa đăng nhập');
+    if (onError) onError('You are not logged in');
   }
 };
 
@@ -62,7 +62,7 @@ export const getValidToken = async () => {
 
     if (!res.ok) {
        logoutGoogle();
-       throw new Error('Refresh Token từ Server thất bại. Vui lòng đăng nhập lại.');
+       throw new Error('Failed to refresh token from server. Please log in again.');
     }
     
     const data = await res.json();

@@ -7,7 +7,7 @@ router.post('/save', async (req, res) => {
   const { google_id, deck_id, percent } = req.body;
 
   if (!google_id || !deck_id || percent === undefined) {
-    return res.status(400).json({ error: 'Lỗi thiếu params lưu trữ' });
+    return res.status(400).json({ error: 'Missing required storage params' });
   }
 
   try {
@@ -21,10 +21,10 @@ router.post('/save', async (req, res) => {
       }, { onConflict: 'google_id,deck_id' }); 
 
     if (error) throw error;
-    res.json({ message: 'Lưu tiến trình Cloud thành công', data });
+    res.json({ message: 'Cloud progress saved successfully', data });
   } catch (error) {
     console.error('Save Progress Error:', error);
-    res.status(500).json({ error: 'Lỗi ghi CSDL Supabase' });
+    res.status(500).json({ error: 'Failed to write to Supabase DB' });
   }
 });
 
@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
     res.json({ data });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Lỗi tải tiến trình Backend Supabase' });
+    res.status(500).json({ error: 'Failed to fetch progress from Backend Supabase' });
   }
 });
 // ============ QUIZ SESSIONS ============
@@ -77,7 +77,7 @@ router.post('/quiz/save', async (req, res) => {
     res.json({ message: 'Quiz session saved', data });
   } catch (error) {
     console.error('Quiz Save Error:', error);
-    res.status(500).json({ error: 'Lỗi lưu quiz session' });
+    res.status(500).json({ error: 'Failed to save quiz session' });
   }
 });
 
@@ -100,7 +100,7 @@ router.get('/quiz/:deck_id', async (req, res) => {
     res.json({ data: data || null });
   } catch (error) {
     console.error('Quiz Load Error:', error);
-    res.status(500).json({ error: 'Lỗi tải quiz session' });
+    res.status(500).json({ error: 'Failed to fetch quiz session' });
   }
 });
 // ============ DECK PROGRESS (JSONB) ============
@@ -125,7 +125,7 @@ router.post('/cards/save', async (req, res) => {
     res.json({ message: 'Deck progress merged successfully' });
   } catch (error) {
     console.error('Merge Deck Progress Error:', error);
-    res.status(500).json({ error: 'Lỗi ghi deck progress jsonb' });
+    res.status(500).json({ error: 'Failed to write deck progress jsonb' });
   }
 });
 
@@ -148,7 +148,7 @@ router.get('/cards/:deck_id', async (req, res) => {
     res.json({ data: data ? data.cards_status : {} });
   } catch (error) {
     console.error('Load Deck Progress Error:', error);
-    res.status(500).json({ error: 'Lỗi tải deck progress jsonb' });
+    res.status(500).json({ error: 'Failed to fetch deck progress jsonb' });
   }
 });
 
@@ -178,7 +178,7 @@ router.post('/delete-bulk', async (req, res) => {
     res.json({ message: 'Database clean up successful', count: deck_ids.length });
   } catch (error) {
     console.error('Bulk Delete Error:', error);
-    res.status(500).json({ error: 'Lỗi dọn dẹp CSDL Supabase' });
+    res.status(500).json({ error: 'Failed to cleanup Supabase DB' });
   }
 });
 
@@ -232,7 +232,7 @@ router.post('/deck/on-modified', async (req, res) => {
     res.json({ message: 'Deck modifications synced to DB' });
   } catch (error) {
     console.error('Deck Modify Sync Error:', error);
-    res.status(500).json({ error: 'Lỗi đồng bộ thay đổi cấu trúc' });
+    res.status(500).json({ error: 'Failed to sync structural changes' });
   }
 });
 

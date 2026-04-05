@@ -110,7 +110,7 @@ function App() {
         handleSyncFromDrive();
       },
       (err) => {
-        console.warn("Chưa đăng nhập Google hoặc phiên đã hết hạn:", err);
+        console.warn("Not logged into Google or session expired:", err);
         setIsSyncing(false);
       }
     );

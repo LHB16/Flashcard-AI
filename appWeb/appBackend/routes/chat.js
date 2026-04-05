@@ -88,14 +88,14 @@ router.post('/ask', async (req, res) => {
     }
 
     if (!success) {
-      return res.status(500).json({ error: 'Hệ thống AI hiện đang quá tải. Tất cả các API Key đều không gọi được. Vui lòng thử lại sau.' });
+      return res.status(500).json({ error: 'AI systems are currently overloaded. All API keys are failing. Please try again later.' });
     }
 
     res.json({ reply: aiResponse, provider });
 
   } catch (err) {
     console.error('Chat API Error:', err);
-    res.status(500).json({ error: 'Lỗi hệ thống khi kết nối với AI Service' });
+    res.status(500).json({ error: 'System error when connecting to AI Service' });
   }
 });
 

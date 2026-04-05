@@ -64,7 +64,7 @@ router.get('/callback', async (req, res) => {
             updated_at: new Date()
           }, { onConflict: 'google_id' });
 
-        if (upsertErr) console.error("⚠️ Supabase upsert lỗi (không ảnh hưởng login):", upsertErr);
+        if (upsertErr) console.error("⚠️ Supabase upsert error (does not affect login):", upsertErr);
       }
     } catch (dbErr) {
       console.error("⚠️ Supabase DB error (bỏ qua):", dbErr.message);
@@ -76,8 +76,8 @@ router.get('/callback', async (req, res) => {
     // Điều hướng ngược lại Frontend kèm URL params
     res.redirect(`${frontendCallback}?access_token=${tokens.access_token}&google_id=${googleId}&expiry=${tokens.expiry_date || (Date.now() + 3599000)}&email=${encodeURIComponent(email)}`);
   } catch (error) {
-    console.error('❌ Lỗi Callback OAuth:', error.message || error);
-    res.status(500).send(`Đăng nhập thất bại: ${error.message || 'Unknown error'}`);
+    console.error('❌ OAuth Callback Error:', error.message || error);
+    res.status(500).send(`Login failed: ${error.message || 'Unknown error'}`);
   }
 });
 
@@ -97,7 +97,7 @@ router.post('/refresh', async (req, res) => {
       .single();
 
     if (error || !user || !user.refresh_token) {
-      return res.status(401).json({ error: 'Phiên bị hủy hoặc chưa cấp phép. Vui lòng login lại qua luồng /auth/google' });
+      return res.status(401).json({ error: 'Session expired or unauthorized. Please log in again via /auth/google' });
     }
 
     oauth2Client.setCredentials({ refresh_token: user.refresh_token });
@@ -108,7 +108,7 @@ router.post('/refresh', async (req, res) => {
       expiry: credentials.expiry_date
     });
   } catch (error) {
-    console.error('Lỗi Refresh Token:', error);
+    console.error('Refresh Token Error:', error);
     res.status(500).json({ error: 'Failed to refresh token API' });
   }
 });

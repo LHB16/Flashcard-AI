@@ -54,7 +54,7 @@ router.get('/dashboard', isAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error('Admin Dashboard error:', err);
-    res.status(500).json({ error: 'Lỗi server khi tải dữ liệu dashboard' });
+    res.status(500).json({ error: 'Server error while fetching dashboard data' });
   }
 });
 
