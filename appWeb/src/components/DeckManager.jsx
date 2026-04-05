@@ -13,12 +13,16 @@ const DEDUP_PAIRS_PER_PAGE = 15;
  * DeckManager — View/Delete cards + Check Duplicates
  * Props: deck, onBack, onDeckModified
  */
-export default function DeckManager({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn }) {
+export default function DeckManager({ deck, allDecks = [], onBack, onDeckModified, setConfirmConfig, userLoggedIn }) {
   const [tab, setTab] = useState('view'); // 'view' | 'dedup'
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [selectedCards, setSelectedCards] = useState(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  // Add functionality states
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
 
   // Dedup state
   const [dedupResults, setDedupResults] = useState(null);
@@ -75,6 +79,52 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
     setDeleteConfirm(null);
     setSelectedCards(prev => { const n = new Set(prev); n.delete(origIdx); return n; });
   }, [deck, deckIdToSync, onDeckModified]);
+
+  const handleAddManual = useCallback(() => {
+    setEditingCard({
+      index: -1,
+      isNew: true,
+      data: {
+        card_id: uuidv4(),
+        question: '',
+        options: ['A. ', 'B. ', 'C. ', 'D. '],
+        correct_answers: [],
+        question_type: 'single_choice',
+        status: 0,
+        notes: ''
+      }
+    });
+    setTab('edit');
+  }, []);
+
+  const handleMergeDeck = useCallback(async (sourceDeck) => {
+    if (!sourceDeck || !sourceDeck.cards) return;
+    
+    // Create copies of cards with new IDs and reset status to 0 (unlearned)
+    const newCards = sourceDeck.cards.map(c => ({
+      ...JSON.parse(JSON.stringify(c)), // deep copy
+      card_id: uuidv4(),
+      status: 0
+    }));
+
+    // Append to current deck
+    deck.cards = [...(deck.cards || []), ...newCards];
+    
+    // Notify change and sync
+    onDeckModified();
+    setIsMergeModalOpen(false);
+    
+    // Show success notification
+    setConfirmConfig({
+      isOpen: true,
+      title: "Decks Merged",
+      description: `Successfully added ${newCards.length} cards from "${sourceDeck.name}" to this deck.`,
+      confirmText: "Got it",
+      type: "success",
+      icon: CheckCircle2,
+      onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+    });
+  }, [deck, onDeckModified, setConfirmConfig]);
 
   const handleDeleteSelected = useCallback(() => {
     if (!selectedCards.size) return;
@@ -246,32 +296,49 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
               </button>
             )}
             
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setEditingCard({
-                  index: -1,
-                  isNew: true,
-                  data: {
-                    card_id: uuidv4(),
-                    question: '',
-                    options: ['A. ', 'B. ', 'C. ', 'D. '],
-                    correct_answers: [],
-                    question_type: 'single_choice',
-                    status: 0,
-                    notes: ''
-                  }
-                });
-                setTab('edit');
-              }}
-              style={{
-                padding: '0.7rem 1.2rem', borderRadius: '10px',
-                display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem',
-                marginLeft: 'auto'
-              }}
-            >
-              <Plus size={18} /> Add Card
-            </button>
+            <div style={{ position: 'relative', marginLeft: 'auto' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+                style={{
+                  padding: '0.7rem 1.2rem', borderRadius: '10px',
+                  display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem',
+                }}
+              >
+                <Plus size={18} /> Add Card
+              </button>
+              
+              {isAddMenuOpen && (
+                <>
+                  <div 
+                    onClick={() => setIsAddMenuOpen(false)} 
+                    style={{ position: 'fixed', inset: 0, zIndex: 999 }} 
+                  />
+                  <div className="glass-panel scale-in" style={{
+                    position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+                    width: '220px', zIndex: 1000, padding: '0.5rem',
+                    boxShadow: '0 15px 35px rgba(0,0,0,0.4)',
+                    display: 'flex', flexDirection: 'column', gap: '0.4rem',
+                    background: 'var(--card-bg)', border: '1px solid var(--glass-border)'
+                  }}>
+                    <button 
+                      className="btn btn-glass" 
+                      style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }} 
+                      onClick={() => { handleAddManual(); setIsAddMenuOpen(false); }}
+                    >
+                      <Plus size={18} color="var(--primary)" /> Add Manually
+                    </button>
+                    <button 
+                      className="btn btn-glass" 
+                      style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }} 
+                      onClick={() => { setIsMergeModalOpen(true); setIsAddMenuOpen(false); }}
+                    >
+                      <Share2 size={18} color="var(--success)" style={{ transform: 'rotate(180deg)' }} /> Import from Deck
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Card List */}
@@ -779,11 +846,68 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
       )}
 
       {/* ─── SHARE TAB (FOCUSED VIEW) ─── */}
-      {tab === 'share' && userLoggedIn && (
-        <ShareDeckView 
-          deck={deck} 
-          onBack={() => setTab('view')} 
-        />
+      {/* ─── MERGE DECK MODAL ─── */}
+      {isMergeModalOpen && (
+        <div className="animate-fade-in" style={{
+          position: 'fixed', inset: 0, zIndex: 2000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
+        }}>
+          <div className="glass-panel scale-in" style={{
+            width: '100%', maxWidth: '500px', background: 'var(--card-bg)',
+            borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: '80vh'
+          }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0 }}>Import from Another Deck</h3>
+              <button 
+                className="btn-glass btn-icon" 
+                onClick={() => setIsMergeModalOpen(false)}
+                style={{ width: '32px', height: '32px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div style={{ padding: '1rem', overflowY: 'auto', flex: 1 }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', padding: '0 0.5rem' }}>
+                Select a deck to copy its cards into the current one. Progress for imported cards will be reset.
+              </p>
+              
+              {allDecks
+                .filter(d => (d.deck_id || d.name) !== (deck.deck_id || deck.name))
+                .map(source => (
+                <div 
+                  key={source.deck_id || source.name}
+                  onClick={() => handleMergeDeck(source)}
+                  className="glass-panel glass-panel-hover"
+                  style={{ 
+                    padding: '1rem', marginBottom: '0.75rem', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '1rem', transition: 'all 0.2s'
+                  }}
+                >
+                  <Layers size={24} color="var(--primary)" />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '1rem' }}>{source.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{source.cards?.length || 0} cards</div>
+                  </div>
+                </div>
+              ))}
+              
+              {allDecks.filter(d => (d.deck_id || d.name) !== (deck.deck_id || deck.name)).length === 0 && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  No other decks available to import from.
+                </div>
+              )}
+            </div>
+            
+            <div style={{ padding: '1.25rem', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-glass" onClick={() => setIsMergeModalOpen(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
