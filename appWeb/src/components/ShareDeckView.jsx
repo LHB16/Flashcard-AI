@@ -181,7 +181,7 @@ export default function ShareDeckView({ deck, onBack }) {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {currentInvites.map((inv, idx) => (
-                  <div key={inv.id} style={{
+                  <div key={inv.receiver_email} style={{
                     display: 'flex', alignItems: 'center', padding: '1rem',
                     borderBottom: idx < currentInvites.length - 1 ? '1px solid var(--glass-border)' : 'none',
                     gap: '1rem'

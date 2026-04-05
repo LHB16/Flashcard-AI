@@ -253,7 +253,7 @@ router.get('/invites/:deck_id', async (req, res) => {
 
     const { data: invites, error: inviteError } = await supabase
       .from('deck_invites')
-      .select('id, receiver_email, created_at')
+      .select('receiver_email, created_at')
       .eq('deck_id', deck_id)
       .order('created_at', { ascending: true });
 
