@@ -427,6 +427,14 @@ Globally-mounted modals (outside all branches, always in DOM):
   6. Combined score: `qRatio * 0.6 + ansRatio * 0.4`
   7. Auto-select "B" cards for exact (≥99%) matches
 
+#### `ShareDeckView.jsx`
+
+- **Purpose:** UI for sharing a snapshot of a deck with other users via email and managing existing permissions.
+- **Key Features:**
+  - **Invite Creation**: Submits new emails to `/share/create`. The backend intelligently filters out users who already have access and only emails the new ones.
+  - **Access Management**: Fetches the active list of permitted viewers (`GET /share/invites`) on mount and displays them. Supports revoking access via `DELETE /share/invite`. Destructive actions are guarded by `ConfirmationModal`.
+  - **Standalone Snapshot**: Recipients receive a standalone clone of the deck based on the state at the exact time of sharing; their local edits do not affect the owner's original deck.
+
 #### `FlashcardMode.jsx`
 
 - Renders cards sequentially with swipe/keyboard/button navigation
@@ -584,8 +592,10 @@ Gated by `isAdmin` middleware (Identity check via `x-user-email` header).
 
 | Method | Path | Request Body | Response | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message }` | Upserts deck snapshot to `shared_decks`, inserts rows into `deck_invites`, then fires a Gmail API invitation email to all recipients (fire-and-forget). |
-| GET | `/share/view/:deck_id` | — | `{ deck_data }` | Returns the JSONB snapshot for the given `deck_id`. Used by `ImportSharedDeckModal` to fetch the deck before cloning. |
+| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message, newlySharedCount }` | Upserts deck snapshot to `shared_decks`. Filters out emails already present in `deck_invites` for this deck to prevent spam resending. Inserts new invites and fires a Gmail API invitation only to these newly added recipients. |
+| GET | `/share/invites/:deck_id` | Query: `google_id` | `{ invites: [ { id, receiver_email, created_at } ] }` | Retrieves the list of currently shared email invitations. Validates that the requested `google_id` matches the deck owner. Returns `[]` if the deck has never been shared. |
+| GET | `/share/view/:deck_id` | Query: `email` | `{ deck_data }` | Returns the JSONB snapshot for the given `deck_id` if the `email` exists in `deck_invites`. Used by `ImportSharedDeckModal` to fetch and clone the deck. |
+| DELETE | `/share/invite` | `{ deck_id, receiver_email, google_id }` | `{ message }` | Removes a specific email's access to the shared deck (deletes from `deck_invites`). Validates ownership via `google_id`. |
 
 > **Email Invitation Detail:** `POST /share/create` queries the `users` table to resolve the sender's email (`google_id → email`), then constructs an RFC 2822 HTML email encoded as `base64url` and sends it via `gmail.users.messages.send` using the `GMAIL_REFRESH_TOKEN`. This approach uses HTTPS instead of SMTP, bypassing Render Free Tier's outbound port block.
 
