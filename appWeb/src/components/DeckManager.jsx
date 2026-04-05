@@ -112,6 +112,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
     
     // Notify change and sync
     onDeckModified();
+    setTab('view');
     setIsMergeModalOpen(false);
     
     // Show success notification
@@ -234,8 +235,8 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
         </span>
       </div>
 
-      {/* Tab Bar - Hidden in Edit Mode only */}
-      {(tab !== 'edit') && (
+      {/* Tab Bar - Hidden in Edit Mode and Import Mode */}
+      {(tab !== 'edit' && tab !== 'import') && (
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <button
             className={`btn ${tab === 'view' ? 'btn-primary' : 'btn-glass'}`}
@@ -331,7 +332,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                     <button 
                       className="btn btn-glass" 
                       style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }} 
-                      onClick={() => { setIsMergeModalOpen(true); setIsAddMenuOpen(false); }}
+                      onClick={() => { setTab('import'); setIsAddMenuOpen(false); }}
                     >
                       <Share2 size={18} color="var(--success)" style={{ transform: 'rotate(180deg)' }} /> Import from Deck
                     </button>
@@ -853,34 +854,33 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
         />
       )}
 
-      {/* ─── MERGE DECK MODAL ─── */}
-      {isMergeModalOpen && (
-        <div className="animate-fade-in" style={{
-          position: 'fixed', inset: 0, zIndex: 2000,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
-        }}>
-          <div className="glass-panel scale-in" style={{
-            width: '100%', maxWidth: '500px', background: 'var(--card-bg)',
-            borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxHeight: '80vh'
+      {/* ─── IMPORT DECK TAB (FOCUSED VIEW) ─── */}
+      {tab === 'import' && (
+        <div className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Editor Header */}
+          <div className="glass-panel" style={{ 
+            padding: '1rem 1.5rem', borderRadius: '24px', 
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'var(--card-bg)' 
           }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0 }}>Import from Another Deck</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <button 
-                className="btn-glass btn-icon" 
-                onClick={() => setIsMergeModalOpen(false)}
-                style={{ width: '32px', height: '32px' }}
+                className="btn btn-glass btn-icon" 
+                onClick={() => setTab('view')}
+                title="Back to list"
               >
-                <X size={18} />
+                <ArrowLeft size={20} />
               </button>
+              <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Import from Another Deck</h3>
             </div>
+          </div>
+
+          <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', margin: 0 }}>
+              Select a deck below to copy its cards into the current one. Progress for imported cards will be reset, while existing cards will retain their progress.
+            </p>
             
-            <div style={{ padding: '1rem', overflowY: 'auto', flex: 1 }}>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', padding: '0 0.5rem' }}>
-                Select a deck to copy its cards into the current one. Progress for imported cards will be reset.
-              </p>
-              
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
               {allDecks
                 .filter(d => (d.deck_id || d.name) !== (deck?.deck_id || deck?.name))
                 .map(source => (
@@ -889,29 +889,24 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                   onClick={() => handleMergeDeck(source)}
                   className="glass-panel glass-panel-hover"
                   style={{ 
-                    padding: '1rem', marginBottom: '0.75rem', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '1rem', transition: 'all 0.2s'
+                    padding: '1.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1.2rem', transition: 'all 0.2s', borderRadius: '16px'
                   }}
                 >
-                  <Layers size={24} color="var(--primary)" />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '1rem' }}>{source.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{source.cards?.length || 0} cards</div>
+                  <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '0.8rem', borderRadius: '12px' }}>
+                    <Layers size={28} color="var(--primary)" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{source.name}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{source.cards?.length || 0} cards</div>
                   </div>
                 </div>
               ))}
               
               {allDecks.filter(d => (d.deck_id || d.name) !== (deck?.deck_id || deck?.name)).length === 0 && (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                   No other decks available to import from.
                 </div>
               )}
-            </div>
-            
-            <div style={{ padding: '1.25rem', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-glass" onClick={() => setIsMergeModalOpen(false)}>
-                Cancel
-              </button>
             </div>
           </div>
         </div>
