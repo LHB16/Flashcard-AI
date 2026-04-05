@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.6 | **Last Updated:** 2026-04-05 | **Status:** Stable
+> **Version:** 2.7 | **Last Updated:** 2026-04-05 | **Status:** Stable
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -584,8 +584,10 @@ Gated by `isAdmin` middleware (Identity check via `x-user-email` header).
 
 | Method | Path | Request Body | Response | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message }` | Upserts deck snapshot to `shared_decks`, inserts rows into `deck_invites` |
+| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message }` | Upserts deck snapshot to `shared_decks`, inserts rows into `deck_invites`, then fires a Gmail API invitation email to all recipients (fire-and-forget). |
 | GET | `/share/view/:deck_id` | — | `{ deck_data }` | Returns the JSONB snapshot for the given `deck_id`. Used by `ImportSharedDeckModal` to fetch the deck before cloning. |
+
+> **Email Invitation Detail:** `POST /share/create` queries the `users` table to resolve the sender's email (`google_id → email`), then constructs an RFC 2822 HTML email encoded as `base64url` and sends it via `gmail.users.messages.send` using the `GMAIL_REFRESH_TOKEN`. This approach uses HTTPS instead of SMTP, bypassing Render Free Tier's outbound port block.
 
 ### 4.6 Google OAuth Flow (Step-by-Step)
 
@@ -679,6 +681,8 @@ User selects folder → filterImageFiles() → setImageFiles()
 | `SUPABASE_URL` | `https://xxx.supabase.co` | Supabase project URL |
 | `SUPABASE_KEY` | `sb_publishable_...` | Supabase anon/publishable key |
 | `PORT` | `3000` | Express server port (Render overrides this) |
+| `EMAIL_NOTIFY` | `flashcardai.notify@gmail.com` | Gmail address used as the sender for deck invitation emails |
+| `GMAIL_REFRESH_TOKEN` | `1//0gcDLW0-...` | OAuth2 Refresh Token for the notify Gmail account. Used by Gmail API to send emails via HTTPS (bypasses Render SMTP port blocking). Generated once via `get-gmail-token.js`. |
 
 **Frontend (`appWeb/.env`)**
 
@@ -862,13 +866,14 @@ The handler is defined in `routes/progress.js`, which is mounted by `index.js` u
 
 ### 4.12 Share & Clone Deck Feature
 
-Added in **2026-04-02**. Allows users to share any deck via email or a sharable Deck ID. Recipients receive a fully independent clone that does not affect the original.
+Added in **2026-04-02**. Extended with **Gmail API email invitation** on **2026-04-05**. Allows users to share any deck via email or a sharable Deck ID. Recipients receive a fully independent clone that does not affect the original.
 
 #### 4.12.1 Design Principles
 
 - **Snapshot model, not live link:** When a user shares a deck, the entire `deck_data` JSON is written to Supabase at that moment. If the owner later edits or deletes their deck, recipients are unaffected.
 - **Clone on import:** When a recipient imports via Deck ID, the app fetches `deck_data` from `shared_decks`, assigns a fresh `uuidv4()` as the new `deck_id`, resets all `card.status` to `0`, and clears timestamps. The cloned deck is uploaded to the recipient's Drive as a completely new, independent entry.
 - **No forced navigation on load:** After importing, the app sets `selectedDeck(null)` and `mode(null)` so the user always lands on the deck list — never silently dropped into study mode.
+- **Gmail API over SMTP:** Email sending uses `googleapis` (`gmail.users.messages.send`) via HTTPS, not Nodemailer/SMTP. This is required because Render Free Tier blocks outbound SMTP ports (465/587).
 
 #### 4.12.2 Share Flow
 
@@ -885,7 +890,26 @@ POST /share/create
   Body: { google_id, deck_id, deck_data (full JSON), receiver_emails[] }
   │
   ├── Supabase UPSERT → shared_decks (deck_id, owner_id, deck_data)
-  └── Supabase INSERT → deck_invites (deck_id, receiver_email) × N emails
+  ├── Supabase DELETE + INSERT → deck_invites (deck_id, receiver_email) × N emails
+  ├── Supabase SELECT → users WHERE google_id = ? → resolve senderEmail
+  │
+  └── Gmail API (fire-and-forget, không block response)
+        ├── Build RFC 2822 HTML email (base64url encoded)
+        │     Subject: "${senderEmail} shared the Flashcard Deck "${deckName}" with you"
+        │     Body: Header banner (blue #2563eb) + Deck ID highlight box + CTA + Footer
+        └── gmail.users.messages.send({ userId: 'me', raw: ... })
+              → Uses GMAIL_REFRESH_TOKEN to auto-obtain Access Token via HTTPS
+```
+
+#### 4.12.2.1 Gmail Token Setup (One-Time)
+
+The `get-gmail-token.js` script (located in `appBackend/`) provides a one-time OAuth2 flow to obtain the `GMAIL_REFRESH_TOKEN` for the notify Gmail account:
+
+1. Add `http://localhost:3456/callback` to Authorized Redirect URIs in Google Cloud Console
+2. Run: `node get-gmail-token.js`
+3. Open the printed URL, sign in with the notify account, grant `gmail.send` scope
+4. Copy the Refresh Token printed in terminal → set as `GMAIL_REFRESH_TOKEN` on Render
+5. Token does not expire unless revoked; no need to repeat this step
 ```
 
 #### 4.12.3 Import (Clone) Flow
