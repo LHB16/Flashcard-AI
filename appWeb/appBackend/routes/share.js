@@ -30,15 +30,12 @@ function createRawEmail(from, to, subject, htmlBody) {
   return Buffer.from(messageParts.join('\r\n')).toString('base64url');
 }
 
-// Kiểm tra Gmail API khi khởi tạo
-(async () => {
-  try {
-    const profile = await gmail.users.getProfile({ userId: 'me' });
-    console.log('✅ Gmail API ready for:', profile.data.emailAddress);
-  } catch (error) {
-    console.error('❌ Gmail API init error:', error.message);
-  }
-})();
+// Kiểm tra cấu hình Gmail API khi khởi tạo
+if (!process.env.GMAIL_REFRESH_TOKEN) {
+  console.error('❌ GMAIL_REFRESH_TOKEN is missing in environment variables');
+} else {
+  console.log('✅ Gmail API configured with refresh token for', process.env.EMAIL_NOTIFY || 'notify account');
+}
 
 // Chia sẻ deck (Share Deck)
 router.post('/create', async (req, res) => {
