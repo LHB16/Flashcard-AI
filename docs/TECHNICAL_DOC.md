@@ -415,8 +415,9 @@ Globally-mounted modals (outside all branches, always in DOM):
 #### `DeckManager.jsx`
 
 - **Props:** `deck: Deck`, `onBack: () => void`, `onDeckModified: () => void`
-- **Tabs:** `"view"` (paginated card list) | `"dedup"` (duplicate detection) | `"share"` (Share Deck UI)
+- **Tabs:** `"view"` (paginated card list) | `"dedup"` (duplicate detection) | `"share"` (Share Deck UI) | `"import"` (Merge Deck UI)
 - The `"share"` tab renders `ShareDeckView.jsx` inline — no modal or separate route needed.
+- The `"import"` tab renders a grid of other available decks to merge into the current one, resetting progress to `0` for all imported cards.
 - **Duplicate Detection Algorithm:**
   1. Normalize question text (lowercase, collapse whitespace)
   2. Build 3-gram shingles for each card
@@ -742,7 +743,7 @@ To achieve sub-1.5s LCP targets, resource discovery is moved as early as possibl
 
 Added in **2026-04-02**, `DeckManager.jsx` was extended with a full card creation and editing workflow, alongside a series of correctness and data-consistency fixes.
 
-#### 4.11.1 Add Card Feature
+#### 4.11.1 Add Card & Merge Deck Features
 
 A new **Add Card** button in the `view` tab opens the edit form pre-populated with a blank card template. The workflow is identical to editing an existing card.
 
@@ -765,6 +766,8 @@ setTab('edit'); // ← was missing; without this, the form never renders
 ```
 
 > **Bug fixed:** The original `onClick` handler called `setEditingCard(...)` but omitted `setTab('edit')`, so clicking "Add Card" silently set state without rendering the editor.
+
+**Merge / Import Deck:** (Added 2026-04-05) The Add Card action was upgraded into a dropdown that also includes "Import from Deck". This opens a dedicated `tab === 'import'` view. When merging, `handleMergeDeck` creates a deep copy of the selected deck's cards, assigns new UUIDs to prevent ID collisions, and forces `status: 0` (Unlearned) so progress is cleanly reset for newly imported cards. Existing cards in the current deck retain their progress.
 
 #### 4.11.2 Card Validation Before Save
 
