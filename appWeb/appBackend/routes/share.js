@@ -3,11 +3,26 @@ const router = express.Router();
 const supabase = require('../supabaseClient');
 const nodemailer = require('nodemailer');
 
+if (!process.env.EMAIL_NOTIFY || !process.env.EMAIL_PASS) {
+  console.error('❌ EMAIL CONFIG ERROR: EMAIL_NOTIFY or EMAIL_PASS is missing in environment variables');
+} else {
+  console.log('✅ EMAIL CONFIG: Environment variables detected for', process.env.EMAIL_NOTIFY);
+}
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_NOTIFY,
     pass: process.env.EMAIL_PASS
+  }
+});
+
+// Kiểm tra kết nối transporter ngay khi khởi tạo
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Transporter verify error:', error);
+  } else {
+    console.log('✅ Transporter is ready to take our messages');
   }
 });
 
@@ -116,10 +131,16 @@ router.post('/create', async (req, res) => {
       `
     };
 
+    console.log(`📧 Attempting to send email to: ${receiver_emails.join(', ')}`);
+
     // Fire-and-forget sendMail (không block response)
     transporter.sendMail(mailOptions, (error, info) => {
-      if (error) console.error('Mail error:', error);
-      else console.log('Mail sent:', info.response);
+      if (error) {
+        console.error('❌ Mail error detail:', error);
+      } else {
+        console.log('✅ Mail sent successfully:', info.response);
+        console.log('📩 Accepted recipients:', info.accepted);
+      }
     });
 
     res.json({ message: 'Deck shared and invites sent successfully!' });
