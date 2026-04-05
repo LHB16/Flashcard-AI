@@ -58,15 +58,27 @@ router.post('/create', async (req, res) => {
 
     if (deckError) throw deckError;
 
-    const { error: deleteError } = await supabase
-      .from('deck_invites')
-      .delete()
-      .eq('deck_id', deck_id);
-
-    if (deleteError) throw deleteError;
-
+    let newlySharedCount = 0;
+    let newEmails = [];
     if (receiver_emails && Array.isArray(receiver_emails) && receiver_emails.length > 0) {
-      const inviteData = receiver_emails.map((email) => ({
+      const { data: existingInvites, error: fetchError } = await supabase
+        .from('deck_invites')
+        .select('receiver_email')
+        .eq('deck_id', deck_id);
+      
+      if (fetchError) throw fetchError;
+
+      const existingEmails = existingInvites.map(inv => inv.receiver_email);
+      newEmails = receiver_emails.filter(email => !existingEmails.includes(email));
+
+      if (newEmails.length === 0) {
+        return res.json({ 
+          message: `${receiver_emails.length} email(s) đã được share trước đó.`,
+          newlySharedCount: 0 
+        });
+      }
+
+      const inviteData = newEmails.map((email) => ({
         deck_id,
         receiver_email: email,
       }));
@@ -76,6 +88,7 @@ router.post('/create', async (req, res) => {
         .insert(inviteData);
 
       if (inviteError) throw inviteError;
+      newlySharedCount = newEmails.length;
     }
 
     // Extract deck name
@@ -137,27 +150,29 @@ router.post('/create', async (req, res) => {
       </div>
     `;
 
-    // Tạo raw email
-    const rawMessage = createRawEmail(
-      `"Flashcard AI" <${process.env.EMAIL_NOTIFY}>`,
-      receiver_emails.join(', '),
-      `${senderEmail} shared the Flashcard Deck "${deckName}" with you`,
-      htmlContent
-    );
+    if (newEmails.length > 0) {
+      // Tạo raw email
+      const rawMessage = createRawEmail(
+        `"Flashcard AI" <${process.env.EMAIL_NOTIFY}>`,
+        newEmails.join(', '),
+        `${senderEmail} shared the Flashcard Deck "${deckName}" with you`,
+        htmlContent
+      );
 
-    console.log(`📧 Attempting to send email to: ${receiver_emails.join(', ')}`);
+      console.log(`📧 Attempting to send email to: ${newEmails.join(', ')}`);
 
-    // Fire-and-forget via Gmail API (HTTPS, không bị Render chặn)
-    gmail.users.messages.send({
-      userId: 'me',
-      requestBody: { raw: rawMessage }
-    }).then(result => {
-      console.log('✅ Mail sent via Gmail API, ID:', result.data.id);
-    }).catch(err => {
-      console.error('❌ Gmail API send error:', err.message);
-    });
+      // Fire-and-forget via Gmail API (HTTPS, không bị Render chặn)
+      gmail.users.messages.send({
+        userId: 'me',
+        requestBody: { raw: rawMessage }
+      }).then(result => {
+        console.log('✅ Mail sent via Gmail API, ID:', result.data.id);
+      }).catch(err => {
+        console.error('❌ Gmail API send error:', err.message);
+      });
+    }
 
-    res.json({ message: 'Deck shared and invites sent successfully!' });
+    res.json({ newlySharedCount, message: 'Thêm quyền truy cập thành công!' });
   } catch (error) {
     console.error('Share Deck Error:', error);
     res.status(500).json({ error: 'Failed to share deck to Supabase' });
@@ -207,5 +222,84 @@ router.get('/view/:deck_id', async (req, res) => {
   }
 });
 
-module.exports = router;
+// Get list of invites for a deck
+router.get('/invites/:deck_id', async (req, res) => {
+  const { deck_id } = req.params;
+  const { google_id } = req.query;
 
+  if (!deck_id || !google_id) {
+    return res.status(400).json({ error: 'Missing deck_id or google_id' });
+  }
+
+  try {
+    const { data: deckRecord, error: deckError } = await supabase
+      .from('shared_decks')
+      .select('owner_id')
+      .eq('deck_id', deck_id)
+      .single();
+
+    if (deckError && deckError.code !== 'PGRST116') {
+      throw deckError;
+    }
+
+    if (!deckRecord) {
+      // Deck hasn't been shared yet
+      return res.json({ invites: [] });
+    }
+
+    if (deckRecord.owner_id !== google_id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { data: invites, error: inviteError } = await supabase
+      .from('deck_invites')
+      .select('id, receiver_email, created_at')
+      .eq('deck_id', deck_id)
+      .order('created_at', { ascending: true });
+
+    if (inviteError) throw inviteError;
+
+    res.json({ invites });
+  } catch (error) {
+    console.error('Fetch Invites Error:', error);
+    res.status(500).json({ error: 'Failed to fetch invites' });
+  }
+});
+
+// Remove an invite
+router.delete('/invite', async (req, res) => {
+  const { deck_id, receiver_email, google_id } = req.body;
+
+  if (!deck_id || !receiver_email || !google_id) {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
+  try {
+    const { data: deckRecord, error: deckError } = await supabase
+      .from('shared_decks')
+      .select('owner_id')
+      .eq('deck_id', deck_id)
+      .single();
+
+    if (deckError) throw deckError;
+
+    if (!deckRecord || deckRecord.owner_id !== google_id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { error: deleteError } = await supabase
+      .from('deck_invites')
+      .delete()
+      .eq('deck_id', deck_id)
+      .eq('receiver_email', receiver_email);
+
+    if (deleteError) throw deleteError;
+
+    res.json({ message: 'Invite removed' });
+  } catch(error) {
+    console.error('Delete Invite Error:', error);
+    res.status(500).json({ error: 'Failed to remove invite' });
+  }
+});
+
+module.exports = router;
