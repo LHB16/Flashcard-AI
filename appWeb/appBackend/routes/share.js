@@ -73,7 +73,7 @@ router.post('/create', async (req, res) => {
 
       if (newEmails.length === 0) {
         return res.json({ 
-          message: `${receiver_emails.length} email(s) đã được share trước đó.`,
+          message: `${receiver_emails.length} email(s) have already been shared previously. No new invites sent.`,
           newlySharedCount: 0 
         });
       }
@@ -172,7 +172,7 @@ router.post('/create', async (req, res) => {
       });
     }
 
-    res.json({ newlySharedCount, message: 'Thêm quyền truy cập thành công!' });
+    res.json({ newlySharedCount, message: 'Deck shared and invites sent successfully!' });
   } catch (error) {
     console.error('Share Deck Error:', error);
     res.status(500).json({ error: 'Failed to share deck to Supabase' });

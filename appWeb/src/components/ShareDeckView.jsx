@@ -126,7 +126,7 @@ export default function ShareDeckView({ deck, onBack }) {
       if (result.newlySharedCount === 0) {
         setMessage({ type: 'error', text: result.message });
       } else {
-        setMessage({ type: 'success', text: result.message || `Đã chia sẻ thành công!` });
+        setMessage({ type: 'success', text: result.message || `Successfully shared!` });
         setEmails('');
         fetchInvites();
       }
@@ -162,7 +162,7 @@ export default function ShareDeckView({ deck, onBack }) {
         {/* Danh sách người đang được share */}
         <div style={{ marginBottom: '2rem' }}>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.8rem', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Đang được share ({currentInvites.length} người)</span>
+            <span>Currently Shared with ({currentInvites.length} {currentInvites.length === 1 ? 'person' : 'people'})</span>
           </h4>
           
           <div style={{ 
@@ -175,7 +175,7 @@ export default function ShareDeckView({ deck, onBack }) {
               </div>
             ) : currentInvites.length === 0 ? (
               <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                Chưa có ai được share deck này
+                No one has been shared this deck yet
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -194,7 +194,7 @@ export default function ShareDeckView({ deck, onBack }) {
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', fontWeight: 500 }}>{inv.receiver_email}</p>
                       <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Đã share: {new Date(inv.created_at).toLocaleDateString('vi-VN')}
+                        Shared on: {new Date(inv.created_at).toLocaleDateString('en-US')}
                       </p>
                     </div>
                     <button
@@ -205,7 +205,7 @@ export default function ShareDeckView({ deck, onBack }) {
                         border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px'
                       }}
-                      title="Xóa quyền truy cập"
+                      title="Remove access"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -261,10 +261,10 @@ export default function ShareDeckView({ deck, onBack }) {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, email: null })}
         onConfirm={removeInvite}
-        title="Xóa quyền truy cập"
-        description={`Bạn có chắc chắn muốn xóa quyền truy cập của ${deleteModal.email}? Người này sẽ không thể tiếp tục tải deck này thông qua ID nữa.`}
-        confirmText="Xóa quyền"
-        cancelText="Hủy"
+        title="Remove Access"
+        description={`Are you sure you want to remove access for ${deleteModal.email}? They will no longer be able to access this deck via ID.`}
+        confirmText="Remove"
+        cancelText="Cancel"
         type="danger"
         isLoading={isDeleting}
         icon={Trash2}
