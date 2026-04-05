@@ -702,7 +702,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
       )}
       {/* Confirmation Modal */}
 
-      {userLoggedIn && <ChatBubble currentCard={currentCard} />}
+      <ChatBubble currentCard={currentCard} userLoggedIn={userLoggedIn} />
     </div>
   );
 });

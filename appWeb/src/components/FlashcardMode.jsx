@@ -558,7 +558,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
         </button>
       </div>
 
-      {userLoggedIn && <ChatBubble currentCard={currentCard} />}
+      <ChatBubble currentCard={currentCard} userLoggedIn={userLoggedIn} />
     </div>
   );
 };

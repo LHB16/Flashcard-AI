@@ -3,7 +3,7 @@ import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-const ChatBubble = ({ currentCard }) => {
+const ChatBubble = ({ currentCard, userLoggedIn = true }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAwake, setIsAwake] = useState(false); // false = mờ, true = rõ
   const [messages, setMessages] = useState([
@@ -208,7 +208,9 @@ YOUR ROLE:
         style={{
           opacity: isAwake ? 1 : 0.3,
           transition: 'opacity 0.4s ease, transform 0.3s, box-shadow 0.3s',
+          cursor: !userLoggedIn ? 'not-allowed' : 'pointer'
         }}
+        disabled={!userLoggedIn}
         onClick={() => {
           // Clear any existing fade timer
           if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
@@ -226,7 +228,7 @@ YOUR ROLE:
             setIsAwake(false); // reset for next time
           }
         }}
-        title={isAwake ? 'Click to open chat' : 'Click to activate'}
+        title={!userLoggedIn ? 'Login to Google Drive first' : (isAwake ? 'Click to open chat' : 'Click to activate')}
       >
         <MessageCircle size={24} />
       </button>

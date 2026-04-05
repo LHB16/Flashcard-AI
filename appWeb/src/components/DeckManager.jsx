@@ -189,15 +189,15 @@ export default function DeckManager({ deck, onBack, onDeckModified, setConfirmCo
           >
             Check Duplicates
           </button>
-          {userLoggedIn && (
-            <button
-              className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
-              onClick={() => setTab('share')}
-              style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
-              <Share2 size={18} /> Share Deck
-            </button>
-          )}
+          <button
+            className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
+            onClick={() => userLoggedIn && setTab('share')}
+            disabled={!userLoggedIn}
+            title={!userLoggedIn ? 'Login to Google Drive first' : ''}
+            style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <Share2 size={18} /> Share Deck
+          </button>
         </div>
       )}
 

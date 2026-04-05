@@ -700,20 +700,20 @@ function App() {
                   <Sparkles size={16} /> AI Scan
                 </button>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                  {userLoggedIn && (
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => setIsAddDeckModalOpen(true)}
-                      style={{
-                        padding: '0.4rem 1.25rem',
-                        fontSize: '0.85rem',
-                        height: '36px',
-                        borderRadius: '10px'
-                      }}
-                    >
-                      <Plus size={16} /> Add Deck
-                    </button>
-                  )}
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => userLoggedIn && setIsAddDeckModalOpen(true)}
+                    disabled={!userLoggedIn}
+                    title={!userLoggedIn ? 'Login to Google Drive first' : ''}
+                    style={{
+                      padding: '0.4rem 1.25rem',
+                      fontSize: '0.85rem',
+                      height: '36px',
+                      borderRadius: '10px'
+                    }}
+                  >
+                    <Plus size={16} /> Add Deck
+                  </button>
                 </div>
               </div>
 
@@ -808,8 +808,14 @@ function App() {
                 </div>
               )}
               <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                {processedDecks.map((deck, idx) => {
-                  const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
+                {processedDecks.length === 0 ? (
+                  <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <BookOpen size={48} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>You don't have any decks yet.</h3>
+                    <p style={{ color: 'var(--text-muted)' }}>Try clicking the <strong style={{color: 'var(--primary)'}}>+ Add Deck</strong> button to get started!</p>
+                  </div>
+                ) : processedDecks.map((deck, idx) => {
+                    const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
                   return (
                     <div
                       key={deck.deck_id || idx}
