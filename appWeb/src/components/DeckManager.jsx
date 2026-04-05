@@ -243,7 +243,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
             onClick={() => setTab('view')}
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
           >
-            View & Delete
+            View & Edit
           </button>
           <button
             className={`btn ${tab === 'dedup' ? 'btn-primary' : 'btn-glass'}`}
@@ -267,6 +267,21 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
       {/* ─── VIEW TAB ─── */}
       {tab === 'view' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {/* Top Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <button className="btn btn-glass btn-icon" disabled={page === 0} onClick={() => setPage(p => p - 1)} style={{ width: '32px', height: '32px' }}>
+                <ChevronLeft size={18} />
+              </button>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
+                Page {page + 1} / {totalPages}
+              </span>
+              <button className="btn btn-glass btn-icon" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} style={{ width: '32px', height: '32px' }}>
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+
           {/* Search + Bulk Delete */}
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
