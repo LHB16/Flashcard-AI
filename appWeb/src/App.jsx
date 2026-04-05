@@ -812,7 +812,7 @@ function App() {
                   <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <BookOpen size={48} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
                     <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>You don't have any decks yet.</h3>
-                    <p style={{ color: 'var(--text-muted)' }}>Try clicking the <strong style={{color: 'var(--primary)'}}>+ Add Deck</strong> button to get started!</p>
+                    <p style={{ color: 'var(--text-muted)' }}>Try clicking the <strong style={{color: 'var(--primary)'}}>+ Add Deck</strong> or <strong style={{color: 'var(--primary)'}}>AI Scan</strong> button to get started!</p>
                   </div>
                 ) : processedDecks.map((deck, idx) => {
                     const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
