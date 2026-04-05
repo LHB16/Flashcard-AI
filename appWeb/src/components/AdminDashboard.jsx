@@ -400,7 +400,7 @@ const AdminDashboard = ({ onBack }) => {
       id: editingNotif?.id || `notif_${Date.now()}`,
       title: formData.get('title'),
       desc: formData.get('desc'),
-      date: formData.get('date'),
+      date: editingNotif?.date || new Date().toISOString().split('T')[0],
       icon: formData.get('icon'),
       link: formData.get('link'),
     };
@@ -447,28 +447,24 @@ const AdminDashboard = ({ onBack }) => {
           <span>Loading notifications...</span>
         </div>
       ) : isEditingNotification ? (
-        <form onSubmit={submitEditNotif} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+        <form onSubmit={submitEditNotif} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.5rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}>
            <div>
              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Title</label>
-             <input type="text" name="title" defaultValue={editingNotif?.title || ''} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
+             <input type="text" name="title" defaultValue={editingNotif?.title || ''} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-main)' }} />
            </div>
            <div>
              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Description</label>
-             <textarea name="desc" defaultValue={editingNotif?.desc || ''} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white', minHeight: '80px', resize: 'vertical' }} />
+             <textarea name="desc" defaultValue={editingNotif?.desc || ''} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-main)', minHeight: '80px', resize: 'vertical' }} />
            </div>
-           <div style={{ display: 'flex', gap: '1rem' }}>
-             <div style={{ flex: 1 }}>
-               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Date (YYYY-MM-DD)</label>
-               <input type="date" name="date" defaultValue={editingNotif?.date || new Date().toISOString().split('T')[0]} required style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
-             </div>
-             <div style={{ flex: 0.5 }}>
-               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Icon (Emoji)</label>
-               <input type="text" name="icon" defaultValue={editingNotif?.icon || ''} placeholder="Ex: 📖" style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
-             </div>
+           
+           <div>
+             <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Icon (Emoji)</label>
+             <input type="text" name="icon" defaultValue={editingNotif?.icon || ''} placeholder="Ex: 📖" style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-main)' }} />
            </div>
+           
            <div>
              <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Link (Optional)</label>
-             <input type="text" name="link" defaultValue={editingNotif?.link || ''} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }} />
+             <input type="text" name="link" defaultValue={editingNotif?.link || ''} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-main)' }} />
            </div>
            
            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
