@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.7 | **Last Updated:** 2026-04-05 | **Status:** Stable
+> **Version:** 2.8 | **Last Updated:** 2026-04-06 | **Status:** Stable
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -592,12 +592,15 @@ Gated by `isAdmin` middleware (Identity check via `x-user-email` header).
 
 | Method | Path | Request Body | Response | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message, newlySharedCount }` | Upserts deck snapshot to `shared_decks`. Filters out emails already present in `deck_invites` for this deck to prevent spam resending. Inserts new invites and fires a Gmail API invitation only to these newly added recipients. |
+| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message, newlySharedCount }` | Upserts deck snapshot to `shared_decks`. Filters out emails already present in `deck_invites` for this deck to prevent spam resending. Inserts new invites and fires a Gmail API invitation using **BCC** to these newly added recipients to protect their privacy. |
 | GET | `/share/invites/:deck_id` | Query: `google_id` | `{ invites: [ { id, receiver_email, created_at } ] }` | Retrieves the list of currently shared email invitations. Validates that the requested `google_id` matches the deck owner. Returns `[]` if the deck has never been shared. |
 | GET | `/share/view/:deck_id` | Query: `email` | `{ deck_data }` | Returns the JSONB snapshot for the given `deck_id` if the `email` exists in `deck_invites`. Used by `ImportSharedDeckModal` to fetch and clone the deck. |
 | DELETE | `/share/invite` | `{ deck_id, receiver_email, google_id }` | `{ message }` | Removes a specific email's access to the shared deck (deletes from `deck_invites`). Validates ownership via `google_id`. |
 
-> **Email Invitation Detail:** `POST /share/create` queries the `users` table to resolve the sender's email (`google_id → email`), then constructs an RFC 2822 HTML email encoded as `base64url` and sends it via `gmail.users.messages.send` using the `GMAIL_REFRESH_TOKEN`. This approach uses HTTPS instead of SMTP, bypassing Render Free Tier's outbound port block.
+> **Email Invitation Detail:** `POST /share/create` queries the `users` table to resolve the sender's email (`google_id → email`), then constructs an RFC 2822 HTML email encoded as `base64url` and sends it via `gmail.users.messages.send`.
+> - **Privacy (BCC):** To prevent recipients from seeing each other's addresses, the list of emails is placed in the `Bcc` header. The `To` header is set to the system's `EMAIL_NOTIFY` address with a display name.
+> - **Quick Access:** The email body includes a prominent call-to-action button and a text link pointing to `https://lhb16-flashcard-ai.pages.dev/`.
+> - **Protocol:** This approach uses HTTPS instead of SMTP, bypassing Render Free Tier's outbound port block.
 
 ### 4.6 Google OAuth Flow (Step-by-Step)
 
