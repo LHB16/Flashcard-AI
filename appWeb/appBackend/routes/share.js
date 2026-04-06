@@ -163,7 +163,7 @@ router.post('/create', async (req, res) => {
       // Tạo raw email
       const rawMessage = createRawEmail(
         `"Flashcard AI" <${process.env.EMAIL_NOTIFY}>`,
-        'Flashcard AI Users', // Hiển thị chung ở mục To để bảo mật
+        `"Flashcard AI User" <${process.env.EMAIL_NOTIFY}>`, // Sử dụng email notify làm người nhận giả để ẩn BCC
         newEmails.join(', '), // Ẩn danh người nhận thực sự trong Bcc
         `${senderEmail} shared the Flashcard Deck "${deckName}" with you`,
         htmlContent
