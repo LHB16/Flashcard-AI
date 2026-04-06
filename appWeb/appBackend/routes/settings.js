@@ -17,7 +17,7 @@ router.get('/email', async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
 
     // No record found → return defaults (both enabled)
-    res.json(data || { receive_email_enabled: true, send_email_enabled: true });
+    res.json(data || { receive_email_enabled: false, send_email_enabled: true });
   } catch (err) {
     console.error('Get email settings error:', err);
     res.status(500).json({ error: 'Failed to fetch email settings' });
