@@ -195,34 +195,34 @@ router.post('/create', async (req, res) => {
           .select('google_id, email')
           .in('email', newEmails);
 
-        let emailableRecipients = [...newEmails]; // default: all new emails
+          let emailableRecipients = [];
 
-        if (recipientUsers && recipientUsers.length > 0) {
-          const recipientGoogleIds = recipientUsers.map(u => u.google_id);
-          const { data: recipientSettings } = await supabase
-            .from('user_settings')
-            .select('google_id, receive_email_enabled')
-            .in('google_id', recipientGoogleIds);
+          if (recipientUsers && recipientUsers.length > 0) {
+            const recipientGoogleIds = recipientUsers.map(u => u.google_id);
+            const { data: recipientSettings } = await supabase
+              .from('user_settings')
+              .select('google_id, receive_email_enabled')
+              .in('google_id', recipientGoogleIds);
 
-          // Build a set of google_ids that have opted out
-          const optedOutIds = new Set();
-          if (recipientSettings) {
-            for (const s of recipientSettings) {
-              if (s.receive_email_enabled === false) {
-                optedOutIds.add(s.google_id);
+            // Build a set of google_ids that have explicitly opted IN (true)
+            const optedInIds = new Set();
+            if (recipientSettings) {
+              for (const s of recipientSettings) {
+                if (s.receive_email_enabled === true) {
+                  optedInIds.add(s.google_id);
+                }
               }
             }
+
+            // Map opted-in google_ids back to emails
+            const optedInEmails = new Set(
+              recipientUsers
+                .filter(u => optedInIds.has(u.google_id))
+                .map(u => u.email)
+            );
+
+            emailableRecipients = newEmails.filter(email => optedInEmails.has(email));
           }
-
-          // Map opted-out google_ids back to emails
-          const optedOutEmails = new Set(
-            recipientUsers
-              .filter(u => optedOutIds.has(u.google_id))
-              .map(u => u.email)
-          );
-
-          emailableRecipients = newEmails.filter(email => !optedOutEmails.has(email));
-        }
 
         if (emailableRecipients.length > 0) {
           // Tạo raw email

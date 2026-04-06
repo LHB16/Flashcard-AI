@@ -727,10 +727,15 @@ function App() {
                   />
                   <button
                     className="btn btn-glass btn-icon"
-                    onClick={() => setShowSettings(true)}
-                    title="Settings"
+                    onClick={() => userLoggedIn && setShowSettings(true)}
+                    disabled={!userLoggedIn}
+                    title={userLoggedIn ? "Settings" : "Login to access settings"}
                     aria-label="Open Settings"
-                    style={{ color: 'var(--text-muted)' }}
+                    style={{ 
+                      color: userLoggedIn ? 'var(--text-muted)' : 'rgba(255,255,255,0.2)',
+                      cursor: userLoggedIn ? 'pointer' : 'not-allowed',
+                      opacity: userLoggedIn ? 1 : 0.5
+                    }}
                   >
                     <Settings size={18} />
                   </button>
