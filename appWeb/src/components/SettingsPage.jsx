@@ -54,7 +54,7 @@ function SettingsPage({
   const [activeSection, setActiveSection] = useState('email');
 
   // ═══════ Email Section State ═══════
-  const [receiveEmailEnabled, setReceiveEmailEnabled] = useState(true);
+  const [receiveEmailEnabled, setReceiveEmailEnabled] = useState(false);
   const [sendEmailEnabled, setSendEmailEnabled] = useState(true);
   const [emailLoading, setEmailLoading] = useState(true);
   const [emailSaving, setEmailSaving] = useState(false);
@@ -184,18 +184,20 @@ function SettingsPage({
   }, [apiKeys]);
 
   const confirmDeleteKey = useCallback((index) => {
-    onOpenConfirm({
+    const config = {
       title: 'Delete API Key?',
       description: `Key "${maskKey(apiKeys[index])}" will be permanently deleted.`,
       confirmText: 'Delete',
       type: 'danger',
       icon: Trash2,
-      onConfirm: () => {
-        const updatedKeys = apiKeys.filter((_, i) => i !== index);
-        saveKeys(updatedKeys);
-        showToast('Key deleted');
-      },
-    });
+    };
+    config.onConfirm = () => {
+      const updatedKeys = apiKeys.filter((_, i) => i !== index);
+      saveKeys(updatedKeys);
+      showToast('Key deleted');
+      onOpenConfirm({ ...config, isOpen: false });
+    };
+    onOpenConfirm(config);
   }, [apiKeys, onOpenConfirm, saveKeys, showToast]);
 
   // ════════════════════════════════════
@@ -226,44 +228,47 @@ function SettingsPage({
   }, [renameValue, data, onDataChange, showToast]);
 
   const confirmResetProgress = useCallback((deck) => {
-    onOpenConfirm({
+    const config = {
       title: `Reset progress for "${deck.name}"?`,
       description: 'All study progress (Known/Unknown) will be reset to 0. This cannot be undone.',
       confirmText: 'Reset',
       type: 'warning',
       icon: RotateCcw,
-      onConfirm: async () => {
-        const resetCards = deck.cards.map(c => ({ ...c, status: 0 }));
-        const newData = data.map(d =>
-          d.deck_id === deck.deck_id ? { ...d, cards: resetCards } : d
-        );
-        onDataChange(newData);
-        // Delete progress from Supabase
-        try {
-          await fetch(`${backendUrl}/progress/deck/on-modified`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ google_id: googleId, deck_id: deck.deck_id, action: 'reset' }),
-          });
-        } catch (e) { console.error(e); }
-        showToast('Progress reset');
-      },
-    });
+    };
+    config.onConfirm = async () => {
+      const resetCards = deck.cards.map(c => ({ ...c, status: 0 }));
+      const newData = data.map(d =>
+        d.deck_id === deck.deck_id ? { ...d, cards: resetCards } : d
+      );
+      onDataChange(newData);
+      try {
+        await fetch(`${backendUrl}/progress/deck/on-modified`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ google_id: googleId, deck_id: deck.deck_id, action: 'reset' }),
+        });
+      } catch (e) { console.error(e); }
+      showToast('Progress reset');
+      onOpenConfirm({ ...config, isOpen: false });
+    };
+    onOpenConfirm(config);
   }, [data, onDataChange, onOpenConfirm, backendUrl, googleId, showToast]);
 
   const confirmDeleteDeck = useCallback((deck) => {
-    onOpenConfirm({
+    const config = {
       title: `Delete deck "${deck.name}"?`,
       description: `${deck.cards.length} card(s) will be permanently lost. This action cannot be undone.`,
       confirmText: 'Delete',
       type: 'danger',
       icon: Trash2,
-      onConfirm: () => {
-        const newData = data.filter(d => d.deck_id !== deck.deck_id);
-        onDataChange(newData);
-        showToast('Deck deleted');
-      },
-    });
+    };
+    config.onConfirm = () => {
+      const newData = data.filter(d => d.deck_id !== deck.deck_id);
+      onDataChange(newData);
+      showToast('Deck deleted');
+      onOpenConfirm({ ...config, isOpen: false });
+    };
+    onOpenConfirm(config);
   }, [data, onDataChange, onOpenConfirm, showToast]);
 
   const handleShareDeck = useCallback((deck) => {
