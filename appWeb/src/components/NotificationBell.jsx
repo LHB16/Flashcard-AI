@@ -1,40 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Check, ExternalLink } from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-export default function NotificationBell() {
+export default function NotificationBell({ userLoggedIn, userEmail, onOpenImportModal }) {
   const [showNotif, setShowNotif] = useState(false);
-  const [readNotifs, setReadNotifs] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const notifRef = useRef(null);
 
+  // Poll notifications
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('read_notifications');
-      if (stored) {
-        setReadNotifs(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error('Error loading read notifications:', e);
+    if (!userLoggedIn || !userEmail) {
+      setNotifications([]);
+      return;
     }
-  }, []);
 
-  useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/notifications`);
+        const res = await fetch(`${BACKEND_URL}/share/notifications?email=${encodeURIComponent(userEmail)}`);
         if (res.ok) {
           const data = await res.json();
-          setNotifications(data || []);
+          setNotifications(data.notifications || []);
         }
       } catch (err) {
         console.error('Failed to fetch notifications:', err);
       }
     };
-    fetchNotifications();
-  }, []);
 
+    fetchNotifications();
+    const intervalId = setInterval(fetchNotifications, 60000); // Poll mỗi 60 giây
+    return () => clearInterval(intervalId);
+  }, [userLoggedIn, userEmail]);
+
+  // Click outside close
   useEffect(() => {
     function handleClickOutside(event) {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
@@ -51,29 +49,42 @@ export default function NotificationBell() {
     };
   }, [showNotif]);
 
-  const markAsRead = (id) => {
-    if (!readNotifs.includes(id)) {
-      const updated = [...readNotifs, id];
-      setReadNotifs(updated);
-      localStorage.setItem('read_notifications', JSON.stringify(updated));
+  // Handle Mark as Read when opening the dropdown
+  useEffect(() => {
+    if (showNotif && userEmail) {
+      const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+      if (unreadIds.length > 0) {
+        fetch(`${BACKEND_URL}/share/notifications/read`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: unreadIds })
+        }).then(res => {
+          if (res.ok) {
+            setNotifications(prev => prev.map(n => unreadIds.includes(n.id) ? { ...n, is_read: true } : n));
+          }
+        }).catch(err => console.error('Failed to mark notifications read:', err));
+      }
+    }
+  }, [showNotif, notifications, userEmail]);
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const handleReceiveDeck = (deck_id) => {
+    setShowNotif(false);
+    if (onOpenImportModal) {
+      onOpenImportModal(deck_id);
     }
   };
 
-  const handleNotificationClick = (notif) => {
-    markAsRead(notif.id);
-    if (notif.link) {
-      window.open(notif.link, '_blank');
-      setShowNotif(false);
-    }
+  const getRelativeTime = (isoString) => {
+    const diff = Math.floor((new Date() - new Date(isoString)) / 1000);
+    if (diff < 60) return `${diff} giây trước`;
+    const mins = Math.floor(diff / 60);
+    if (mins < 60) return `${mins} phút trước`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    return `${Math.floor(hours / 24)} ngày trước`;
   };
-
-  const markAllAsRead = () => {
-    const allIds = notifications.map(n => n.id);
-    setReadNotifs(allIds);
-    localStorage.setItem('read_notifications', JSON.stringify(allIds));
-  };
-
-  const unreadCount = notifications.filter(n => !readNotifs.includes(n.id)).length;
 
   return (
     <div className="relative" ref={notifRef} style={{ position: 'relative' }}>
@@ -91,76 +102,61 @@ export default function NotificationBell() {
             fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 'bold', border: '2px solid var(--bg)'
           }}>
-            {unreadCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {showNotif && (
-        <div className="glass-panel animate-fade-in notification-dropdown">
+        <div className="glass-panel animate-fade-in notification-dropdown" style={{
+          position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+          width: '320px', maxHeight: '400px', display: 'flex', flexDirection: 'column',
+          zIndex: 9999, overflow: 'hidden', overscrollBehavior: 'contain',
+          background: 'var(--glass-bg)', backdropFilter: 'blur(16px)'
+        }}>
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Notifications</h3>
-            {unreadCount > 0 && (
-              <button 
-                onClick={markAllAsRead}
-                style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                <Check size={14} /> Mark all read
-              </button>
-            )}
+          <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Thông báo</h3>
           </div>
 
           {/* List */}
           <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
             {notifications.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No notifications
+                Không có thông báo nào
               </div>
             ) : (
               notifications.map(notif => {
-                const isRead = readNotifs.includes(notif.id);
+                const { sender_email, deck_name, deck_id } = notif.payload || {};
                 return (
                   <div 
                     key={notif.id}
-                    onClick={() => handleNotificationClick(notif)}
                     style={{
                       padding: '1rem',
                       borderBottom: '1px solid var(--glass-border)',
-                      cursor: notif.link ? 'pointer' : 'default',
-                      background: isRead ? 'transparent' : 'rgba(79, 70, 229, 0.05)',
+                      background: notif.is_read ? 'transparent' : 'rgba(79, 70, 229, 0.05)',
                       display: 'flex',
                       gap: '0.75rem',
                       alignItems: 'flex-start',
                       transition: 'background 0.2s',
                     }}
-                    onMouseEnter={(e) => {
-                       if (notif.link) e.currentTarget.style.background = isRead ? 'rgba(0,0,0,0.02)' : 'rgba(79, 70, 229, 0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                       if (notif.link) e.currentTarget.style.background = isRead ? 'transparent' : 'rgba(79, 70, 229, 0.05)';
-                    }}
                   >
-                    {notif.icon && (
-                      <div style={{ fontSize: '1.5rem', flexShrink: 0, filter: isRead ? 'grayscale(40%)' : 'none' }}>
-                        {notif.icon}
-                      </div>
-                    )}
-                    <div>
-                      <h4 style={{ margin: '0 0 0.2rem', fontSize: '0.95rem', color: isRead ? 'var(--text-main)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        {notif.title}
-                        {!isRead && <span style={{ width: '6px', height: '6px', background: 'var(--danger)', borderRadius: '50%', display: 'inline-block' }}></span>}
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                        {notif.desc}
+                    <div style={{ fontSize: '1.5rem', flexShrink: 0, filter: notif.is_read ? 'grayscale(40%)' : 'none' }}>
+                      🔔
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: '0 0 0.4rem', fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.4' }}>
+                        <strong style={{ color: 'var(--primary)' }}>{sender_email}</strong> đã chia sẻ deck <strong style={{ color: 'var(--text-main)' }}>"{deck_name}"</strong> với bạn
                       </p>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.4rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{notif.date}</span>
-                        {notif.link && (
-                           <span style={{ fontSize: '0.75rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                             Read more <ExternalLink size={12} />
-                           </span>
-                        )}
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{getRelativeTime(notif.created_at)}</span>
+                        <button 
+                          onClick={() => handleReceiveDeck(deck_id)}
+                          className="btn btn-primary"
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderRadius: '6px' }}
+                        >
+                          Nhận deck
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -173,3 +169,4 @@ export default function NotificationBell() {
     </div>
   );
 }
+

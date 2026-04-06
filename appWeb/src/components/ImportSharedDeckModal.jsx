@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Download, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported }) {
+export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported, initialDeckId = '' }) {
   const [deckId, setDeckId] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialDeckId) setDeckId(initialDeckId);
+      else setDeckId('');
+      setMessage(null);
+    }
+  }, [isOpen, initialDeckId]);
 
   if (!isOpen) return null;
 

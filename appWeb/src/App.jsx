@@ -27,6 +27,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('decks');
   const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importModalInitialId, setImportModalInitialId] = useState('');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedDecks, setSelectedDecks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -507,7 +508,14 @@ function App() {
               <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: 0 }}>Cross-platform sync & intelligent learning</p>
             </div>
             <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <NotificationBell />
+              <NotificationBell 
+                userLoggedIn={userLoggedIn} 
+                userEmail={userEmail} 
+                onOpenImportModal={(id) => {
+                  setImportModalInitialId(id);
+                  setIsImportModalOpen(true);
+                }} 
+              />
               {userEmail === 'binhlhce200315@gmail.com' && (
                 <button
                   className="btn btn-glass btn-icon"
@@ -594,11 +602,12 @@ function App() {
           isOpen={isAddDeckModalOpen}
           onClose={() => setIsAddDeckModalOpen(false)}
           onDeckCreated={handleDeckCreated}
-          onOpenImport={() => { setIsAddDeckModalOpen(false); setIsImportModalOpen(true); }}
+          onOpenImport={() => { setIsAddDeckModalOpen(false); setImportModalInitialId(''); setIsImportModalOpen(true); }}
           setConfirmConfig={setConfirmConfig}
         />
         <ImportSharedDeckModal
           isOpen={isImportModalOpen}
+          initialDeckId={importModalInitialId}
           onClose={() => setIsImportModalOpen(false)}
           onDeckImported={handleDeckImported}
         />
@@ -667,7 +676,15 @@ function App() {
                       </button>
                     </div>
                   )}
-                  <NotificationBell />
+                  <NotificationBell 
+                    userLoggedIn={userLoggedIn} 
+                    userEmail={userEmail} 
+                    onOpenImportModal={(id) => {
+                      setImportModalInitialId(id);
+                      setIsImportModalOpen(true);
+                      setMode(null);
+                    }} 
+                  />
                   {userEmail === 'binhlhce200315@gmail.com' && (
                     <button
                       className="btn btn-glass btn-icon"

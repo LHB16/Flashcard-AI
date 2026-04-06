@@ -109,6 +109,24 @@ router.post('/create', async (req, res) => {
 
     const senderEmail = senderData.email;
 
+    // --- PHASE 1.2: Add Notifications ---
+    if (newEmails.length > 0) {
+      const notifData = newEmails.map(email => ({
+        receiver_email: email,
+        type: 'deck_shared',
+        payload: {
+          deck_id: deck_id,
+          deck_name: deckName,
+          sender_email: senderEmail
+        }
+      }));
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert(notifData);
+      
+      if (notifError) console.error('Failed to create notifications:', notifError);
+    }
+
     // Build HTML email
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e5e7eb;">
@@ -309,6 +327,45 @@ router.delete('/invite', async (req, res) => {
   } catch(error) {
     console.error('Delete Invite Error:', error);
     res.status(500).json({ error: 'Failed to remove invite' });
+  }
+});
+
+// GET /share/notifications
+router.get('/notifications', async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: 'Missing email' });
+
+  try {
+    const { data: notifications, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('receiver_email', email)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json({ notifications: notifications || [] });
+  } catch (error) {
+    console.error('Fetch Notifications Error:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// PATCH /share/notifications/read
+router.patch('/notifications/read', async (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'Missing ids array' });
+  }
+
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .in('id', ids);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update Notifications Error:', error);
+    res.status(500).json({ error: 'Failed to update notifications' });
   }
 });
 

@@ -91,3 +91,17 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO system_settings (key, value)
 VALUES ('notifications', '[]'::jsonb)
 ON CONFLICT (key) DO NOTHING;
+
+-- 9. Tạo bảng Notifications cho người dùng (In-App Notification)
+CREATE TABLE IF NOT EXISTS notifications (
+  id             UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  receiver_email TEXT NOT NULL,
+  type           TEXT NOT NULL DEFAULT 'deck_shared',
+  payload        JSONB NOT NULL,
+  is_read        BOOLEAN DEFAULT FALSE,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_receiver_is_read
+  ON notifications(receiver_email, is_read);
+
