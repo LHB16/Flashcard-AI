@@ -372,6 +372,9 @@ appWeb/
 | `isSyncing` | `boolean` | Shows top progress bar during sync |
 | `isSelectionMode` | `boolean` | Whether bulk-delete selection mode is active on deck list |
 | `selectedDecks` | `Set<string>` | Set of `deck_id` values selected for bulk deletion |
+| `isAddDeckModalOpen` | `boolean` | Controls visibility of the `AddDeckModal` |
+| `isImportModalOpen` | `boolean` | Controls visibility of the `ImportSharedDeckModal` |
+| `importModalInitialId` | `string` | Holds the pre-filled ID passed to `ImportSharedDeckModal` (e.g., from notifications) |
 | `showDeleteConfirm` | `boolean` | Controls visibility of the deck-delete `ConfirmationModal` |
 | `isDeleting` | `boolean` | Shows loading spinner in delete modal while async deletion runs |
 | `confirmConfig` | `ConfirmConfig` | Config object driving the generic `ConfirmationModal` (title, description, type, icon, onConfirm) |
