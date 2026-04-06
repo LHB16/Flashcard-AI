@@ -17,10 +17,11 @@ gmailOAuth2.setCredentials({
 const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2 });
 
 // Helper: Tạo raw email RFC 2822 (base64url encoded)
-function createRawEmail(from, to, subject, htmlBody) {
+function createRawEmail(from, to, bcc, subject, htmlBody) {
   const messageParts = [
     `From: ${from}`,
     `To: ${to}`,
+    ...(bcc ? [`Bcc: ${bcc}`] : []),
     `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
     'MIME-Version: 1.0',
     'Content-Type: text/html; charset=UTF-8',
@@ -135,9 +136,17 @@ router.post('/create', async (req, res) => {
             <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 20px; color: #1d4ed8; letter-spacing: 1px; font-weight: 600; word-break: break-all;">${deck_id}</p>
           </div>
 
-          <p style="margin: 0; font-size: 14px; color: #374151; font-style: italic; line-height: 1.5;">
+          <p style="margin: 0 0 20px 0; font-size: 14px; color: #374151; font-style: italic; line-height: 1.5;">
             To get started, open Flashcard AI, tap "Add Deck" → "Import", and paste the Deck ID above.
           </p>
+
+          <!-- App Link -->
+          <div style="text-align: center; margin-top: 10px;">
+            <a href="https://lhb16-flashcard-ai.pages.dev/" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Open Flashcard AI</a>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">
+              Or visit: <a href="https://lhb16-flashcard-ai.pages.dev/" style="color: #2563eb; text-decoration: underline;">https://lhb16-flashcard-ai.pages.dev/</a>
+            </p>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -154,7 +163,8 @@ router.post('/create', async (req, res) => {
       // Tạo raw email
       const rawMessage = createRawEmail(
         `"Flashcard AI" <${process.env.EMAIL_NOTIFY}>`,
-        newEmails.join(', '),
+        'Flashcard AI Users', // Hiển thị chung ở mục To để bảo mật
+        newEmails.join(', '), // Ẩn danh người nhận thực sự trong Bcc
         `${senderEmail} shared the Flashcard Deck "${deckName}" with you`,
         htmlContent
       );
