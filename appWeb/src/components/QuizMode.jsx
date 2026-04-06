@@ -564,7 +564,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
         {answeredCount} / {cards.length} answered ({progressPct}%)
       </div>
 
-      <div className="glass-panel" aria-describedby="leo-ai-context" style={{ padding: '2.5rem', marginBottom: '2rem', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div className="glass-panel quiz-question-card" aria-describedby="leo-ai-context" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <h3 style={{ fontSize: '1.4rem', lineHeight: '1.6', fontWeight: 500 }}>{currentCard.question}</h3>
         {multiChoice && (
           <p style={{ color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.8rem', opacity: 0.9 }}>
@@ -613,7 +613,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
             return (
               <button
                 key={i}
-                className="btn btn-glass"
+                className="btn btn-glass quiz-option-btn"
                 style={{
                   justifyContent: 'flex-start',
                   padding: '1.2rem 1.5rem',
@@ -653,7 +653,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
             return (
               <button
                 key={i}
-                className="btn btn-glass"
+                className="btn btn-glass quiz-option-btn"
                 style={{
                   justifyContent: 'flex-start',
                   padding: '1.2rem 1.5rem',

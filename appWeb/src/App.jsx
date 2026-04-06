@@ -492,11 +492,11 @@ function App() {
       <>
         {isSyncing && <div className="top-progress-bar"></div>}
         <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-          <header className="app-header" style={{
+          <header className="app-header login-header" style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '4rem',
+            marginBottom: '3rem',
             marginTop: '2rem',
             padding: '1rem 2rem',
             background: 'var(--glass-bg)',
@@ -708,7 +708,7 @@ function App() {
                 <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   {userLoggedIn && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span className="header-sync-label" style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <Cloud size={14} /> Synced {displayName && `(${displayName})`}
                       </span>
                       <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
@@ -880,7 +880,7 @@ function App() {
                   </button>
                 </div>
               )}
-              <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+              <div className="animate-fade-in deck-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1.5rem' }}>
                 {processedDecks.length === 0 ? (
                   <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <BookOpen size={48} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
@@ -892,7 +892,7 @@ function App() {
                   return (
                     <div
                       key={deck.deck_id || idx}
-                      className={`glass-panel glass-panel-hover ${isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'selected' : ''}`}
+                      className={`glass-panel glass-panel-hover deck-item-card ${isSelectionMode && selectedDecks.has(deck.deck_id || deck.name) ? 'selected' : ''}`}
                       style={{
                         padding: '2.5rem 2rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative',
                         transition: 'all 0.2s',
@@ -1070,7 +1070,7 @@ function App() {
               <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 {userLoggedIn && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    <span style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <span className="header-sync-label" style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
                     </span>
                     <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">

@@ -470,13 +470,13 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
       </div>
 
       {/* Score Pills */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '2rem', alignItems: 'center', padding: '0 1rem' }}>
+      <div className="score-pills-row">
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--glass-bg)', padding: '0.4rem 1rem', borderRadius: '20px' }}>
           <X size={20} color="var(--danger)" strokeWidth={2.5} />
           <span style={{ color: 'var(--danger)', fontWeight: 'bold', fontSize: '1.2rem' }}>{unknown}</span>
         </div>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', flex: 1, textAlign: 'center' }}>
-          ← Unknown &nbsp;/&nbsp; Known →
+        <span className="score-hint" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', flex: 1, textAlign: 'center' }}>
+          ← Unknown / Known →
         </span>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--glass-bg)', padding: '0.4rem 1rem', borderRadius: '20px' }}>
           <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.2rem' }}>{known}</span>
@@ -519,8 +519,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
               )}
             </div>
 
-            <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
-              👆 Tap / Space to flip
+            <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.85rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
+              Tap to flip
             </p>
           </div>
 
@@ -538,8 +538,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
                 </p>
               )}
             </div>
-            <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.9rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
-              👆 Tap / Space to flip back
+            <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.85rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
+              Tap to flip back
             </p>
           </div>
         </div>
@@ -547,13 +547,13 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', width: '100%' }}>
-        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
+        <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
           <X size={32} color="var(--danger)" strokeWidth={3} />
         </button>
         <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Previous Card (R)">
           <RotateCcw size={24} />
         </button>
-        <button className="btn btn-glass btn-icon" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
+        <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
           <Check size={32} color="var(--success)" strokeWidth={3} />
         </button>
       </div>

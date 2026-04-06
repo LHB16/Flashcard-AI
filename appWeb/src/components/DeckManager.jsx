@@ -230,14 +230,14 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
           <Settings size={22} color="var(--primary)" style={{ marginRight: '10px' }} /> 
           {deck?.name || 'Deck'}
         </h2>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+        <span className="deck-header-stats" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           {cards.length} cards · {multiCount} multi · {singleCount} single
         </span>
       </div>
 
       {/* Tab Bar - Hidden in Edit Mode and Import Mode */}
       {(tab !== 'edit' && tab !== 'import') && (
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        <div className="deck-manager-tabs" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <button
             className={`btn ${tab === 'view' ? 'btn-primary' : 'btn-glass'}`}
             onClick={() => setTab('view')}
@@ -621,7 +621,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
       {tab === 'edit' && editingCard && (
         <div className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Editor Header */}
-          <div className="glass-panel" style={{ 
+          <div className="glass-panel deck-editor-header" style={{ 
             padding: '1rem 1.5rem', borderRadius: '24px', 
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             background: 'var(--card-bg)' 
@@ -703,7 +703,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
             </button>
           </div>
 
-          <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div className="glass-panel deck-edit-form" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Question */}
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Question Content</label>

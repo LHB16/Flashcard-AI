@@ -2159,6 +2159,281 @@ input:checked + .toggle-track::after {
   border-color: var(--danger);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE OVERHAUL — 2026
+   Breakpoints: 900 / 768 / 640 / 480 / 375
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Login Page Header ── */
+@media (max-width: 480px) {
+  .login-header {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.85rem 1rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .login-header .app-header-left {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .login-header .app-header-left h1 {
+    font-size: 1.6rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .login-header .app-header-left p {
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .login-header .app-header-right {
+    flex-shrink: 0 !important;
+    gap: 0.4rem !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .login-header .app-header-left h1 {
+    font-size: 1.4rem !important;
+  }
+
+  .login-header .app-header-left p {
+    display: none !important;
+  }
+}
+
+/* ── Sync Label — Ẩn trên mobile nhỏ ── */
+@media (max-width: 480px) {
+  .header-sync-label {
+    display: none !important;
+  }
+}
+
+/* ── Deck Card Grid ── */
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .deck-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .deck-item-card {
+    padding: 1.5rem 1.25rem !important;
+  }
+
+  .deck-item-card h3 {
+    font-size: 1.1rem !important;
+  }
+}
+
+/* ── Flip Card Mobile ── */
+@media (max-width: 640px) {
+  .flip-card {
+    min-height: 300px !important;
+  }
+
+  .flip-card-inner {
+    min-height: 300px !important;
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    padding: 1.5rem 1rem !important;
+  }
+
+  .flip-card-front h3 {
+    font-size: 1.05rem !important;
+  }
+}
+
+/* ── Score Pills Row ── */
+.score-pills-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 2rem;
+  align-items: center;
+  padding: 0 1rem;
+}
+
+@media (max-width: 480px) {
+  .score-pills-row {
+    margin-bottom: 1.25rem !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .score-pills-row > div {
+    padding: 0.3rem 0.7rem !important;
+  }
+
+  .score-pills-row span {
+    font-size: 1rem !important;
+  }
+
+  .score-pills-row .score-hint {
+    font-size: 0.78rem !important;
+  }
+}
+
+/* ── Flashcard Action Buttons ── */
+.flashcard-action-btn {
+  min-height: 52px;
+}
+
+@media (max-width: 480px) {
+  .flashcard-action-btn {
+    min-height: 56px !important;
+    padding: 1.1rem !important;
+  }
+}
+
+/* ── Quiz Question Card ── */
+.quiz-question-card {
+  padding: 2.5rem;
+  min-height: 200px;
+}
+
+@media (max-width: 640px) {
+  .quiz-question-card {
+    padding: 1.5rem !important;
+    min-height: auto !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .quiz-question-card h3 {
+    font-size: 1.15rem !important;
+  }
+}
+
+/* ── Quiz Option Buttons ── */
+.quiz-option-btn {
+  min-height: 44px;
+}
+
+@media (max-width: 640px) {
+  .quiz-option-btn {
+    padding: 0.95rem 1.1rem !important;
+    font-size: 0.9rem !important;
+    min-height: 52px !important;
+  }
+}
+
+/* ── DeckManager Tab Bar ── */
+.deck-manager-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 3px;
+  margin-bottom: 1rem;
+}
+
+.deck-manager-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .deck-manager-tabs .btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 0.5rem 0.9rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  .deck-header-stats {
+    display: none !important;
+  }
+}
+
+/* ── DeckManager Edit Form ── */
+@media (max-width: 640px) {
+  .deck-edit-form {
+    padding: 1.25rem 1rem !important;
+    gap: 1.5rem !important;
+  }
+
+  .deck-editor-header {
+    padding: 0.85rem 1rem !important;
+    border-radius: 16px !important;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
+
+/* ── Safe Area Insets (iOS Notch / Home Bar) ── */
+@supports (padding: max(0px)) {
+  .chat-toggle-btn {
+    bottom: max(1.5rem, calc(0.5rem + env(safe-area-inset-bottom)));
+    right: max(1.5rem, calc(0.5rem + env(safe-area-inset-right)));
+  }
+
+  @media (max-width: 480px) {
+    .chat-window {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
+
+/* ── Small Phone — 375px (iPhone SE) ── */
+@media (max-width: 375px) {
+  .app-main {
+    padding: 0.75rem !important;
+  }
+
+  .app-header {
+    padding: 0.75rem 0.9rem !important;
+  }
+
+  .btn {
+    font-size: 0.875rem !important;
+    padding: 0.65rem 1.1rem !important;
+  }
+
+  .btn-icon {
+    padding: 0.65rem !important;
+  }
+
+  .study-title {
+    font-size: 1.4rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .mode-card {
+    padding: 1.5rem 1rem !important;
+  }
+
+  .glass-panel {
+    border-radius: 14px !important;
+  }
+
+  .tab-btn {
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.7rem !important;
+  }
+}
+
+/* ── Global Scrollbar — Thinner on Mobile ── */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+}
+
 /* Toast */
 .settings-toast {
   position: fixed;
