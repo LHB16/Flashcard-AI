@@ -287,7 +287,23 @@ CREATE TABLE IF NOT EXISTS deck_invites (
 );
 ```
 
-> These two tables power the Share & Clone feature. The `deck_data` JSONB column stores a full snapshot of the deck **at the time of sharing**, so recipients always get a consistent clone regardless of future edits by the owner.
+**Table: `notifications`** — In-app user notifications (Added **2026-04-06**)
+
+```sql
+CREATE TABLE IF NOT EXISTS notifications (
+  id             UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  receiver_email TEXT NOT NULL,
+  type           TEXT NOT NULL DEFAULT 'deck_shared',
+  payload        JSONB NOT NULL,
+  is_read        BOOLEAN DEFAULT FALSE,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_receiver_is_read
+  ON notifications(receiver_email, is_read);
+```
+
+> These tables power the Share & Clone feature. The `deck_data` JSONB column stores a full snapshot of the deck **at the time of sharing**, while `notifications` guarantees real-time in-app alerts to recipients.
 
 ---
 
@@ -450,8 +466,11 @@ Globally-mounted modals (outside all branches, always in DOM):
 
 #### `NotificationBell.jsx`
 
-- Fixed notification list with unread badge count
-- Read state persisted in `localStorage`
+- **Hybrid Notification Engine** (Upgraded **2026-04-06**): Displays two synchronized alert streams simultaneously:
+  - **System Notifications:** Fetched from global `/notifications`, read state persisted locally in `localStorage`.
+  - **Shared Decks:** Fetched from `/share/notifications`, read state persisted globally via Supabase `PATCH`.
+- Renders dynamic unread badges, relative timestamps, and visual read/unread highlights.
+- Clicking "Import Deck" natively calls `onOpenImportModal(deck_id)`, propagating the ID straight into `ImportSharedDeckModal` for seamless 1-click loading.
 - Dropdown z-index: **`9999`** to always appear above all UI elements
 - `overscroll-behavior: contain` prevents background page scroll
 
@@ -592,13 +611,15 @@ Gated by `isAdmin` middleware (Identity check via `x-user-email` header).
 
 | Method | Path | Request Body | Response | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message, newlySharedCount }` | Upserts deck snapshot to `shared_decks`. Filters out emails already present in `deck_invites` for this deck to prevent spam resending. Inserts new invites and fires a Gmail API invitation using **BCC** to these newly added recipients to protect their privacy. |
-| GET | `/share/invites/:deck_id` | Query: `google_id` | `{ invites: [ { id, receiver_email, created_at } ] }` | Retrieves the list of currently shared email invitations. Validates that the requested `google_id` matches the deck owner. Returns `[]` if the deck has never been shared. |
-| GET | `/share/view/:deck_id` | Query: `email` | `{ deck_data }` | Returns the JSONB snapshot for the given `deck_id` if the `email` exists in `deck_invites`. Used by `ImportSharedDeckModal` to fetch and clone the deck. |
+| POST | `/share/create` | `{ google_id, deck_id, deck_data, receiver_emails[] }` | `{ message, newlySharedCount }` | Upserts deck snapshot to `shared_decks`. Filters out existing emails to prevent spam resending. Fire Gmail API invitations under `Bcc` AND inserts alert records into the `notifications` table for real-time app delivery. |
+| GET | `/share/invites/:deck_id` | Query: `google_id` | `{ invites: [...] }` | Retrieves the list of currently shared email invitations. Validates that the requested `google_id` matches the deck owner. |
+| GET | `/share/view/:deck_id` | Query: `email` | `{ deck_data }` | Returns the JSONB snapshot for the given `deck_id` if the `email` exists in `deck_invites`. Used by `ImportSharedDeckModal`. |
 | DELETE | `/share/invite` | `{ deck_id, receiver_email, google_id }` | `{ message }` | Removes a specific email's access to the shared deck (deletes from `deck_invites`). Validates ownership via `google_id`. |
+| GET | `/share/notifications` | Query: `email` | `{ notifications: [...] }` | Fetches personalized alerts for received decks, returning newest first. |
+| PATCH | `/share/notifications/read`| `{ ids: string[] }` | `{ success: true }` | Marks an array of database-stored notifications as `is_read = true`. |
 
 > **Email Invitation Detail:** `POST /share/create` queries the `users` table to resolve the sender's email (`google_id → email`), then constructs an RFC 2822 HTML email encoded as `base64url` and sends it via `gmail.users.messages.send`.
-> - **Privacy (BCC):** To prevent recipients from seeing each other's addresses, the list of emails is placed in the `Bcc` header. The `To` header is set to the system's `EMAIL_NOTIFY` address with a display name.
+> - **Privacy (BCC):** To prevent recipients from seeing each other's addresses, the list of emails is placed in the `Bcc` header. The `To` header is set to the system's `EMAIL_NOTIFY` address.
 > - **Quick Access:** The email body includes a prominent call-to-action button and a text link pointing to `https://lhb16-flashcard-ai.pages.dev/`.
 > - **Protocol:** This approach uses HTTPS instead of SMTP, bypassing Render Free Tier's outbound port block.
 

@@ -935,11 +935,12 @@ function App() {
           isOpen={isAddDeckModalOpen}
           onClose={() => setIsAddDeckModalOpen(false)}
           onDeckCreated={handleDeckCreated}
-          onOpenImport={() => { setIsAddDeckModalOpen(false); setIsImportModalOpen(true); }}
+          onOpenImport={() => { setIsAddDeckModalOpen(false); setImportModalInitialId(''); setIsImportModalOpen(true); }}
           setConfirmConfig={setConfirmConfig}
         />
         <ImportSharedDeckModal
           isOpen={isImportModalOpen}
+          initialDeckId={importModalInitialId}
           onClose={() => setIsImportModalOpen(false)}
           onDeckImported={handleDeckImported}
         />
