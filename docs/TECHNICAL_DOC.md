@@ -1158,11 +1158,41 @@ return (
 
 ---
 
-### 4.14 Frontend Developer Guidelines & Pitfalls
+### 4.14 Mobile UI & Responsive Design
+
+Implemented comprehensively on **2026-04-06**, the frontend layout is fully adaptable to mobile viewports using advanced CSS media queries, structural class abstractions, and viewport optimizations.
+
+#### 4.14.1 Breakpoint Strategy
+
+The mobile UI applies the following distinct breaking points:
+
+| Breakpoint | Target Device Focus | CSS Rule | Implementation Effect |
+| :--- | :--- | :--- | :--- |
+| **900px** | Tablet/Desktop | `min-width: 900px` | Full multi-column grids and full feature visibility. |
+| **768px** | iPad/Vertical Tablet | `max-width: 768px` | Tighter containers, slimmer scrollbars. |
+| **640px** | Large Phone | `max-width: 640px` | `deck-grid` collapses to a safe 1-column layout. Editor features are compacted. |
+| **480px** | Phone (Portrait) | `max-width: 480px` | Heaviest adjustments: `login-header` splits, `span.hide-on-mobile` elements are hidden (icons-only buttons), flashcard actions become full-width touch targets. |
+| **375px** | iPhone SE/Compact Phone | `max-width: 375px` | Reduced font-sizes across H1s/H2s, reduced border-radii (`16px`), smaller paddings to prevent overflow. |
+
+#### 4.14.2 Touch Targets & CSS Best Practices
+
+- **Minimal Dom Interference**: All mobile optimizations were achieved through **CSS Media Queries** and strategic `className` propagation without affecting React's component state or JavaScript logic tree.
+- **Mobile Action Buttons**: Buttons have a guaranteed minimum touch target of `44px - 56px` vertically.
+- **`.hide-on-mobile`**: An aggressive utility class that completely sets `display: none !important;` on text labels inside buttons on small screens (`<= 480px`). This transforms dual text/icon buttons (e.g. `<RotateCcw> Reset`) into clean, space-saving icon-only buttons (just `<RotateCcw>`).
+
+#### 4.14.3 Safe Layout Wraps
+
+Container overflows are strictly prevented through modern flexbox/grid adjustments:
+- E.g. **Share Deck Modal**: Addresses long email overflows by combining `whiteSpace: 'nowrap'`, `textOverflow: 'ellipsis'` with an adjacent explicit `flexShrink: 0` assigned strictly to the delete (Trash) button, ensuring the delete action is never pushed outside the viewport bounds.
+- Tab Bars (like `deck-manager-tabs`) leverage sideways momentum-scrolling without wrapping to maintain vertical real-estate on mobile.
+
+---
+
+### 4.15 Frontend Developer Guidelines & Pitfalls
 
 This section documents critical development rules established on **2026-04-03** to ensure application stability and proper cross-device synchronization.
 
-#### 4.14.1 Explicit Hook Imports (Avoiding "White Screen" Crashes)
+#### 4.15.1 Explicit Hook Imports (Avoiding "White Screen" Crashes)
 
 While the automatic JSX transform handles `<JSX />` syntax without requiring `import React`, it **does not** provide React's globals or hooks.
 
@@ -1172,7 +1202,7 @@ While the automatic JSX transform handles `<JSX />` syntax without requiring `im
   import React, { useState, useEffect, useCallback, useRef } from 'react';
   ```
 
-#### 4.14.2 Modal Awareness Across UI Branches
+#### 4.15.2 Modal Awareness Across UI Branches
 
 The application uses multiple top-level `return` branches (e.g., for Login, Deck List, and Study Modes).
 
