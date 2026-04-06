@@ -164,10 +164,8 @@ export default function NotificationBell({ userLoggedIn, userEmail, onOpenImport
 
       {showNotif && (
         <div className="glass-panel animate-fade-in notification-dropdown" style={{
-          position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-          width: '320px', maxHeight: '400px', display: 'flex', flexDirection: 'column',
-          zIndex: 9999, overflow: 'hidden', overscrollBehavior: 'contain',
-          background: 'var(--glass-bg)', backdropFilter: 'blur(16px)'
+          overscrollBehavior: 'contain',
+          backdropFilter: 'blur(16px)'
         }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
