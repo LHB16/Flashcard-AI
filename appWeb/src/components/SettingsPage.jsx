@@ -50,6 +50,7 @@ function SettingsPage({
   onBack,
   onDataChange,
   onOpenConfirm,
+  onShareDeck,
 }) {
   const [activeSection, setActiveSection] = useState('email');
 
@@ -272,9 +273,13 @@ function SettingsPage({
   }, [data, onDataChange, onOpenConfirm, showToast]);
 
   const handleShareDeck = useCallback((deck) => {
-    navigator.clipboard.writeText(deck.deck_id);
-    showToast(`Copied Deck ID for "${deck.name}"`);
-  }, [showToast]);
+    if (onShareDeck) {
+      onShareDeck(deck);
+    } else {
+      navigator.clipboard.writeText(deck.deck_id);
+      showToast(`Copied Deck ID for "${deck.name}"`);
+    }
+  }, [onShareDeck, showToast]);
 
   // ════════════════════════════════════
   // DANGER ZONE — NUCLEAR DELETE

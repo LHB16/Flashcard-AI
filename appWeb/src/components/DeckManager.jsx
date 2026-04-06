@@ -13,8 +13,8 @@ const DEDUP_PAIRS_PER_PAGE = 15;
  * DeckManager — View/Delete cards + Check Duplicates
  * Props: deck, onBack, onDeckModified
  */
-export default function DeckManager({ deck, allDecks = [], onBack, onDeckModified, setConfirmConfig, userLoggedIn }) {
-  const [tab, setTab] = useState('view'); // 'view' | 'dedup'
+export default function DeckManager({ deck, allDecks = [], onBack, onDeckModified, setConfirmConfig, userLoggedIn, initialTab = 'view' }) {
+  const [tab, setTab] = useState(initialTab); // 'view' | 'dedup' | 'share'
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [selectedCards, setSelectedCards] = useState(new Set());

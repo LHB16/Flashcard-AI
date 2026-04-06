@@ -34,6 +34,7 @@ function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [managerTab, setManagerTab] = useState('view');
 
   // Generic confirmation modal state
   const [confirmConfig, setConfirmConfig] = useState({
@@ -644,7 +645,13 @@ function App() {
                 setData(newData);
                 uploadDecksToDrive(newData, driveFileId);
               }}
-              onOpenConfirm={(config) => setConfirmConfig({ ...config, isOpen: true })}
+              onOpenConfirm={(config) => setConfirmConfig({ ...config, isOpen: config.isOpen !== undefined ? config.isOpen : true })}
+              onShareDeck={(deck) => {
+                setShowSettings(false);
+                setSelectedDeck(deck);
+                setManagerTab('share');
+                setMode('manage');
+              }}
             />
           </main>
           <ConfirmationModal
@@ -1172,7 +1179,7 @@ function App() {
               <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button
                   className="btn btn-glass glass-panel-hover"
-                  onClick={() => setMode('manage')}
+                  onClick={() => { setManagerTab('view'); setMode('manage'); }}
                   style={{ fontSize: '0.95rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
                 >
                   <Settings size={18} /> Manage Cards
@@ -1191,7 +1198,7 @@ function App() {
           {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
           {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
-          {mode === 'manage' && <DeckManager deck={selectedDeck} allDecks={data} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
+          {mode === 'manage' && <DeckManager deck={selectedDeck} allDecks={data} onBack={() => { setMode('home'); setManagerTab('view'); }} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} initialTab={managerTab} />}
         </div>
         <AddDeckModal
           isOpen={isAddDeckModalOpen}
