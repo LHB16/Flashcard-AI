@@ -10,6 +10,7 @@ import ImportSharedDeckModal from './components/ImportSharedDeckModal';
 import NotificationBell from './components/NotificationBell';
 import ChatBubble from './components/ChatBubble';
 import AdminDashboard from './components/AdminDashboard';
+import SettingsPage from './components/SettingsPage';
 import { Layers, BrainCircuit, Moon, Sun, BookOpen, Cloud, Check, Loader2, CloudOff, Search, Star, StarOff, ChevronUp, ChevronDown, Sparkles, Settings, Plus, Trash2, AlertTriangle, X, Download, Keyboard, LogOut, Shield } from 'lucide-react';
 import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, uploadDecksToDrive, deleteDecksProgress } from './services/driveSync';
 import Footer from './components/Footer';
@@ -32,6 +33,7 @@ function App() {
   const [selectedDecks, setSelectedDecks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Generic confirmation modal state
   const [confirmConfig, setConfirmConfig] = useState({
@@ -627,6 +629,37 @@ function App() {
 
   // 2. Render deck selection if multiple decks and none selected
   if (data && !selectedDeck) {
+    if (showSettings) {
+      return (
+        <>
+          <main className="app-main" style={{ padding: '1.5rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+            <SettingsPage
+              userEmail={userEmail}
+              googleId={localStorage.getItem('g_id') || ''}
+              data={data}
+              driveFileId={driveFileId}
+              backendUrl={import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}
+              onBack={() => setShowSettings(false)}
+              onDataChange={(newData) => {
+                setData(newData);
+                uploadDecksToDrive(newData, driveFileId);
+              }}
+              onOpenConfirm={(config) => setConfirmConfig({ ...config, isOpen: true })}
+            />
+          </main>
+          <ConfirmationModal
+            isOpen={confirmConfig.isOpen}
+            onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            onConfirm={confirmConfig.onConfirm}
+            title={confirmConfig.title}
+            description={confirmConfig.description}
+            confirmText={confirmConfig.confirmText}
+            type={confirmConfig.type}
+            icon={confirmConfig.icon}
+          />
+        </>
+      );
+    }
     return (
       <>
         <main className="app-main" style={{ padding: '1.5rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
@@ -685,6 +718,15 @@ function App() {
                       setMode(null);
                     }} 
                   />
+                  <button
+                    className="btn btn-glass btn-icon"
+                    onClick={() => setShowSettings(true)}
+                    title="Settings"
+                    aria-label="Open Settings"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <Settings size={18} />
+                  </button>
                   {userEmail === 'binhlhce200315@gmail.com' && (
                     <button
                       className="btn btn-glass btn-icon"

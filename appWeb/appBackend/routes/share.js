@@ -178,26 +178,79 @@ router.post('/create', async (req, res) => {
     `;
 
     if (newEmails.length > 0) {
-      // Tạo raw email
-      const rawMessage = createRawEmail(
-        `"Flashcard AI" <${process.env.EMAIL_NOTIFY}>`,
-        `"Flashcard AI User" <${process.env.EMAIL_NOTIFY}>`, // Sử dụng email notify làm người nhận giả để ẩn BCC
-        newEmails.join(', '), // Ẩn danh người nhận thực sự trong Bcc
-        `${senderEmail} shared the Flashcard Deck "${deckName}" with you`,
-        htmlContent
-      );
+      // --- Check email preferences ---
+      // 1. Check sender's send_email_enabled
+      const { data: senderSettings } = await supabase
+        .from('user_settings')
+        .select('send_email_enabled')
+        .eq('google_id', google_id)
+        .maybeSingle();
 
-      console.log(`📧 Attempting to send email to: ${newEmails.join(', ')}`);
+      const shouldSendEmail = senderSettings?.send_email_enabled !== false;
 
-      // Fire-and-forget via Gmail API (HTTPS, không bị Render chặn)
-      gmail.users.messages.send({
-        userId: 'me',
-        requestBody: { raw: rawMessage }
-      }).then(result => {
-        console.log('✅ Mail sent via Gmail API, ID:', result.data.id);
-      }).catch(err => {
-        console.error('❌ Gmail API send error:', err.message);
-      });
+      if (shouldSendEmail) {
+        // 2. Check each recipient's receive_email_enabled
+        const { data: recipientUsers } = await supabase
+          .from('users')
+          .select('google_id, email')
+          .in('email', newEmails);
+
+        let emailableRecipients = [...newEmails]; // default: all new emails
+
+        if (recipientUsers && recipientUsers.length > 0) {
+          const recipientGoogleIds = recipientUsers.map(u => u.google_id);
+          const { data: recipientSettings } = await supabase
+            .from('user_settings')
+            .select('google_id, receive_email_enabled')
+            .in('google_id', recipientGoogleIds);
+
+          // Build a set of google_ids that have opted out
+          const optedOutIds = new Set();
+          if (recipientSettings) {
+            for (const s of recipientSettings) {
+              if (s.receive_email_enabled === false) {
+                optedOutIds.add(s.google_id);
+              }
+            }
+          }
+
+          // Map opted-out google_ids back to emails
+          const optedOutEmails = new Set(
+            recipientUsers
+              .filter(u => optedOutIds.has(u.google_id))
+              .map(u => u.email)
+          );
+
+          emailableRecipients = newEmails.filter(email => !optedOutEmails.has(email));
+        }
+
+        if (emailableRecipients.length > 0) {
+          // Tạo raw email
+          const rawMessage = createRawEmail(
+            `"Flashcard AI" <${process.env.EMAIL_NOTIFY}>`,
+            `"Flashcard AI User" <${process.env.EMAIL_NOTIFY}>`,
+            emailableRecipients.join(', '),
+            `${senderEmail} shared the Flashcard Deck "${deckName}" with you`,
+            htmlContent
+          );
+
+          console.log(`📧 Attempting to send email to: ${emailableRecipients.join(', ')}`);
+
+          // Fire-and-forget via Gmail API (HTTPS, không bị Render chặn)
+          gmail.users.messages.send({
+            userId: 'me',
+            requestBody: { raw: rawMessage }
+          }).then(result => {
+            console.log('✅ Mail sent via Gmail API, ID:', result.data.id);
+          }).catch(err => {
+            console.error('❌ Gmail API send error:', err.message);
+          });
+        } else {
+          console.log('📧 All recipients have disabled email notifications, skipping send.');
+        }
+      } else {
+        console.log('📧 Sender has disabled send_email_enabled, skipping email send.');
+      }
     }
 
     res.json({ newlySharedCount, message: 'Deck shared and invites sent successfully!' });

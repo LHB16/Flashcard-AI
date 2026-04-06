@@ -105,3 +105,14 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_receiver_is_read
   ON notifications(receiver_email, is_read);
 
+-- 10. Tạo bảng User Settings lưu cấu hình cá nhân của người dùng
+CREATE TABLE IF NOT EXISTS user_settings (
+  google_id             TEXT PRIMARY KEY REFERENCES users(google_id) ON DELETE CASCADE,
+  receive_email_enabled  BOOLEAN NOT NULL DEFAULT TRUE,
+  send_email_enabled     BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at            TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index cho tìm kiếm nhanh
+CREATE INDEX IF NOT EXISTS idx_user_settings_google_id ON user_settings(google_id);
+
