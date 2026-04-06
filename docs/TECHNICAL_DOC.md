@@ -303,6 +303,17 @@ CREATE INDEX IF NOT EXISTS idx_notifications_receiver_is_read
   ON notifications(receiver_email, is_read);
 ```
 
+**Table: `user_settings`** — User-specific global configurations (Added **2026-04-06**)
+
+```sql
+CREATE TABLE IF NOT EXISTS user_settings (
+  google_id             TEXT PRIMARY KEY REFERENCES users(google_id) ON DELETE CASCADE,
+  receive_email_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  send_email_enabled    BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at            TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
 > These tables power the Share & Clone feature. The `deck_data` JSONB column stores a full snapshot of the deck **at the time of sharing**, while `notifications` guarantees real-time in-app alerts to recipients.
 
 ---
@@ -331,8 +342,8 @@ appWeb/
 │   │   ├── FlashcardMode.jsx    # Swipe-to-score flashcard study
 │   │   ├── Footer.jsx           # Footer with links
 │   │   ├── KeyboardShortcuts.jsx# Keyboard shortcut overlay
-│   │   ├── NotificationBell.jsx # Notification dropdown
 │   │   ├── ShareDeckView.jsx    # Share deck UI (email invite + Copy ID)
+│   │   ├── SettingsPage.jsx     # Centralized user configurations + Danger zone
 │   │   └── QuizMode.jsx         # Multiple-choice quiz engine
 │   └── services/
 │       ├── configService.js     # config.json CRUD on Drive
@@ -453,6 +464,16 @@ Globally-mounted modals (outside all branches, always in DOM):
   - **Invite Creation**: Submits new emails to `/share/create`. The backend intelligently filters out users who already have access and only emails the new ones.
   - **Access Management**: Fetches the active list of permitted viewers (`GET /share/invites`) on mount and displays them. Supports revoking access via `DELETE /share/invite`. Destructive actions are guarded by `ConfirmationModal`.
   - **Standalone Snapshot**: Recipients receive a standalone clone of the deck based on the state at the exact time of sharing; their local edits do not affect the owner's original deck.
+
+#### `SettingsPage.jsx`
+
+- **Purpose:** Centralized user configuration panel introduced on **2026-04-06** replacing scattered logic.
+- **Key Features:**
+  - **Email Notifications**: Controls the strict opt-in logic for receiving shared deck emails (`receive_email_enabled: false` by default). Includes debounced auto-save functions.
+  - **Gemini API Keys**: Directly reads/writes `config.json` on Google Drive AppDataFolder (`configService.js`).
+  - **My Decks**: Full grid overview of deck statistics (known/progress/card count), renaming capabilities, and direct access resetting.
+  - **Danger Zone**: Houses the "Nuclear Delete" feature that recursively wipes Google Drive data (`decks.json`, `config.json`), and requests Supabase backend `DELETE /settings/delete-all-data` to wipe `deck_progress`, `quiz_sessions`, etc.
+- **UX**: Built with an isolated full-screen glass layout, responsive mobile tabs, and protected with `ConfirmationModal` guarding all destructive actions.
 
 #### `FlashcardMode.jsx`
 
@@ -622,9 +643,18 @@ Gated by `isAdmin` middleware (Identity check via `x-user-email` header).
 | PATCH | `/share/notifications/read`| `{ ids: string[] }` | `{ success: true }` | Marks an array of database-stored notifications as `is_read = true`. |
 
 > **Email Invitation Detail:** `POST /share/create` queries the `users` table to resolve the sender's email (`google_id → email`), then constructs an RFC 2822 HTML email encoded as `base64url` and sends it via `gmail.users.messages.send`.
+> - **Opt-in Privacy:** Only registered users with an active `user_settings` record and `receive_email_enabled = true` will be added to the `Bcc` broadcast list. New or opted-out users will never receive emails, but their decks will still seamlessly sync via in-app notifications.
 > - **Privacy (BCC):** To prevent recipients from seeing each other's addresses, the list of emails is placed in the `Bcc` header. The `To` header is set to the system's `EMAIL_NOTIFY` address.
 > - **Quick Access:** The email body includes a prominent call-to-action button and a text link pointing to `https://lhb16-flashcard-ai.pages.dev/`.
 > - **Protocol:** This approach uses HTTPS instead of SMTP, bypassing Render Free Tier's outbound port block.
+
+**`/settings` routes**
+
+| Method | Path | Request Body | Response | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/settings/email` | Query: `google_id` | `{ receive_email_enabled, send_email_enabled }` | Returns email preferences. Defaults to `false` for receive if no record exists. |
+| POST | `/settings/email` | `{ google_id, receive_email_enabled, send_email_enabled }` | `{ message }` | Upserts user preferences. Debounced on the frontend. |
+| DELETE | `/settings/delete-all-data`| `{ google_id }` | `{ message }` | Nukes all relational progress, sessions, invites, and notifications linked to the `google_id`. Used by Danger Zone. |
 
 ### 4.6 Google OAuth Flow (Step-by-Step)
 
