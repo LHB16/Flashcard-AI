@@ -7,7 +7,7 @@ const ChatBubble = ({ currentCard, userLoggedIn = true }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAwake, setIsAwake] = useState(false); // false = mờ, true = rõ
   const [messages, setMessages] = useState([
-    { role: 'bot', content: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!' }
+    { role: 'assistant', content: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!' }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +22,13 @@ const ChatBubble = ({ currentCard, userLoggedIn = true }) => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Reset conversation history khi đổi Flashcard
+  useEffect(() => {
+    setMessages([
+      { role: 'assistant', content: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!' }
+    ]);
+  }, [currentCard]);
 
   // Focus input when chat opens
   useEffect(() => {
@@ -64,18 +71,25 @@ const ChatBubble = ({ currentCard, userLoggedIn = true }) => {
     if (!trimmed || isLoading) return;
 
     const userMsg = { role: 'user', content: trimmed };
-    setMessages(prev => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
 
     try {
       const { card_front, card_back, card_context } = buildCardContext();
 
+      // Filter out only role & content for API
+      const chatHistory = newMessages.map(msg => ({
+        role: msg.role === 'bot' ? 'assistant' : msg.role,
+        content: msg.content
+      }));
+
       const res = await fetch(`${BACKEND_URL}/chat/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_question: trimmed,
+          messages: chatHistory,
           card_front,
           card_back,
           card_context,
@@ -98,12 +112,12 @@ YOUR ROLE:
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
       const data = await res.json();
-      const botMsg = { role: 'bot', content: data.reply || 'Sorry, I couldn\'t generate a response.' };
+      const botMsg = { role: 'assistant', content: data.reply || 'Sorry, I couldn\'t generate a response.' };
       setMessages(prev => [...prev, botMsg]);
     } catch (err) {
       console.error('Chat error:', err);
       setMessages(prev => [...prev, {
-        role: 'bot',
+        role: 'assistant',
         content: '⚠️ Connection error. Please check your internet and try again.'
       }]);
     } finally {

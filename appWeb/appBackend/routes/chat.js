@@ -7,7 +7,12 @@ const supabase = require('../supabaseClient');
  * AI Chat Assistant proxy
  */
 router.post('/ask', async (req, res) => {
-  const { user_question, card_context, system_prompt } = req.body;
+  const { messages, user_question, card_context, system_prompt } = req.body;
+
+  // Hỗ trợ cả 2 chuẩn: truyền mảng messages (mới) hoặc truyền user_question (cũ)
+  const chatMessages = messages || [
+    { role: 'user', content: user_question }
+  ];
 
   try {
     // 1. Lấy danh sách API Keys từ Database
@@ -34,13 +39,13 @@ router.post('/ask', async (req, res) => {
             'Authorization': `Bearer ${key}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              { role: 'system', content: system_prompt },
-              { role: 'user', content: user_question }
-            ],
-            temperature: 0.7,
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: [
+                { role: 'system', content: system_prompt },
+                ...chatMessages
+              ],
+              temperature: 0.7,
             max_tokens: 500
           })
         });
@@ -66,13 +71,30 @@ router.post('/ask', async (req, res) => {
     if (!success && process.env.GEMINI_API_KEY) {
       try {
         const selectedKey = process.env.GEMINI_API_KEY;
+
+        // Format history thành cấu trúc của Gemini 1.5
+        const geminiMessages = chatMessages.map((msg, index) => {
+          let content = msg.content;
+          // Nhúng system_prompt vào tin nhắn user đầu tiên nếu dùng chuẩn cũ không qua system_instruction
+          if (index === 0 && msg.role === 'user') {
+            content = `${system_prompt}\n\n${content}`;
+          }
+          return {
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: content }]
+          };
+        });
+
+        // Bỏ qua tin nhắn "assistant" đầu tiên nếu nó là tin chào mừng (vì Gemini yêu cầu role 'user' đầu tiên)
+        const filteredGeminiMessages = geminiMessages[0]?.role === 'model' 
+          ? geminiMessages.slice(1) 
+          : geminiMessages;
+
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${selectedKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{
-              parts: [{ text: `${system_prompt}\n\nUser Question: ${user_question}` }]
-            }]
+            contents: filteredGeminiMessages
           })
         });
         
