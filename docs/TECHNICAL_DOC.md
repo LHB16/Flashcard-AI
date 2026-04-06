@@ -1777,8 +1777,7 @@ npx expo start
 1. **New API endpoint:** Add to the appropriate route file in `appBackend/routes/`. Update this documentation's API table.
 2. **New React component:** Create in `src/components/`. Ensure it handles both `dark` and `light` theme via CSS variables.
 3. **New data field:** Add to `decks.json` schema (Section 3.1), update `Deck.FromDict()` in .NET and `Deck.from_dict()` in Python, and update Android's `storage.js`.
-4. **New notification:** Add to the `NOTIFICATIONS` array in `NotificationBell.jsx`.
-
+4. **New notification:** Insert the notification into the database `system_settings` (for global system notifications) or `notifications` table (for user-specific alerts).
 ### 9.4 Coding Conventions
 
 - **Commit messages:** Conventional Commits format (`feat:`, `fix:`, `docs:`, `refactor:`)
