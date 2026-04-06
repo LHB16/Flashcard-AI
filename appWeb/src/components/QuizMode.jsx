@@ -515,7 +515,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
         gap: '0.8rem' 
       }}>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', justifySelf: 'start' }} onClick={onBack}>
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} /> <span className="hide-on-mobile">Back</span>
         </button>
         
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', justifySelf: 'center' }}>
@@ -546,13 +546,13 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
               gap: '0.3rem',
               border: '1px solid rgba(139, 92, 246, 0.2)'
             }} onClick={goToFirstUnanswered} title={`Go to question ${firstUnansweredIdx + 1}`}>
-              <SkipForward size={14} /> Jump to #{firstUnansweredIdx + 1}
+              <SkipForward size={14} /> <span className="hide-on-mobile">Jump to</span> #{firstUnansweredIdx + 1}
             </button>
           )}
         </div>
 
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', justifySelf: 'end' }} onClick={resetQuiz} title="Reset all progress (Restart)">
-          Reset
+          <RotateCcw size={18} /> <span className="hide-on-mobile">Reset</span>
         </button>
       </div>
 

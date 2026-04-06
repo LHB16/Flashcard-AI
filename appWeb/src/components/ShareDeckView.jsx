@@ -192,8 +192,8 @@ export default function ShareDeckView({ deck, onBack }) {
                     }}>
                       <User size={18} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', fontWeight: 500 }}>{inv.receiver_email}</p>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inv.receiver_email}</p>
                       <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                         Shared on: {new Date(inv.created_at).toLocaleDateString('en-US')}
                       </p>
@@ -204,7 +204,7 @@ export default function ShareDeckView({ deck, onBack }) {
                       style={{ 
                         background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', 
                         border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px'
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', flexShrink: 0
                       }}
                       title="Remove access"
                     >

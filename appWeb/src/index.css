@@ -2164,6 +2164,10 @@ input:checked + .toggle-track::after {
    Breakpoints: 900 / 768 / 640 / 480 / 375
    ═══════════════════════════════════════════════════════════ */
 
+@media (max-width: 480px) {
+  .hide-on-mobile { display: none !important; }
+}
+
 /* ── Login Page Header ── */
 @media (max-width: 480px) {
   .login-header {
