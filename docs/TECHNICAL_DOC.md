@@ -409,7 +409,7 @@ Globally-mounted modals (outside all branches, always in DOM):
   - Defaults to `0.3` opacity (visually unobtrusive) when idle.
   - Click 1: Wakes up to `1.0` opacity. Automatically returns to `0.3` after 3 seconds if untouched.
   - Click 2: Expands into a full chat window.
-- **State:** Passes context of the currently active card (`currentCard.question` and `currentCard.options`) in system prompts to `/scan/chat` endpoint.
+- **State:** Maintains stateful conversation history while studying a card. The full `messages[]` array is sent to the `/chat/ask` endpoint on each interaction. The conversation history is automatically cleared whenever `currentCard` changes to prevent context mixing between different flashcards. Passes card content via `card_context` field.
 - Disabled via CSS and tooltip if `userLoggedIn === false`.
 
 #### `DeckManager.jsx`
@@ -572,9 +572,9 @@ Gated by `isAdmin` middleware (Identity check via `x-user-email` header).
 
 | Method | Path | Request Body | Response | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| POST | `/chat/ask` | `{ user_question, card_context, system_prompt }` | `{ reply: string, provider: 'groq' \| 'gemini' }` | Uses rotated Groq keys. Fallback to Gemini if all keys fail. |
+| POST | `/chat/ask` | `{ messages[], user_question(legacy), card_context, system_prompt }` | `{ reply: string, provider: 'groq' }` | Accepts full conversation history. Uses rotated Groq keys exclusively. |
 
-> The `/chat/ask` endpoint features an **automatic API key rotation and fallback system**. It pulls an array of Groq API keys from the Supabase `system_settings` table, shuffles them randomly for load balancing, and iterates through them until one succeeds. If all Groq keys fail (e.g., due to rate limits), it gracefully falls back to the server's local `GEMINI_API_KEY`.
+> The `/chat/ask` endpoint features an **automatic API key rotation system**. It pulls an array of Groq API keys from the Supabase `system_settings` table, shuffles them randomly for load balancing, and iterates through them until one succeeds. The previous Gemini fallback has been strictly removed to enforce usage of the Groq (Llama 3) models.
 
 **`/progress` routes**
 

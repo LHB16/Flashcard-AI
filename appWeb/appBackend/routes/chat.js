@@ -67,47 +67,7 @@ router.post('/ask', async (req, res) => {
       }
     }
 
-    // 3. Fallback sang Gemini nếu Groq hết key hoặc tất cả đều lỗi
-    if (!success && process.env.GEMINI_API_KEY) {
-      try {
-        const selectedKey = process.env.GEMINI_API_KEY;
 
-        // Format history thành cấu trúc của Gemini 1.5
-        const geminiMessages = chatMessages.map((msg, index) => {
-          let content = msg.content;
-          // Nhúng system_prompt vào tin nhắn user đầu tiên nếu dùng chuẩn cũ không qua system_instruction
-          if (index === 0 && msg.role === 'user') {
-            content = `${system_prompt}\n\n${content}`;
-          }
-          return {
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: content }]
-          };
-        });
-
-        // Bỏ qua tin nhắn "assistant" đầu tiên nếu nó là tin chào mừng (vì Gemini yêu cầu role 'user' đầu tiên)
-        const filteredGeminiMessages = geminiMessages[0]?.role === 'model' 
-          ? geminiMessages.slice(1) 
-          : geminiMessages;
-
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${selectedKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: filteredGeminiMessages
-          })
-        });
-        
-        const data = await response.json();
-        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          aiResponse = data.candidates[0].content.parts[0].text;
-          provider = 'gemini';
-          success = true;
-        }
-      } catch (err) {
-        console.error('Gemini fallback error:', err.message);
-      }
-    }
 
     if (!success) {
       return res.status(500).json({ error: 'AI systems are currently overloaded. All API keys are failing. Please try again later.' });
