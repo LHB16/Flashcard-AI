@@ -732,9 +732,9 @@ function App() {
                     title={userLoggedIn ? "Settings" : "Login to access settings"}
                     aria-label="Open Settings"
                     style={{ 
-                      color: userLoggedIn ? 'var(--text-muted)' : 'rgba(255,255,255,0.2)',
+                      color: 'var(--text-muted)',
                       cursor: userLoggedIn ? 'pointer' : 'not-allowed',
-                      opacity: userLoggedIn ? 1 : 0.5
+                      opacity: userLoggedIn ? 1 : 0.4
                     }}
                   >
                     <Settings size={18} />
