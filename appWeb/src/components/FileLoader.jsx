@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { UploadCloud, FileJson } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const FileLoader = ({ onDataLoaded }) => {
+  const { t } = useTranslation();
   const [error, setError] = useState(null);
 
   const handleFileUpload = (e) => {
@@ -30,7 +32,7 @@ const FileLoader = ({ onDataLoaded }) => {
   return (
     <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', maxWidth: '500px', margin: '0 auto', width: '100%' }}>
       <UploadCloud size={64} style={{ color: 'var(--primary)', margin: '0 auto 1.5rem', display: 'block' }} />
-      <h2 style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 600 }}>Upload File (Manual)</h2>
+      <h2 style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 600 }}>{t('common.uploadFileManual')}</h2>
       <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.5' }}>
         Upload your <strong className="text-gradient">desk.json</strong> file to get started.
       </p>
@@ -44,7 +46,7 @@ const FileLoader = ({ onDataLoaded }) => {
       <div className="file-upload-wrapper">
         <button className="btn btn-primary" style={{ position: 'relative', width: '100%' }}>
           <FileJson size={20} />
-          <span>Select desk.json from your device</span>
+          <span>{t('common.selectJsonFromDevice')}</span>
         </button>
         <input type="file" accept=".json" onChange={handleFileUpload} />
       </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import FileLoader from './components/FileLoader';
 import FlashcardMode from './components/FlashcardMode';
 import QuizMode from './components/QuizMode';
@@ -19,6 +20,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 
 
 function App() {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [mode, setMode] = useState(null); // 'home', 'flashcard', 'quiz'
@@ -180,9 +182,9 @@ function App() {
   const handleLogoutClick = () => {
     setConfirmConfig({
       isOpen: true,
-      title: "Logout / Disconnect?",
-      description: "Are you sure you want to log out and disconnect from Google Drive? Your local data will remain until you log in again or clear browser cache.",
-      confirmText: "Logout",
+      title: t('app.logoutTitle'),
+      description: t('app.logoutDesc'),
+      confirmText: t('app.logoutBtn'),
       type: "danger",
       icon: LogOut,
       onConfirm: () => {
@@ -235,9 +237,9 @@ function App() {
       console.error(e);
       setConfirmConfig({
         isOpen: true,
-        title: "Sync Failed",
-        description: "Failed to connect to Google Drive or fetch data. Please check your internet connection and try again.",
-        confirmText: "Close",
+        title: t('app.syncFailedTitle'),
+        description: t('app.syncFailedDesc'),
+        confirmText: t('app.close'),
         type: "danger",
         icon: AlertTriangle,
         onConfirm: () => setConfirmConfig(prev => ({ ...prev, isOpen: false }))
@@ -548,8 +550,8 @@ function App() {
             zIndex: 200
           }}>
             <div className="app-header-left">
-              <h1 className="text-gradient" style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', margin: 0 }}>Flashcard AI</h1>
-              <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: 0 }}>Cross-platform sync & intelligent learning</p>
+              <h1 className="text-gradient" style={{ fontSize: '2.5rem', letterSpacing: '-0.02em', margin: 0 }}>{t('app.title')}</h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: 0 }}>{t('app.subtitle')}</p>
             </div>
             <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <NotificationBell 
@@ -585,23 +587,23 @@ function App() {
                   {userLoggedIn ? (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center', borderColor: 'rgba(16, 185, 129, 0.4)', position: 'relative' }}>
-                        <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ position: 'absolute', right: '1rem', top: '1rem', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
+                        <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ position: 'absolute', right: '1rem', top: '1rem', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title={t('app.logoutBtn')}>
                           <CloudOff size={18} strokeWidth={2} />
                         </button>
                         <Check size={48} color="var(--success)" style={{ marginBottom: '1.5rem', margin: '0 auto' }} />
-                        <h3 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>Connected to Google Drive</h3>
-                        <p style={{ color: 'var(--text-muted)' }}>Any changes from now on will be synced automatically.</p>
+                        <h3 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>{t('app.connectedToDrive')}</h3>
+                        <p style={{ color: 'var(--text-muted)' }}>{t('app.autoSyncNote')}</p>
                       </div>
                       <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
                         <button className="btn btn-primary" onClick={() => handleSyncFromDrive(false)} style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px' }}>
-                          ▶ Start
+                          {t('app.start')}
                         </button>
                         <button
                           className="btn btn-glass glass-panel-hover"
                           onClick={() => handleSyncFromDrive(true)}
                           style={{ padding: '1.2rem', fontSize: '1.1rem', flex: 1, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                         >
-                          <Sparkles size={18} /> AI Scan
+                          <Sparkles size={18} /> {t('app.aiScan')}
                         </button>
                       </div>
                     </div>
@@ -609,7 +611,7 @@ function App() {
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <button className="btn btn-glass glass-panel-hover" onClick={handleLoginClick} style={{ padding: '1.5rem', fontSize: '1.2rem', width: '100%', borderColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                         <Cloud size={28} color="var(--primary)" />
-                        Sign in with Google to experience full features
+                        {t('app.signInGoogle')}
                       </button>
                     </div>
                   )}
@@ -624,7 +626,7 @@ function App() {
 
             <div className="home-divider">
               <div className="line"></div>
-              <span>{isSyncing ? '---' : 'or Local Upload'}</span>
+              <span>{isSyncing ? '---' : t('app.orLocalUpload')}</span>
               <div className="line"></div>
             </div>
 
@@ -745,7 +747,7 @@ function App() {
                 pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
               }}>
                 <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Select a Deck</h1>
+                  <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>{t('app.selectADeck')}</h1>
                   {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
                 </div>
                 <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -758,11 +760,11 @@ function App() {
                           </>
                         ) : (
                           <>
-                            <Cloud size={14} /> Synced {displayName && `(${displayName})`}
+                            <Cloud size={14} /> {t('app.synced')} {displayName && `(${displayName})`}
                           </>
                         )}
                       </span>
-                      <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
+                      <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title={t('app.logoutBtn')}>
                         <CloudOff size={16} strokeWidth={2} />
                       </button>
                     </div>
@@ -780,7 +782,7 @@ function App() {
                     className="btn btn-glass btn-icon"
                     onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setShowSettings(true)}
                     disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
-                    title={(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? "Settings" : "Login to access settings"}
+                    title={(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('settings.title') : t('app.loginToAccessSettings')}
                     aria-label="Open Settings"
                     style={{
                       color: 'var(--text-muted)',
@@ -803,7 +805,7 @@ function App() {
                   <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                     {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                   </button>
-                  <button className="btn btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={resetAll}>Go back</button>
+                  <button className="btn btn-glass" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={resetAll}>{t('app.goBack')}</button>
                 </div>
               </header>
 
@@ -813,22 +815,22 @@ function App() {
                   className={`tab-btn${activeTab === 'decks' ? ' active' : ''}`}
                   onClick={() => setActiveTab('decks')}
                 >
-                  <BookOpen size={16} /> My Decks
+                  <BookOpen size={16} /> {t('app.myDecks')}
                 </button>
                 <button
                   className={`tab-btn${activeTab === 'scan' ? ' active' : ''}`}
                   onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setActiveTab('scan')}
                   disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
-                  title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 'Login to Google Drive first' : ''}
+                  title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : ''}
                 >
-                  <Sparkles size={16} /> AI Scan
+                  <Sparkles size={16} /> {t('app.aiScan')}
                 </button>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
                   <button
                     className="btn btn-primary"
                     onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setIsAddDeckModalOpen(true)}
                     disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
-                    title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 'Login to Google Drive first' : ''}
+                    title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : ''}
                     style={{
                       padding: '0.4rem 1.25rem',
                       fontSize: '0.85rem',
@@ -836,7 +838,7 @@ function App() {
                       borderRadius: '10px'
                     }}
                   >
-                    <Plus size={16} /> Add Deck
+                    <Plus size={16} /> {t('app.addDeck')}
                   </button>
                 </div>
               </div>
@@ -847,14 +849,14 @@ function App() {
                     <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
                     <input
                       type="text"
-                      placeholder="Search decks..."
+                      placeholder={t('app.searchDecks')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                     />
                   </div>
-                  <button className="btn btn-glass" onClick={toggleSort} style={{ width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title="Toggle Sort Order">
-                    {sortOrder === 'asc' ? 'A-Z↓' : sortOrder === 'desc' ? 'Z-A↑' : 'Sort'}
+                  <button className="btn btn-glass" onClick={toggleSort} style={{ width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title={t('app.sort')}>
+                    {sortOrder === 'asc' ? 'A-Z↓' : sortOrder === 'desc' ? 'Z-A↑' : t('app.sort')}
                   </button>
                 </div>
               )}
@@ -909,10 +911,10 @@ function App() {
                     className="btn btn-glass"
                     style={{ border: 'none', padding: '0.6rem 1rem', fontWeight: 'bold' }}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-main)', textAlign: 'center' }}>
-                    Selected <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
+                    {t('app.selected')} <span style={{ color: 'var(--primary)' }}>{selectedDecks.size}</span>
                   </div>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
@@ -927,7 +929,7 @@ function App() {
                       display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
                     }}
                   >
-                    <Trash2 size={16} /> Delete
+                    <Trash2 size={16} /> {t('common.delete')}
                   </button>
                 </div>
               )}
@@ -935,8 +937,8 @@ function App() {
                 {processedDecks.length === 0 ? (
                   <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <BookOpen size={48} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                    <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>You don't have any decks yet.</h3>
-                    <p style={{ color: 'var(--text-muted)' }}>Try clicking the <strong style={{color: 'var(--primary)'}}>+ Add Deck</strong> or <strong style={{color: 'var(--primary)'}}>AI Scan</strong> button to get started!</p>
+                    <h3 style={{ fontSize: '1.2rem', color: 'var(--text-main)', marginBottom: '0.5rem' }}>{t('app.noDecksYet')}</h3>
+                    <p style={{ color: 'var(--text-muted)' }} dangerouslySetInnerHTML={{ __html: t('app.noDecksHint') }} />
                   </div>
                 ) : processedDecks.map((deck, idx) => {
                     const isPinned = deck.deck_id && pinnedDecks.includes(deck.deck_id);
@@ -993,7 +995,7 @@ function App() {
                               transition: 'opacity 0.2s'
                             }}
                             className="btn-icon pin-btn"
-                            title={isSelectionMode ? "Disabled in selection mode" : (isPinned ? "Unpin deck" : "Pin deck")}
+                            title={isSelectionMode ? t('app.disabledInSelection') : (isPinned ? t('app.unpinDeck') : t('app.pinDeck'))}
                           >
                             {isPinned ? <Star size={24} color="#fbbf24" strokeWidth={2.5} /> : <Star size={24} color="var(--text-muted)" strokeWidth={1.5} />}
                           </button>
@@ -1002,7 +1004,7 @@ function App() {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
                         <BookOpen size={36} color="var(--primary)" />
-                        {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(251, 191, 36, 0.2)' }}><Star size={12} color="#fbbf24" strokeWidth={2.5} /> Pinned</span>}
+                        {isPinned && <span style={{ fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(251, 191, 36, 0.1)', color: '#fbbf24', padding: '0.3rem 0.6rem', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(251, 191, 36, 0.2)' }}><Star size={12} color="#fbbf24" strokeWidth={2.5} /> {t('app.pinned')}</span>}
                       </div>
 
                       <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem', color: 'var(--text-main)', wordBreak: 'break-word', paddingRight: '2.5rem' }}>{deck.name || 'Deck ' + (idx + 1)}</h3>
@@ -1019,7 +1021,7 @@ function App() {
                             ></div>
                           </div>
                           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Progress:</span>
+                            <span>{t('app.progress')}</span>
                             <strong style={{ color: 'var(--primary)' }}>
                               {deck.cards.filter(c => c.status === 2).length} / {deck.cards.length}
                             </strong>
@@ -1054,10 +1056,10 @@ function App() {
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
           onConfirm={confirmDeleteDeck}
-          title={`Delete ${selectedDecks.size} Deck${selectedDecks.size > 1 ? 's' : ''}?`}
-          description="Are you sure you want to permanently delete the selected decks? All flashcards inside will be lost. This action cannot be undone."
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t('app.deleteDecksTitle', { count: selectedDecks.size, plural: selectedDecks.size > 1 ? 's' : '' })}
+          description={t('app.deleteDecksDesc')}
+          confirmText={t('common.delete')}
+          cancelText={t('common.cancel')}
           icon={Trash2}
           type="danger"
           isLoading={isDeleting}
@@ -1113,9 +1115,9 @@ function App() {
               pointerEvents: isHeaderCollapsed ? 'none' : 'auto'
             }}>
               <div className="app-header-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>Flashcard AI</h1>
+                <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>{t('app.title')}</h1>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', borderLeft: '1px solid var(--glass-border)', paddingLeft: '1rem' }}>
-                  {selectedDeck?.name || 'Unnamed Deck'} ({selectedDeck?.cards?.length || 0} cards)
+                  {selectedDeck?.name || t('app.unnamedDeck')} ({selectedDeck?.cards?.length || 0} {t('app.cards')})
                 </span>
               </div>
               <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -1128,11 +1130,11 @@ function App() {
                         </>
                       ) : (
                         <>
-                          <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
+                          <Cloud size={14} /> {t('app.driveSynced')} {displayName && `(${displayName})`}
                         </>
                       )}
                     </span>
-                    <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
+                    <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title={t('app.logoutBtn')}>
                       <CloudOff size={16} strokeWidth={2} />
                     </button>
                   </div>
@@ -1153,7 +1155,7 @@ function App() {
                 </button>
                 {data && (
                   <button className="btn btn-glass" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => { setSelectedDeck(null); setMode(null); }}>
-                    {data.length > 1 ? 'Switch Deck' : 'My Decks'}
+                    {data.length > 1 ? t('app.switchDeck') : t('app.myDecks')}
                   </button>
                 )}
               </div>
@@ -1200,7 +1202,7 @@ function App() {
               <button
                 onClick={handleDeleteCurrentDeck}
                 className="btn-icon"
-                title="Delete this deck"
+                title={t('app.deleteThisDeck')}
                 style={{
                   position: 'absolute', top: '0', right: '0',
                   background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.15)',
@@ -1212,7 +1214,7 @@ function App() {
               >
                 <Trash2 size={20} color="#ef4444" />
               </button>
-              <h2 className="study-title" style={{ fontSize: '2rem', marginBottom: '3rem', textAlign: 'center' }}>How would you like to study today?</h2>
+              <h2 className="study-title" style={{ fontSize: '2rem', marginBottom: '3rem', textAlign: 'center' }}>{t('app.studyTitle')}</h2>
 
               <div className="mode-selection-container" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <div
@@ -1223,8 +1225,8 @@ function App() {
                   <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2))', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                     <Layers size={40} color="var(--primary)" />
                   </div>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Flashcards</h3>
-                  <p style={{ color: 'var(--text-muted)' }}>Review terms and definitions using an interactive 3D flipping card system.</p>
+                  <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>{t('app.flashcards')}</h3>
+                  <p style={{ color: 'var(--text-muted)' }}>{t('app.flashcardsDesc')}</p>
                 </div>
 
                 <div
@@ -1235,8 +1237,8 @@ function App() {
                   <div style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2))', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                     <BrainCircuit size={40} color="var(--success)" />
                   </div>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Quiz Mode</h3>
-                  <p style={{ color: 'var(--text-muted)' }}>Assess your progress rapidly with an intelligent multiple-choice testing system.</p>
+                  <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>{t('app.quizMode')}</h3>
+                  <p style={{ color: 'var(--text-muted)' }}>{t('app.quizModeDesc')}</p>
                 </div>
               </div>
 
@@ -1246,14 +1248,14 @@ function App() {
                   onClick={() => { setManagerTab('view'); setMode('manage'); }}
                   style={{ fontSize: '0.95rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
                 >
-                  <Settings size={18} /> Manage Cards
+                  <Settings size={18} /> {t('app.manageCards')}
                 </button>
                 <button
                   className="btn btn-glass"
                   onClick={() => setMode('shortcuts')}
                   style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
                 >
-                  <Keyboard size={18} /> Shortcuts
+                  <Keyboard size={18} /> {t('app.shortcuts')}
                 </button>
               </div>
             </div>
@@ -1289,9 +1291,9 @@ function App() {
                   <AlertTriangle size={32} color="#ef4444" />
                 </div>
               </div>
-              <h2 style={{ fontSize: '1.25rem', textAlign: 'center', margin: '0 0 1rem', color: 'var(--text-main)' }}>Delete {selectedDecks.size} Deck{selectedDecks.size > 1 ? 's' : ''}?</h2>
+              <h2 style={{ fontSize: '1.25rem', textAlign: 'center', margin: '0 0 1rem', color: 'var(--text-main)' }}>{t('app.deleteDecksTitle', { count: selectedDecks.size, plural: selectedDecks.size > 1 ? 's' : '' })}</h2>
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 2rem' }}>
-                Are you sure you want to permanently delete the selected decks? All flashcards inside will be lost. This action cannot be undone.
+                {t('app.deleteDecksDesc')}
               </p>
 
               <div style={{ display: 'flex', gap: '0.8rem' }}>
@@ -1301,7 +1303,7 @@ function App() {
                   className="btn btn-glass"
                   style={{ flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold' }}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={confirmDeleteDeck}
@@ -1314,7 +1316,7 @@ function App() {
                   }}
                 >
                   {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
-                  Delete
+                  {t('common.delete')}
                 </button>
               </div>
             </div>

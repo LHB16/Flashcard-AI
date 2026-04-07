@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, Loader2, AlertTriangle, RotateCw, Check, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
 import ChatBubble from './ChatBubble';
 
 const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn }) => {
+  const { t } = useTranslation();
   const cards = deck?.cards || [];
 
   const [index, setIndex] = useState(0);
@@ -162,9 +164,9 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
     if (isAnimating.current) return;
     setConfirmConfig({
       isOpen: true,
-      title: "Reset Progress?",
-      description: "Are you sure you want to reset all progress for this deck? This action cannot be undone.",
-      confirmText: "Reset",
+      title: t('common.resetProgressTitle'),
+      description: t('common.resetProgressDesc'),
+      confirmText: t('common.reset'),
       type: "danger",
       icon: RotateCcw,
       onConfirm: () => {
@@ -400,8 +402,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
   if (!cards || cards.length === 0) {
     return (
       <div className="glass-panel animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
-        <h3>This deck has no cards!</h3>
-        <button className="btn btn-glass" onClick={onBack} style={{ marginTop: '1rem' }}>Go Back</button>
+        <h3>{t('deckmanager.thisDeckHasNoCards')}</h3>
+        <button className="btn btn-glass" onClick={onBack} style={{ marginTop: '1rem' }}>{t('common.back')}</button>
       </div>
     );
   }
@@ -429,7 +431,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
             Try again
           </button>
           <button className="btn btn-glass" style={{ width: '100%', padding: '1rem' }} onClick={onBack}>
-            Choose Another Mode
+            {t('common.back')}
           </button>
         </div>
       </div>
@@ -453,14 +455,14 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
         gap: '0.8rem'
       }}>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', justifySelf: 'start' }} onClick={onBack}>
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} /> {t('common.back')}
         </button>
         <span style={{ fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', justifySelf: 'center' }}>
           {index + 1} / {cards.length}
           {isSyncingCards && <Loader2 size={16} color="var(--primary)" className="spin" />}
         </span>
-        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', justifySelf: 'end' }} onClick={restartStudy} title="Reset all progress (Restart)">
-          Reset
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', justifySelf: 'end' }} onClick={restartStudy} title={`${t('common.reset')} (Restart)`}>
+          {t('common.reset')}
         </button>
       </div>
 
@@ -550,7 +552,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
         <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
           <X size={32} color="var(--danger)" strokeWidth={3} />
         </button>
-        <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title="Previous Card (R)">
+        <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title={`${t('common.previous')} (R)`}>
           <RotateCcw size={24} />
         </button>
         <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>

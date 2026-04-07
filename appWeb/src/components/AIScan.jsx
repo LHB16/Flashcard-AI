@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle, CheckCircle2, Loader2, Upload, Info, Settings, Terminal, HelpCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import ApiKeyChip from './ApiKeyChip';
 import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
@@ -30,6 +31,8 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
   const [skippedCount, setSkippedCount] = useState(0);
   const [deckName, setDeckName] = useState('');
   const fileInputRef = useRef(null);
+
+  const { t } = useTranslation();
 
   // ─── Scan State ───
   const [scanState, setScanState] = useState('idle'); // idle | scanning | done | cancelled
@@ -121,7 +124,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
     // Auto-fill deck name from folder path
     if (filtered.length > 0 && !deckName) {
       const path = filtered[0].webkitRelativePath || '';
-      const folderName = path.split('/')[0] || 'Scanned Deck';
+      const folderName = path.split('/')[0] || t('aiscan.scannedDeck');
       setDeckName(folderName);
     }
 
@@ -245,7 +248,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
     } catch (err) {
       if (err.name === 'AbortError') {
         setScanState('cancelled');
-        addLog('⏹ Scan cancelled.');
+        addLog(`⏹ ${t('aiscan.scanCancelled')}.`);
       } else {
         addLog(`❌ Fatal error: ${err.message}`);
         setScanState('done');
@@ -264,7 +267,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
 
     const newDeck = {
       deck_id: uuidv4(),
-      name: deckName || 'AI Scanned Deck',
+      name: deckName || t('aiscan.scannedDeck'),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       source_folder: '',
@@ -291,8 +294,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
           <AlertTriangle size={48} color="var(--warning)" style={{ marginBottom: '1rem' }} />
           <h3 style={{ marginBottom: '0.5rem' }}>Login Required</h3>
           <p style={{ color: 'var(--text-muted)' }}>
-            Please login to Google Drive first to use AI Scan.
-            API keys are stored securely on your Drive.
+            {t('aiscan.loginToDriveFirst')}
           </p>
         </div>
       </div>
@@ -307,7 +309,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
         <div className="scan-section-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Settings size={20} color="var(--primary)" />
-            <h3>Config & API Keys</h3>
+            <h3>{t('aiscan.configApiKeys')}</h3>
             {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
           </div>
           <a href="/guide.html#ai-scan" target="_blank" rel="noreferrer" title="How to get a free Gemini API Key" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', background: 'rgba(79, 70, 229, 0.1)', padding: '6px', borderRadius: '50%', textDecoration: 'none' }}>
@@ -336,7 +338,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
               ))}
               {config.api_keys.length === 0 && (
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                  No API keys yet. Add one below.
+                  {t('aiscan.noApiKeysYet')}
                 </p>
               )}
             </div>
@@ -348,19 +350,19 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
                 value={newKeyInput}
                 onChange={(e) => setNewKeyInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddKey()}
-                placeholder="Paste Gemini API key (AIza...)"
+                placeholder={t('aiscan.pasteApiKey')}
                 className="key-input"
               />
               <button className="btn btn-glass" onClick={handleAddKey} style={{ flexShrink: 0 }}>
-                <Plus size={16} /> Add
+                <Plus size={16} /> {t('aiscan.add')}
               </button>
             </div>
 
             {/* Batch Size Config */}
             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                Images per batch (Max 30)
-                <span title="Limit is 30 images per batch to ensure high extraction quality and prevent Gemini payload limits." style={{ display: 'inline-flex', cursor: 'help' }}>
+                {t('aiscan.imagesPerBatch')}
+                <span title={t('aiscan.imagesPerBatchTooltip')} style={{ display: 'inline-flex', cursor: 'help' }}>
                   <Info size={14} color="var(--primary)" />
                 </span>
               </label>
@@ -379,7 +381,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
                 }}
                 className="key-input"
                 style={{ width: '100%' }}
-                placeholder="Maximum 30 images"
+                placeholder={t('aiscan.maxImages')}
               />
             </div>
 
@@ -392,7 +394,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
                 style={{ marginTop: '0.75rem', width: '100%' }}
               >
                 {savingConfig ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                Save Keys to Drive
+                {t('aiscan.saveKeysToDrive')}
               </button>
             )}
           </>
@@ -403,7 +405,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       <div className="glass-panel scan-section">
         <div className="scan-section-header">
           <FolderOpen size={20} color="var(--primary)" />
-          <h3>Select Images</h3>
+          <h3>{t('aiscan.selectImages')}</h3>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -412,7 +414,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
             onClick={() => fileInputRef.current?.click()}
             style={{ flex: '0 0 auto' }}
           >
-            <FolderOpen size={16} /> Choose Folder
+            <FolderOpen size={16} /> {t('aiscan.chooseFolder')}
           </button>
           <input
             ref={fileInputRef}
@@ -463,7 +465,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
               disabled={!canStartScan}
               style={{ flex: 1, padding: '1rem', fontSize: '1.05rem' }}
             >
-              <Sparkles size={20} /> Start AI Scan
+              <Sparkles size={20} /> {t('aiscan.startAIScan', 'Start AI Scan')}
             </button>
           ) : (
             <button
@@ -495,7 +497,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
           </div>
           <div style={{ marginTop: 'auto', textAlign: 'center', padding: '2rem', opacity: 0.6 }}>
             <Sparkles size={40} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.3 }} />
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Select a folder and start AI Scan to see logs here.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('aiscan.logsPlaceholder', 'Select a folder and start AI Scan to see logs here.')}</p>
           </div>
         </div>
       )}
@@ -517,7 +519,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
                     : `Processing batch... ${progressPercent}%`)
                 : scanState === 'done'
                   ? `Done! ${scannedCards.length} cards extracted`
-                  : 'Scan cancelled'}
+                  : t('aiscan.scanCancelled')}
             </h3>
           </div>
 

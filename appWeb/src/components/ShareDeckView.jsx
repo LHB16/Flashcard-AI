@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Send, Loader2, Copy, Check, Trash2, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
 
 export default function ShareDeckView({ deck, onBack }) {
+  const { t } = useTranslation();
   const [emails, setEmails] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '' }
@@ -82,12 +84,12 @@ export default function ShareDeckView({ deck, onBack }) {
     const googleId = localStorage.getItem('g_id');
     
     if (!googleId) {
-      setMessage({ type: 'error', text: 'Please login to Google Drive to share the deck.' });
+      setMessage({ type: 'error', text: t('sharedeck.pleaseLogin') });
       return;
     }
 
     if (!deck || !deck.deck_id) {
-       setMessage({ type: 'error', text: 'Error: Current deck is invalid (missing ID).' });
+       setMessage({ type: 'error', text: t('sharedeck.invalidDeck') });
        return;
     }
 
@@ -98,7 +100,7 @@ export default function ShareDeckView({ deck, onBack }) {
     ));
 
     if (emailList.length === 0) {
-      setMessage({ type: 'error', text: 'Please enter at least 1 valid email.' });
+      setMessage({ type: 'error', text: t('sharedeck.enterValidEmail') });
       return;
     }
 
@@ -133,7 +135,7 @@ export default function ShareDeckView({ deck, onBack }) {
       }
     } catch (err) {
       console.error(err);
-      setMessage({ type: 'error', text: 'An error occurred: ' + err.message });
+      setMessage({ type: 'error', text: `${t('sharedeck.serverError')}: ${err.message}` });
     } finally {
       setIsSharing(false);
     }
@@ -143,10 +145,10 @@ export default function ShareDeckView({ deck, onBack }) {
     <div className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Send size={20} color="var(--primary)" /> Share "{deck?.name}"
+          <Send size={20} color="var(--primary)" /> {t('sharedeck.shareTitle', { name: deck?.name })}
         </h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-          Recipients will receive a standalone clone of this deck. Their future changes will not affect your original deck.
+          {t('sharedeck.shareDesc')}
         </p>
 
         {message && (
@@ -163,7 +165,7 @@ export default function ShareDeckView({ deck, onBack }) {
         {/* Danh sách người đang được share */}
         <div style={{ marginBottom: '2rem' }}>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.8rem', display: 'flex', justifyContent: 'space-between' }}>
-            <span>Currently Shared with ({currentInvites.length} {currentInvites.length === 1 ? 'person' : 'people'})</span>
+            <span>{t('sharedeck.currentlySharedWith', { count: currentInvites.length, person: currentInvites.length === 1 ? t('sharedeck.person') : t('sharedeck.people') })}</span>
           </h4>
           
           <div style={{ 
@@ -176,7 +178,7 @@ export default function ShareDeckView({ deck, onBack }) {
               </div>
             ) : currentInvites.length === 0 ? (
               <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                No one has been shared this deck yet
+                {t('sharedeck.noOneShared')}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -195,7 +197,7 @@ export default function ShareDeckView({ deck, onBack }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-main)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inv.receiver_email}</p>
                       <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Shared on: {new Date(inv.created_at).toLocaleDateString('en-US')}
+                        {t('sharedeck.sharedOn', { date: new Date(inv.created_at).toLocaleDateString('en-US') })}
                       </p>
                     </div>
                     <button
@@ -206,7 +208,7 @@ export default function ShareDeckView({ deck, onBack }) {
                         border: '1px solid rgba(239, 68, 68, 0.2)', width: '36px', height: '36px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', flexShrink: 0
                       }}
-                      title="Remove access"
+                      title={t('sharedeck.removeAccess')}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -218,12 +220,12 @@ export default function ShareDeckView({ deck, onBack }) {
         </div>
 
         <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.8rem', display: 'block', textTransform: 'uppercase' }}>
-          Recipient Emails
+          {t('sharedeck.recipientEmails')}
         </label>
         <textarea
           value={emails}
           onChange={(e) => setEmails(e.target.value)}
-          placeholder="user1@gmail.com, user2@gmail.com&#10;user3@domain.com"
+          placeholder={t('sharedeck.enterPlaceholder')}
           style={{
             width: '100%', minHeight: '120px', padding: '1rem', borderRadius: '16px',
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)',
@@ -235,13 +237,13 @@ export default function ShareDeckView({ deck, onBack }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.6rem 1rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-               Deck ID: <strong style={{color: 'var(--text-main)', margin: '0 0.5rem'}}>{deck?.deck_id}</strong>
+               {t('sharedeck.deckId')} <strong style={{color: 'var(--text-main)', margin: '0 0.5rem'}}>{deck?.deck_id}</strong>
             </p>
             <button 
               onClick={handleCopyId}
               className="btn-glass btn-icon"
               style={{ width: '32px', height: '32px', padding: 0, border: 'none' }}
-              title="Copy Deck ID"
+              title={t('sharedeck.copyDeckId')}
             >
               {copied ? <Check size={16} color="var(--success)" /> : <Copy size={16} />}
             </button>
@@ -253,7 +255,7 @@ export default function ShareDeckView({ deck, onBack }) {
             style={{ padding: '0.8rem 2rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isSharing ? 0.7 : 1 }}
           >
             {isSharing ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-            {isSharing ? 'Sharing...' : 'Share Now'}
+            {isSharing ? t('sharedeck.sharing') : t('sharedeck.shareNow')}
           </button>
         </div>
       </div>
@@ -262,10 +264,10 @@ export default function ShareDeckView({ deck, onBack }) {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, email: null })}
         onConfirm={removeInvite}
-        title="Remove Access"
-        description={`Are you sure you want to remove access for ${deleteModal.email}? They will no longer be able to access this deck via ID.`}
-        confirmText="Remove"
-        cancelText="Cancel"
+        title={t('sharedeck.removeAccessTitle')}
+        description={t('sharedeck.removeAccessDesc', { email: deleteModal.email })}
+        confirmText={t('sharedeck.remove')}
+        cancelText={t('sharedeck.cancel')}
         type="danger"
         isLoading={isDeleting}
         icon={Trash2}

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, SkipForward, CheckCircle, XCircle, Square, CheckSquare, Loader2, Hourglass, AlertTriangle, RotateCcw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
 import ChatBubble from './ChatBubble';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn }) => {
+  const { t } = useTranslation();
   const cards = deck?.cards || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -385,9 +387,9 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
   const resetQuiz = () => {
     setConfirmConfig({
       isOpen: true,
-      title: "Reset Progress?",
-      description: "Are you sure you want to reset all quiz progress? This action cannot be undone.",
-      confirmText: "Reset",
+      title: t('common.resetProgressTitle'),
+      description: t('common.resetProgressDesc'),
+      confirmText: t('common.reset'),
       type: "danger",
       icon: RotateCcw,
       onConfirm: () => {
@@ -419,7 +421,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
     return (
       <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
         <Hourglass size={32} className="animate-spin-slow" color="var(--primary)" />
-        <h3 style={{ margin: 0 }}>Loading quiz session...</h3>
+        <h3 style={{ margin: 0 }}>{t('quizmode.loadingQuizSession')}</h3>
       </div>
     );
   }
@@ -427,8 +429,8 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
   if (!cards || cards.length === 0) {
     return (
       <div className="glass-panel animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
-        <h3>This deck has no cards!</h3>
-        <button className="btn btn-glass" onClick={onBack} style={{ marginTop: '1rem' }}>Go Back</button>
+        <h3>{t('deckmanager.thisDeckHasNoCards')}</h3>
+        <button className="btn btn-glass" onClick={onBack} style={{ marginTop: '1rem' }}>{t('common.back')}</button>
       </div>
     );
   }
@@ -452,8 +454,8 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
           ✅ Correct: <strong style={{ color: 'var(--success)' }}>{score}</strong> &nbsp; ❌ Wrong: <strong style={{ color: 'var(--danger)' }}>{wrongCount}</strong> &nbsp; / &nbsp; {cards.length} questions
         </p>
         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
-          <button className="btn btn-glass" onClick={resetQuiz}>Try again</button>
-          <button className="btn btn-primary" onClick={onBack}>Choose Another Mode</button>
+          <button className="btn btn-glass" onClick={resetQuiz}>{t('common.reset')}</button>
+          <button className="btn btn-primary" onClick={onBack}>{t('common.back')}</button>
         </div>
       </div>
     );
@@ -515,12 +517,12 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
         gap: '0.8rem' 
       }}>
         <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', justifySelf: 'start' }} onClick={onBack}>
-          <ArrowLeft size={18} /> <span className="hide-on-mobile">Back</span>
+          <ArrowLeft size={18} /> <span className="hide-on-mobile">{t('common.back')}</span>
         </button>
         
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', justifySelf: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goLeft} title="Previous question">
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goLeft} title={t('common.previous')}>
               <ChevronLeft size={20} />
             </button>
             
@@ -528,7 +530,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
               {currentIndex + 1} / {cards.length}
             </span>
             
-            <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goRight} title="Next question">
+            <button className="btn btn-glass btn-icon" style={{ padding: '0.5rem', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={goRight} title={t('common.next')}>
               <ChevronRight size={20} />
             </button>
           </div>
@@ -546,13 +548,13 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
               gap: '0.3rem',
               border: '1px solid rgba(139, 92, 246, 0.2)'
             }} onClick={goToFirstUnanswered} title={`Go to question ${firstUnansweredIdx + 1}`}>
-              <SkipForward size={14} /> <span className="hide-on-mobile">Jump to</span> #{firstUnansweredIdx + 1}
+              <SkipForward size={14} /> <span className="hide-on-mobile">{t('quizmode.jumpTo')}</span> #{firstUnansweredIdx + 1}
             </button>
           )}
         </div>
 
-        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', justifySelf: 'end' }} onClick={resetQuiz} title="Reset all progress (Restart)">
-          <RotateCcw size={18} /> <span className="hide-on-mobile">Reset</span>
+        <button className="btn btn-glass btn-icon" style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', justifySelf: 'end' }} onClick={resetQuiz} title={`${t('common.reset')} all progress (Restart)`}>
+          <RotateCcw size={18} /> <span className="hide-on-mobile">{t('common.reset')}</span>
         </button>
       </div>
 
@@ -695,7 +697,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
             }}
             onClick={handleSubmitMulti}
           >
-            Submit ({selectedMulti.length}/{correctCount})
+            {t('quizmode.submit')} ({selectedMulti.length}/{correctCount})
             {focusedIdx === currentCard.options.length && <span style={{ fontSize: '1.2rem', marginLeft: '8px', animation: 'bounce-x 0.8s infinite' }}>👈</span>}
           </button>
         </div>

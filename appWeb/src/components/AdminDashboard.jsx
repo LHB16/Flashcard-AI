@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Shield, ArrowLeft, Users, Plus, Trash2, Loader2, Key, AlertTriangle, Clock, Globe, Bell, Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
@@ -21,7 +22,25 @@ const NAV_ITEMS = [
 ];
 
 const AdminDashboard = ({ onBack }) => {
+  const { t } = useTranslation();
   const adminEmail = localStorage.getItem('g_email');
+
+  // Define options with translations inside the component
+  const timezoneOptions = [
+    { value: 'auto', label: t('admin.autoTimezone') },
+    { value: 'Asia/Ho_Chi_Minh', label: t('admin.vietnamTimezone') },
+    { value: 'Asia/Tokyo', label: t('admin.tokyoTimezone') },
+    { value: 'America/New_York', label: t('admin.newYorkTimezone') },
+    { value: 'America/Los_Angeles', label: t('admin.losAngelesTimezone') },
+    { value: 'Europe/London', label: t('admin.londonTimezone') },
+    { value: 'UTC', label: 'UTC' },
+  ];
+
+  const navItems = [
+    { id: 'users', label: t('admin.userManagement'), icon: Users },
+    { id: 'keys', label: t('admin.groqApiKeys'), icon: Key },
+    { id: 'notifications', label: t('admin.notifications'), icon: Bell },
+  ];
   const [activeTab, setActiveTab] = useState('users');
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
@@ -258,11 +277,11 @@ const AdminDashboard = ({ onBack }) => {
   const renderUsersTab = () => (
     <div className="admin-tab-content animate-fade-in">
       <div className="admin-content-header">
-        <h3>User Management</h3>
+        <h3>{t('admin.userManagement')}</h3>
         <div className="admin-tz-selector">
           <Globe size={14} />
           <select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
-            {TIMEZONE_OPTIONS.map(tz => (
+            {timezoneOptions.map(tz => (
               <option key={tz.value} value={tz.value}>{tz.label}</option>
             ))}
           </select>
@@ -314,7 +333,7 @@ const AdminDashboard = ({ onBack }) => {
   const renderKeysTab = () => (
     <div className="admin-tab-content animate-fade-in">
       <div className="admin-content-header">
-        <h3>Groq API Keys</h3>
+        <h3>{t('admin.groqApiKeys')}</h3>
         {keysUpdatedAt && (
           <div className="admin-keys-updated">
             <Clock size={13} />
@@ -382,7 +401,7 @@ const AdminDashboard = ({ onBack }) => {
       });
       if (!res.ok) throw new Error(`Save failed: ${res.status}`);
       setNotifications(updatedNotifs);
-      setStatusMsg({ text: 'Notifications saved!', type: 'success' });
+      setStatusMsg({ text: t('aiscan.notificationsSaved'), type: 'success' });
     } catch (err) {
       console.error('Save notifications err:', err);
       setStatusMsg({ text: err.message || 'Failed to save notifications', type: 'error' });
@@ -433,7 +452,7 @@ const AdminDashboard = ({ onBack }) => {
   const renderNotificationsTab = () => (
     <div className="admin-tab-content animate-fade-in">
       <div className="admin-content-header">
-         <h3>Manage Notifications</h3>
+         <h3>{t('admin.notifications')}</h3>
          {!isEditingNotification && (
            <button className="btn btn-primary" onClick={() => { setEditingNotif(null); setIsEditingNotification(true); }} style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
              <Plus size={16} /> Add Notification
@@ -469,7 +488,7 @@ const AdminDashboard = ({ onBack }) => {
            
            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
              <button type="button" className="btn btn-glass" onClick={() => setIsEditingNotification(false)} style={{ flex: 1, padding: '0.8rem', fontWeight: 'bold' }}>Cancel</button>
-             <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.8rem', fontWeight: 'bold' }} disabled={isLoadingNotifications}>{isLoadingNotifications ? 'Saving...' : 'Save Notification'}</button>
+             <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.8rem', fontWeight: 'bold' }} disabled={isLoadingNotifications}>{isLoadingNotifications ? t('common.saving') : t('common.save')}</button>
            </div>
         </form>
       ) : (
@@ -527,7 +546,7 @@ const AdminDashboard = ({ onBack }) => {
       <div className="admin-body">
         {/* Sidebar */}
         <nav className="admin-sidebar glass-panel">
-          {NAV_ITEMS.map(item => {
+          {navItems.map(item => {
             const Icon = item.icon;
             return (
               <button

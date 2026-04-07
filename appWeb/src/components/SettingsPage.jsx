@@ -178,7 +178,7 @@ function SettingsPage({
     setIsAddingKey(false);
     setNewKeyValue('');
     setEditingKeyIndex(null);
-    showToast(editingKeyIndex !== null ? 'Key updated' : 'Key added');
+    showToast(editingKeyIndex !== null ? t('settings.apiKeysSection.keyUpdated') : t('settings.apiKeysSection.keyAdded'));
   }, [newKeyValue, editingKeyIndex, apiKeys, saveKeys, showToast]);
 
   const handleEditKey = useCallback((index) => {
@@ -189,16 +189,16 @@ function SettingsPage({
 
   const confirmDeleteKey = useCallback((index) => {
     const config = {
-      title: 'Delete API Key?',
-      description: `Key "${maskKey(apiKeys[index])}" will be permanently deleted.`,
-      confirmText: 'Delete',
+      title: t('settings.apiKeysSection.deleteKeyTitle'),
+      description: t('settings.apiKeysSection.deleteKeyDesc', { key: maskKey(apiKeys[index]) }),
+      confirmText: t('common.delete'),
       type: 'danger',
       icon: Trash2,
     };
     config.onConfirm = () => {
       const updatedKeys = apiKeys.filter((_, i) => i !== index);
       saveKeys(updatedKeys);
-      showToast('Key deleted');
+      showToast(t('settings.apiKeysSection.keyDeleted'));
       onOpenConfirm({ ...config, isOpen: false });
     };
     onOpenConfirm(config);
@@ -228,14 +228,14 @@ function SettingsPage({
     );
     onDataChange(newData);
     setRenamingDeckId(null);
-    showToast(`Renamed to "${renameValue.trim()}"`);
+    showToast(t('settings.decksSection.renamedTo', { name: renameValue.trim() }));
   }, [renameValue, data, onDataChange, showToast]);
 
   const confirmResetProgress = useCallback((deck) => {
     const config = {
-      title: `Reset progress for "${deck.name}"?`,
-      description: 'All study progress (Known/Unknown) will be reset to 0. This cannot be undone.',
-      confirmText: 'Reset',
+      title: t('settings.decksSection.resetTitle', { name: deck.name }),
+      description: t('settings.decksSection.resetDesc'),
+      confirmText: t('settings.decksSection.resetBtn'),
       type: 'warning',
       icon: RotateCcw,
     };
@@ -252,7 +252,7 @@ function SettingsPage({
           body: JSON.stringify({ google_id: googleId, deck_id: deck.deck_id, action: 'reset' }),
         });
       } catch (e) { console.error(e); }
-      showToast('Progress reset');
+      showToast(t('settings.decksSection.progressReset'));
       onOpenConfirm({ ...config, isOpen: false });
     };
     onOpenConfirm(config);
@@ -260,16 +260,16 @@ function SettingsPage({
 
   const confirmDeleteDeck = useCallback((deck) => {
     const config = {
-      title: `Delete deck "${deck.name}"?`,
-      description: `${deck.cards.length} card(s) will be permanently lost. This action cannot be undone.`,
-      confirmText: 'Delete',
+      title: t('settings.decksSection.deleteTitle', { name: deck.name }),
+      description: t('settings.decksSection.deleteDesc', { count: deck.cards.length }),
+      confirmText: t('common.delete'),
       type: 'danger',
       icon: Trash2,
     };
     config.onConfirm = () => {
       const newData = data.filter(d => d.deck_id !== deck.deck_id);
       onDataChange(newData);
-      showToast('Deck deleted');
+      showToast(t('settings.decksSection.deckDeleted'));
       onOpenConfirm({ ...config, isOpen: false });
     };
     onOpenConfirm(config);
@@ -280,7 +280,7 @@ function SettingsPage({
       onShareDeck(deck);
     } else {
       navigator.clipboard.writeText(deck.deck_id);
-      showToast(`Copied Deck ID for "${deck.name}"`);
+      showToast(t('settings.decksSection.copiedDeckId', { name: deck.name }));
     }
   }, [onShareDeck, showToast]);
 
@@ -477,9 +477,9 @@ function SettingsPage({
   // ───── Email Section ─────
   const renderEmailSection = () => (
     <section className="settings-section animate-fade-in">
-      <h2>Email Notifications</h2>
+      <h2>{t('settings.emailSection.title')}</h2>
       <p className="section-desc">
-        Control how email notifications are sent and received when sharing decks.
+        {t('settings.emailSection.desc')}
       </p>
 
       {emailLoading ? (
@@ -491,8 +491,8 @@ function SettingsPage({
         <>
           <div className="setting-row">
             <div className="setting-info">
-              <label>Receive email when someone shares a deck with me</label>
-              <p>When enabled, you will receive an email notification whenever someone invites you to view their deck.</p>
+              <label>{t('settings.emailSection.receiveLabel')}</label>
+              <p>{t('settings.emailSection.receiveDesc')}</p>
             </div>
             <Toggle
               checked={receiveEmailEnabled}
@@ -503,11 +503,11 @@ function SettingsPage({
 
           <div className="setting-row">
             <div className="setting-info">
-              <label>Send email to recipients when I share a deck</label>
+              <label>{t('settings.emailSection.sendLabel')}</label>
               <p>
-                When enabled, the people you share with will receive an email (if they also allow it).
+                {t('settings.emailSection.sendDesc')}
                 <br />
-                <strong>Note:</strong> Recipient preference takes priority — email is only sent when both parties have their toggle on.
+                <strong>Note:</strong> {t('settings.emailSection.sendNote')}
               </p>
             </div>
             <Toggle
@@ -518,15 +518,13 @@ function SettingsPage({
           </div>
 
           <div className="settings-status-row">
-            {emailSaving && <span className="save-indicator"><Loader2 size={14} className="spin" /> Saving...</span>}
-            {emailSaved && <span className="save-indicator saved"><Check size={14} /> Saved</span>}
+            {emailSaving && <span className="save-indicator"><Loader2 size={14} className="spin" /> {t('settings.saveStatus.saving')}</span>}
+            {emailSaved && <span className="save-indicator saved"><Check size={14} /> {t('settings.saveStatus.saved')}</span>}
           </div>
 
           <div className="info-box">
             <Info size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
-            <span>
-              Email is sent <strong>only when</strong>: the sender has &quot;Send email&quot; on <strong>AND</strong> the recipient has &quot;Receive email&quot; on.
-            </span>
+            <span dangerouslySetInnerHTML={{ __html: t('settings.emailSection.infoBox') }} />
           </div>
         </>
       )}
@@ -536,8 +534,8 @@ function SettingsPage({
   // ───── API Keys Section ─────
   const renderApiKeysSection = () => (
     <section className="settings-section animate-fade-in">
-      <h2>Gemini API Keys</h2>
-      <p className="section-desc">Manage the API keys used by the AI Scan feature. Keys are stored securely in your Google Drive.</p>
+      <h2>{t('settings.apiKeysSection.title')}</h2>
+      <p className="section-desc">{t('settings.apiKeysSection.desc')}</p>
 
       {keysLoading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1.5rem' }}>
@@ -546,7 +544,7 @@ function SettingsPage({
       ) : (
         <>
           {apiKeys.length === 0 && !isAddingKey && (
-            <p style={{ color: 'var(--text-muted)', marginTop: '1rem', fontStyle: 'italic' }}>No API keys configured yet.</p>
+            <p style={{ color: 'var(--text-muted)', marginTop: '1rem', fontStyle: 'italic' }}>{t('settings.apiKeysSection.noKeys')}</p>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
@@ -556,10 +554,10 @@ function SettingsPage({
                   {maskKey(key)}
                 </span>
                 <div className="key-actions">
-                  <button className="settings-icon-btn" onClick={() => handleEditKey(index)} title="Edit">
+                  <button className="settings-icon-btn" onClick={() => handleEditKey(index)} title={t('common.edit')}>
                     <Pencil size={14} />
                   </button>
-                  <button className="settings-icon-btn danger" onClick={() => confirmDeleteKey(index)} title="Delete">
+                  <button className="settings-icon-btn danger" onClick={() => confirmDeleteKey(index)} title={t('common.delete')}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -572,7 +570,7 @@ function SettingsPage({
               <input
                 type="text"
                 className="settings-input"
-                placeholder="Enter Gemini API key (AIza...)"
+                placeholder={t('settings.apiKeysSection.placeholder')}
                 value={newKeyValue}
                 onChange={(e) => setNewKeyValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveKey()}
@@ -580,10 +578,10 @@ function SettingsPage({
               />
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button className="btn btn-primary" onClick={handleSaveKey} disabled={!newKeyValue.trim()} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', borderRadius: '8px' }}>
-                  {editingKeyIndex !== null ? 'Update' : 'Add'}
+                  {editingKeyIndex !== null ? t('settings.apiKeysSection.update') : t('settings.apiKeysSection.add')}
                 </button>
                 <button className="btn btn-glass" onClick={() => { setIsAddingKey(false); setEditingKeyIndex(null); setNewKeyValue(''); }} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', borderRadius: '8px' }}>
-                  Cancel
+                  {t('settings.apiKeysSection.cancel')}
                 </button>
               </div>
             </div>
@@ -594,7 +592,7 @@ function SettingsPage({
               className="settings-add-btn"
               onClick={() => { setIsAddingKey(true); setEditingKeyIndex(null); setNewKeyValue(''); }}
             >
-              <Plus size={16} /> Add API Key
+              <Plus size={16} /> {t('settings.apiKeysSection.addKey')}
             </button>
           )}
         </>
@@ -605,14 +603,14 @@ function SettingsPage({
   // ───── Decks Section ─────
   const renderDecksSection = () => (
     <section className="settings-section animate-fade-in">
-      <h2>My Decks</h2>
-      <p className="section-desc">{(data || []).length} deck(s)</p>
+      <h2>{t('settings.decksSection.title')}</h2>
+      <p className="section-desc">{t('settings.decksSection.deckCount', { count: (data || []).length })}</p>
 
       <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
         <input
           type="text"
           className="settings-input"
-          placeholder="Search decks..."
+          placeholder={t('settings.decksSection.searchPlaceholder')}
           value={deckSearch}
           onChange={(e) => setDeckSearch(e.target.value)}
         />
@@ -622,18 +620,18 @@ function SettingsPage({
         <table className="decks-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Cards</th>
-              <th>Progress</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th>{t('settings.decksSection.thName')}</th>
+              <th>{t('settings.decksSection.thCards')}</th>
+              <th>{t('settings.decksSection.thProgress')}</th>
+              <th>{t('settings.decksSection.thCreated')}</th>
+              <th>{t('settings.decksSection.thActions')}</th>
             </tr>
           </thead>
           <tbody>
             {filteredDecks.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                  {deckSearch ? 'No decks match your search.' : 'No decks yet.'}
+                  {deckSearch ? t('settings.decksSection.noMatch') : t('settings.decksSection.noDecks')}
                 </td>
               </tr>
             ) : filteredDecks.map(deck => {
@@ -671,16 +669,16 @@ function SettingsPage({
                   <td style={{ whiteSpace: 'nowrap' }}>{formatDate(deck.created_at)}</td>
                   <td>
                     <div className="deck-actions">
-                      <button className="settings-icon-btn" onClick={() => startRename(deck)} title="Rename">
+                      <button className="settings-icon-btn" onClick={() => startRename(deck)} title={t('common.rename')}>
                         <Pencil size={14} />
                       </button>
-                      <button className="settings-icon-btn" onClick={() => confirmResetProgress(deck)} title="Reset progress">
+                      <button className="settings-icon-btn" onClick={() => confirmResetProgress(deck)} title={t('common.reset')}>
                         <RotateCcw size={14} />
                       </button>
-                      <button className="settings-icon-btn" onClick={() => handleShareDeck(deck)} title="Copy Deck ID">
+                      <button className="settings-icon-btn" onClick={() => handleShareDeck(deck)} title={t('common.share')}>
                         <Share2 size={14} />
                       </button>
-                      <button className="settings-icon-btn danger" onClick={() => confirmDeleteDeck(deck)} title="Delete deck">
+                      <button className="settings-icon-btn danger" onClick={() => confirmDeleteDeck(deck)} title={t('common.delete')}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -699,26 +697,22 @@ function SettingsPage({
     <section className="settings-section danger-zone animate-fade-in">
       <div className="danger-zone-header">
         <AlertTriangle size={20} color="var(--danger)" />
-        <h2 style={{ color: 'var(--danger)' }}>Danger Zone</h2>
+        <h2 style={{ color: 'var(--danger)' }}>{t('settings.dangerSection.title')}</h2>
       </div>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-        Actions in this section <strong>cannot be undone</strong>. Be absolutely sure before proceeding.
-      </p>
+      <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }} dangerouslySetInnerHTML={{ __html: t('settings.dangerSection.desc') }} />
 
       <div className="danger-action-row">
         <div style={{ flex: 1 }}>
-          <strong style={{ display: 'block', marginBottom: '4px' }}>Delete All Data</strong>
+          <strong style={{ display: 'block', marginBottom: '4px' }}>{t('settings.dangerSection.deleteAllTitle')}</strong>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.5 }}>
-            Permanently delete all decks from Google Drive and all progress data
-            (deck_progress, quiz_sessions) from Supabase. Your account remains but
-            is completely empty.
+            {t('settings.dangerSection.deleteAllDesc')}
           </p>
         </div>
         <button
           className="danger-btn-large"
           onClick={() => { setShowNuclearConfirm(true); setNuclearConfirmText(''); }}
         >
-          <Trash2 size={16} /> Delete All Data
+          <Trash2 size={16} /> {t('settings.dangerSection.deleteAllBtn')}
         </button>
       </div>
     </section>
@@ -749,19 +743,19 @@ function SettingsPage({
               <Trash2 size={28} color="#ef4444" />
             </div>
           </div>
-          <h2 style={{ textAlign: 'center', fontSize: '1.25rem', marginBottom: '0.75rem', color: 'var(--text-main)' }}>Delete All Data?</h2>
+          <h2 style={{ textAlign: 'center', fontSize: '1.25rem', marginBottom: '0.75rem', color: 'var(--text-main)' }}>{t('settings.nuclearModal.title')}</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.5, textAlign: 'center' }}>
-            This action will permanently delete:
+            {t('settings.nuclearModal.desc')}
           </p>
           <ul className="nuclear-list">
-            <li>All decks and cards from Google Drive</li>
-            <li>All study progress (deck_progress, quiz_sessions) from Supabase</li>
-            <li>All API keys in config.json from Drive</li>
+            <li>{t('settings.nuclearModal.item1')}</li>
+            <li>{t('settings.nuclearModal.item2')}</li>
+            <li>{t('settings.nuclearModal.item3')}</li>
           </ul>
-          <p style={{ textAlign: 'center', color: 'var(--text-main)', fontWeight: 600, marginBottom: '1rem' }}>This action cannot be undone.</p>
+          <p style={{ textAlign: 'center', color: 'var(--text-main)', fontWeight: 600, marginBottom: '1rem' }}>{t('settings.nuclearModal.cannotUndo')}</p>
 
           <label style={{ color: 'var(--text-muted)', fontSize: '13px', display: 'block', marginBottom: '4px' }}>
-            Type the following exactly to confirm:
+            {t('settings.nuclearModal.typeLabel')}
           </label>
           <code className="nuclear-code">I know this cannot be undone</code>
           <input
@@ -778,7 +772,7 @@ function SettingsPage({
               onClick={() => setShowNuclearConfirm(false)}
               style={{ flex: 1, padding: '0.8rem', borderRadius: '14px', fontWeight: 'bold' }}
             >
-              Cancel
+              {t('settings.nuclearModal.cancel')}
             </button>
             <button
               className="btn"
@@ -793,7 +787,7 @@ function SettingsPage({
               }}
             >
               {isNuclearDeleting ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
-              Delete Everything
+              {t('settings.nuclearModal.deleteEverything')}
             </button>
           </div>
         </div>

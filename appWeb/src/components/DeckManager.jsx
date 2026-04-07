@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save, Layers, Shuffle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
@@ -14,6 +15,7 @@ const DEDUP_PAIRS_PER_PAGE = 15;
  * Props: deck, onBack, onDeckModified
  */
 export default function DeckManager({ deck, allDecks = [], onBack, onDeckModified, setConfirmConfig, userLoggedIn, initialTab = 'view' }) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(initialTab); // 'view' | 'dedup' | 'share'
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -203,9 +205,9 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
   const handleShuffleCards = useCallback(() => {
     setConfirmConfig({
       isOpen: true,
-      title: "Shuffle Cards?",
-      description: "Are you sure you want to shuffle all cards in this deck? The order will be permanently changed.",
-      confirmText: "Shuffle",
+      title: t('deckmanager.shuffleCards'),
+      description: t('deckmanager.shuffleCardsDesc'),
+      confirmText: t('deckmanager.shuffle'),
       type: "warning",
       icon: Shuffle,
       onConfirm: () => {
@@ -226,9 +228,9 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
 
     setConfirmConfig({
       isOpen: true,
-      title: selectedCards.size > 0 ? `Shuffle Options for ${selectedCards.size} cards?` : "Shuffle All Options?",
-      description: "This will randomize the order of options (A, B, C, D...) for the selected cards. Correct answers will be preserved.",
-      confirmText: "Shuffle",
+      title: selectedCards.size > 0 ? t('deckmanager.shuffleSelectedOptionsTitle', { count: selectedCards.size }) : t('deckmanager.shuffleAllOptionsTitle'),
+      description: t('deckmanager.shuffleOptionsDesc'),
+      confirmText: t('deckmanager.shuffle'),
       type: "warning",
       icon: Shuffle,
       onConfirm: () => {
@@ -297,10 +299,10 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
         </button>
         <h2 style={{ fontSize: '1.5rem', margin: 0, flex: 1, display: 'flex', alignItems: 'center' }}>
           <Settings size={22} color="var(--primary)" style={{ marginRight: '10px' }} /> 
-          {deck?.name || 'Deck'}
+          {deck?.name || t('deckmanager.deck')}
         </h2>
         <span className="deck-header-stats" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          {cards.length} cards · {multiCount} multi · {singleCount} single
+          {cards.length} {t('deckmanager.cards')} · {multiCount} {t('deckmanager.multi').toLowerCase()} · {singleCount} {t('deckmanager.single').toLowerCase()}
         </span>
       </div>
 
@@ -312,23 +314,23 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
             onClick={() => setTab('view')}
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
           >
-            View & Edit
+            {t('deckmanager.viewAndEdit')}
           </button>
           <button
             className={`btn ${tab === 'dedup' ? 'btn-primary' : 'btn-glass'}`}
             onClick={() => { setTab('dedup'); if (!dedupResults && !dedupRunning) runDedup(); }}
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
           >
-            Check Duplicates
+            {t('deckmanager.checkDuplicates')}
           </button>
           <button
             className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
             onClick={() => userLoggedIn && setTab('share')}
             disabled={!userLoggedIn}
-            title={!userLoggedIn ? 'Login to Google Drive first' : ''}
+            title={!userLoggedIn ? t('deckmanager.loginToDriveFirst') : ''}
             style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
           >
-            <Share2 size={18} /> Share Deck
+            <Share2 size={18} /> {t('deckmanager.shareDeck')}
           </button>
         </div>
       )}
@@ -343,7 +345,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                 <ChevronLeft size={18} />
               </button>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
-                Page {page + 1} / {totalPages}
+                {t('deckmanager.page')} {page + 1} / {totalPages}
               </span>
               <button className="btn btn-glass btn-icon" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} style={{ width: '32px', height: '32px' }}>
                 <ChevronRight size={18} />
@@ -357,7 +359,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
               <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)' }} />
               <input
                 type="text"
-                placeholder="Search cards..."
+                placeholder={t('deckmanager.searchCards')}
                 value={searchQuery}
                 onChange={e => { setSearchQuery(e.target.value); setPage(0); }}
                 style={{
@@ -377,7 +379,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                   display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer'
                 }}
               >
-                <Trash2 size={16} /> Delete {selectedCards.size} selected
+                <Trash2 size={16} /> {t('deckmanager.deleteSelected', { count: selectedCards.size })}
               </button>
             )}
             
@@ -390,7 +392,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                   display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem',
                 }}
               >
-                <Plus size={18} /> Add Card
+                <Plus size={18} /> {t('deckmanager.addCard')}
               </button>
               
               {isAddMenuOpen && (
@@ -411,14 +413,14 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                       style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }} 
                       onClick={() => { handleAddManual(); setIsAddMenuOpen(false); }}
                     >
-                      <Plus size={18} color="var(--primary)" /> Add Manually
+                      <Plus size={18} color="var(--primary)" /> {t('deckmanager.addManually')}
                     </button>
                     <button
                       className="btn btn-glass"
                       style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }}
                       onClick={() => { setTab('import'); setIsAddMenuOpen(false); }}
                     >
-                      <Share2 size={18} color="var(--success)" style={{ transform: 'rotate(180deg)' }} /> Import from Deck
+                      <Share2 size={18} color="var(--success)" style={{ transform: 'rotate(180deg)' }} /> {t('deckmanager.importFromDeck')}
                     </button>
                     <div style={{ height: '1px', background: 'var(--glass-border)', margin: '0.2rem 0' }} />
                     <button
@@ -426,14 +428,14 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                       style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }}
                       onClick={() => { handleShuffleCards(); setIsAddMenuOpen(false); }}
                     >
-                      <Shuffle size={18} color="var(--warning)" /> Shuffle Questions
+                      <Shuffle size={18} color="var(--warning)" /> {t('deckmanager.shuffleQuestionsBtn')}
                     </button>
                     <button
                       className="btn btn-glass"
                       style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }}
                       onClick={() => { handleShuffleOptions(); setIsAddMenuOpen(false); }}
                     >
-                      <Shuffle size={18} color="#3b82f6" /> Shuffle Options
+                      <Shuffle size={18} color="#3b82f6" /> {t('deckmanager.shuffleOptionsBtn')}
                     </button>
                   </div>
                 </>
@@ -480,7 +482,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                       background: card.question_type === 'multiple_choice' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
                       color: card.question_type === 'multiple_choice' ? '#f59e0b' : 'var(--success)',
                     }}>
-                      {card.question_type === 'multiple_choice' ? 'Multi' : 'Single'}
+                      {card.question_type === 'multiple_choice' ? t('deckmanager.multi') : t('deckmanager.single')}
                     </span>
                   </div>
                   <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.4, wordBreak: 'break-word' }}>
@@ -500,9 +502,9 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                       onClick={() => {
                         setConfirmConfig({
                           isOpen: true,
-                          title: "Delete Card?",
-                          description: "Are you sure you want to delete this flashcard? This action cannot be undone.",
-                          confirmText: "Delete",
+                          title: t('deckmanager.deleteCardTitle'),
+                          description: t('deckmanager.deleteCardDesc'),
+                          confirmText: t('deckmanager.delete'),
                           type: "danger",
                           icon: Trash2,
                           onConfirm: () => {
@@ -511,7 +513,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                           }
                         });
                       }}
-                      title="Delete card"
+                      title={t('deckmanager.delete')}
                       style={{ 
                         color: '#ef4444', 
                         width: '32px', height: '32px', padding: 0,
@@ -526,7 +528,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                         setEditingCard({ index: card._origIdx, data: JSON.parse(JSON.stringify(deck.cards[card._origIdx])) });
                         setTab('edit');
                       }}
-                      title="Edit card"
+                      title={t('deckmanager.editCard')}
                       style={{ 
                         color: 'var(--primary)', 
                         width: '32px', height: '32px', padding: 0,
@@ -541,7 +543,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
 
             {filteredCards.length === 0 && (
               <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                {searchQuery ? 'No cards match your search.' : 'This deck has no cards.'}
+                {searchQuery ? t('deckmanager.noCardsMatchSearch') : t('deckmanager.thisDeckHasNoCards')}
               </div>
             )}
           </div>
@@ -553,7 +555,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                 <ChevronLeft size={18} />
               </button>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                Page {page + 1} / {totalPages}
+                {t('deckmanager.page')} {page + 1} / {totalPages}
               </span>
               <button className="btn btn-glass btn-icon" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
                 <ChevronRight size={18} />
@@ -569,17 +571,17 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
           {dedupRunning && (
             <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
               <div className="animate-spin" style={{ width: '40px', height: '40px', border: '3px solid var(--glass-border)', borderTopColor: 'var(--primary)', borderRadius: '50%', margin: '0 auto 1rem' }} />
-              <p>Analyzing {cards.length} cards for duplicates...</p>
+              <p>{t('deckmanager.analyzingCards', { count: cards.length })}</p>
             </div>
           )}
 
           {!dedupRunning && dedupResults !== null && dedupResults.length === 0 && (
             <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center' }}>
               <CheckCircle2 size={48} color="var(--success)" style={{ margin: '0 auto 1rem', display: 'block' }} />
-              <h3>No Duplicates Found! 🎉</h3>
-              <p style={{ color: 'var(--text-muted)' }}>All {cards.length} cards are unique.</p>
+              <h3>{t('deckmanager.noDuplicatesFound')}</h3>
+              <p style={{ color: 'var(--text-muted)' }}>{t('deckmanager.allCardsUnique', { count: cards.length })}</p>
               <button className="btn btn-glass" onClick={runDedup} style={{ marginTop: '1rem' }}>
-                🔄 Run Again
+                🔄 {t('deckmanager.runAgain')}
               </button>
             </div>
           )}
@@ -590,9 +592,9 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
               <div className="glass-panel dedup-summary-panel" style={{ padding: '1rem 1.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
                 <AlertTriangle size={20} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div className="dedup-summary-stats" style={{ flex: 1 }}>
-                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.filter(d => d.ratio >= 0.99).length}</strong> exact</span>
-                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.filter(d => d.ratio < 0.99).length}</strong> similar</span>
-                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.length}</strong> total pairs</span>
+                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.filter(d => d.ratio >= 0.99).length}</strong> {t('deckmanager.exact')}</span>
+                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.filter(d => d.ratio < 0.99).length}</strong> {t('deckmanager.similar')}</span>
+                  <span><strong style={{minWidth: '24px', display: 'inline-block'}}>{dedupResults.length}</strong> {t('deckmanager.totalPairs')}</span>
                 </div>
                 <div className="dedup-summary-actions">
                   <button
@@ -600,7 +602,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                     onClick={selectAllExact}
                     style={{ fontSize: '0.85rem', padding: '0.4rem 1rem' }}
                   >
-                    ☑ Toggle All Exact (100%)
+                    ☑ {t('deckmanager.toggleAllExact')}
                   </button>
                   {dedupSelected.size > 0 && (
                     <button
@@ -612,7 +614,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.85rem'
                       }}
                     >
-                      <Trash2 size={14} /> Delete {dedupSelected.size} selected
+                      <Trash2 size={14} /> {t('deckmanager.deleteSelected', { count: dedupSelected.size })}
                     </button>
                   )}
                   <button className="btn btn-glass" onClick={runDedup} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', display: 'flex', justifyContent: 'center' }}>
@@ -666,7 +668,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                                   onChange={() => toggleDedupSelect(globalIdx, slot)}
                                   style={{ accentColor: '#ef4444' }}
                                 />
-                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>#{idx + 1} — Delete?</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>#{idx + 1} — {t('deckmanager.deleteQuestion')}</span>
                               </label>
                               <p style={{ margin: '0.2rem 0', fontSize: '0.85rem', lineHeight: 1.3, wordBreak: 'break-word' }}>
                                 {card.question.length > 150 ? card.question.slice(0, 150) + '...' : card.question}
@@ -690,7 +692,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                     <ChevronLeft size={18} />
                   </button>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Page {dedupPage + 1} / {dedupTotalPages}
+                    {t('deckmanager.page')} {dedupPage + 1} / {dedupTotalPages}
                   </span>
                   <button className="btn btn-glass btn-icon" disabled={dedupPage >= dedupTotalPages - 1} onClick={() => setDedupPage(p => p + 1)}>
                     <ChevronRight size={18} />
@@ -716,49 +718,49 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                 onClick={() => {
                   setConfirmConfig({
                     isOpen: true,
-                    title: "Discard changes?",
-                    description: "Are you sure you want to leave? Your unsaved edits will be lost.",
-                    confirmText: "Discard",
+                    title: t('deckmanager.discardChangesTitle'),
+                    description: t('deckmanager.discardChangesDesc'),
+                    confirmText: t('deckmanager.discardBtn'),
                     type: "danger",
                     icon: AlertTriangle,
                     onConfirm: () => { setTab('view'); closeConfirm(); }
                   });
                 }}
-                title="Back to list"
+                title={t('deckmanager.backToList')}
               >
                 <ArrowLeft size={20} />
               </button>
-              <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Edit Flashcard</h3>
+              <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{t('deckmanager.editFlashcard')}</h3>
             </div>
             
             <button
               className="btn btn-primary"
               onClick={async () => {
                 if (!editingCard.data.question.trim()) {
-                  showAlert("Empty Question", "Question content cannot be empty!");
+                  showAlert(t('deckmanager.emptyQuestion'), t('deckmanager.emptyQuestionDesc'));
                   return;
                 }
                 
                 const correctCount = editingCard.data.correct_answers?.length || 0;
                 if (correctCount === 0) {
-                  showAlert("No Correct Answer", "Please select at least one correct answer!");
+                  showAlert(t('deckmanager.noCorrectAnswer'), t('deckmanager.noCorrectAnswerDesc'));
                   return;
                 }
                 if (editingCard.data.question_type === 'single_choice' && correctCount !== 1) {
-                  showAlert("Invalid Answer", "Single Choice questions must have exactly 1 correct answer!");
+                  showAlert(t('deckmanager.invalidAnswer'), t('deckmanager.singleChoiceOneAnswer'));
                   return;
                 }
                 if (editingCard.data.question_type === 'multiple_choice' && correctCount < 2) {
-                  showAlert("Invalid Answers", "Multiple Choice questions must have at least 2 correct answers!");
+                  showAlert(t('deckmanager.invalidAnswers'), t('deckmanager.multipleChoiceTwoAnswers'));
                   return;
                 }
 
                 const isNew = editingCard.isNew;
                 setConfirmConfig({
                   isOpen: true,
-                  title: isNew ? "Add card?" : "Save changes?",
-                  description: isNew ? "Do you want to add this new card to the deck?" : "Are you sure you want to save the changes to this flashcard?",
-                  confirmText: isNew ? "Add" : "Save",
+                  title: isNew ? t('deckmanager.addCardTitle') : t('deckmanager.saveChangesTitle'),
+                  description: isNew ? t('deckmanager.addCardDesc') : t('deckmanager.saveChangesDesc'),
+                  confirmText: isNew ? t('deckmanager.add') || 'Add' : t('common.save'),
                   type: isNew ? "warning" : "info",
                   icon: isNew ? Plus : Save,
                   onConfirm: async () => {
@@ -783,14 +785,14 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
               }}
               style={{ padding: '0.6rem 2rem', borderRadius: '12px' }}
             >
-              Save Changes
+              {t('deckmanager.saveChanges')}
             </button>
           </div>
 
           <div className="glass-panel deck-edit-form" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Question */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Question Content</label>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>{t('deckmanager.questionContent')}</label>
               <textarea
                 value={editingCard.data.question}
                 onInput={(e) => {
@@ -804,35 +806,35 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                   color: 'var(--text-main)', fontSize: '1rem', outline: 'none', resize: 'none',
                   lineHeight: '1.5'
                 }}
-                placeholder="Enter question text..."
+                placeholder={t('deckmanager.enterQuestionText')}
               />
             </div>
 
             {/* Type Toggle */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Question Type</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('deckmanager.questionType')}</span>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                {['single_choice', 'multiple_choice'].map(t => {
-                  const isActive = editingCard.data.question_type === t;
+                {['single_choice', 'multiple_choice'].map(type => {
+                  const isActive = editingCard.data.question_type === type;
                   return (
                     <button
-                      key={t}
+                      key={type}
                       className="btn"
                       onClick={() => {
-                        const newData = { ...editingCard.data, question_type: t };
-                        if (t === 'single_choice' && newData.correct_answers?.length > 1) {
+                        const newData = { ...editingCard.data, question_type: type };
+                        if (type === 'single_choice' && newData.correct_answers?.length > 1) {
                           newData.correct_answers = [newData.correct_answers[0]];
                         }
                         setEditingCard(prev => ({ ...prev, data: newData }));
                       }}
                       style={{
                         padding: '0.5rem 1.2rem', borderRadius: '10px', fontSize: '0.85rem',
-                        background: isActive ? (t === 'multiple_choice' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)') : 'var(--glass-bg)',
-                        color: isActive ? (t === 'multiple_choice' ? '#f59e0b' : 'var(--success)') : 'var(--text-muted)',
-                        border: `1px solid ${isActive ? (t === 'multiple_choice' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)') : 'var(--glass-border)'}`
+                        background: isActive ? (type === 'multiple_choice' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)') : 'var(--glass-bg)',
+                        color: isActive ? (type === 'multiple_choice' ? '#f59e0b' : 'var(--success)') : 'var(--text-muted)',
+                        border: `1px solid ${isActive ? (type === 'multiple_choice' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)') : 'var(--glass-border)'}`
                       }}
                     >
-                      {t === 'multiple_choice' ? 'Multiple Choice' : 'Single Choice'}
+                      {type === 'multiple_choice' ? t('deckmanager.multipleChoice') : t('deckmanager.singleChoice')}
                     </button>
                   );
                 })}
@@ -841,7 +843,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
 
             {/* Options */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem', fontWeight: 600, textTransform: 'uppercase' }}>Answers & Options</label>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem', fontWeight: 600, textTransform: 'uppercase' }}>{t('deckmanager.answersAndOptions')}</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {(editingCard.data.options || []).map((opt, idx) => {
                   const letter = String.fromCharCode(65 + idx);
@@ -891,7 +893,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                           resize: 'none', minHeight: '40px', lineHeight: '1.4'
                         }}
                         rows={1}
-                        placeholder={`Enter option ${letter}...`}
+                        placeholder={t('deckmanager.enterOption', { letter: letter })}
                       />
 
                       {/* Delete Option */}
@@ -936,7 +938,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                       width: '100%', fontSize: '0.95rem'
                     }}
                   >
-                    <Plus size={20} /> Add more options
+                    <Plus size={20} /> {t('deckmanager.addMoreOptions')}
                   </button>
                 )}
               </div>
@@ -970,13 +972,13 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
               >
                 <ArrowLeft size={20} />
               </button>
-              <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Import from Another Deck</h3>
+              <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{t('deckmanager.importFromAnotherDeck')}</h3>
             </div>
           </div>
 
           <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', margin: 0 }}>
-              Select a deck below to copy its cards into the current one. Progress for imported cards will be reset, while existing cards will retain their progress.
+              {t('deckmanager.importFromAnotherDeckDesc')}
             </p>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -996,14 +998,14 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{source.name}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{source.cards?.length || 0} cards</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{source.cards?.length || 0} {t('deckmanager.cards')}</div>
                   </div>
                 </div>
               ))}
               
               {allDecks.filter(d => (d.deck_id || d.name) !== (deck?.deck_id || deck?.name)).length === 0 && (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                  No other decks available to import from.
+                  {t('deckmanager.noOtherDecks')}
                 </div>
               )}
             </div>

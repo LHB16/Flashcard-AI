@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash, BookOpen, Layers, AlertTriangle, ArrowRight, Trash2, Pencil, LogOut, FileJson } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -8,6 +9,7 @@ import ConfirmationModal from './ConfirmationModal';
  * Props: isOpen, onClose, onDeckCreated
  */
 export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImport, setConfirmConfig }) {
+  const { t } = useTranslation();
   const [deckName, setDeckName] = useState('');
   const [activeTab, setActiveTab] = useState('bulk'); // 'bulk' | 'manual'
   
@@ -206,7 +208,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
             }}>
               <Plus size={24} />
             </div>
-            <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)', fontWeight: 'bold' }}>Create New Deck</h2>
+            <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)', fontWeight: 'bold' }}>{t('common.createNewDeck')}</h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
             <label 
@@ -214,7 +216,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', borderRadius: '12px', fontSize: '0.9rem', color: 'var(--primary)', cursor: 'pointer', margin: 0 }}
             >
               <FileJson size={16} />
-              Upload JSON
+              {t('common.uploadJson')}
               <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileUpload} />
             </label>
             <button 
@@ -229,9 +231,9 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
               onClick={() => {
                 setConfirmConfig({
                   isOpen: true,
-                  title: "Discard Changes?",
-                  description: "Are you sure you want to discard your changes? All input data will be lost.",
-                  confirmText: "Discard",
+                  title: t('common.discardChangesTitle'),
+                  description: t('common.discardChangesDesc'),
+                  confirmText: t('common.discard'),
                   type: "danger",
                   icon: AlertTriangle,
                   onConfirm: () => {
@@ -252,7 +254,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
         {/* Deck Name Input */}
         <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.02)' }}>
           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-            Deck Name (Required)
+            {t('common.deckNameRequired')}
           </label>
           <input 
             type="text"
@@ -279,7 +281,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
               borderBottom: activeTab === 'bulk' ? '2px solid var(--primary)' : 'none'
             }}
           >
-            <Layers size={18} /> Bulk Import
+            <Layers size={18} /> {t('common.bulkImport')}
           </button>
           <button 
             onClick={() => setActiveTab('manual')}
@@ -291,7 +293,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
               borderBottom: activeTab === 'manual' ? '2px solid var(--primary)' : 'none'
             }}
           >
-            <Pencil size={18} /> Manual Entry
+            <Pencil size={18} /> {t('common.manualEntry')}
           </button>
         </div>
 
@@ -306,7 +308,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
               }}>
                 <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
-                  <p style={{ margin: '0 0 0.5rem', fontWeight: 'bold', textDecoration: 'underline' }}>Format Instructions:</p>
+                  <p style={{ margin: '0 0 0.5rem', fontWeight: 'bold', textDecoration: 'underline' }}>{t('common.formatInstructions')}</p>
                   <p style={{ margin: '0 0 0.2rem' }}>Wrap question in <b>{"{[(Q)]}"}</b> tags.</p>
                   <p style={{ margin: '0 0 0.2rem' }}>Wrap correct answers in <b>{"{[(A)]}"}</b> tags.</p>
                   <p style={{ margin: '0 0 0.5rem' }}>Wrap wrong options (distractors) in <b>{"{[(O)]}"}</b> tags.</p>
@@ -346,12 +348,12 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0', borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)' }}>
                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Type</span>
                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                     {['single_choice', 'multiple_choice'].map(t => {
-                       const isActive = currentCard.question_type === t;
+                     {['single_choice', 'multiple_choice'].map(type => {
+                       const isActive = currentCard.question_type === type;
                        return (
                          <button
-                           key={t}
-                           onClick={() => setCurrentCard(p => ({ ...p, question_type: t, correct_answers: t === 'single_choice' ? [p.correct_answers[0]] : p.correct_answers }))}
+                           key={type}
+                           onClick={() => setCurrentCard(p => ({ ...p, question_type: type, correct_answers: type === 'single_choice' ? [p.correct_answers[0]] : p.correct_answers }))}
                            style={{
                              padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer',
                              border: `1px solid ${isActive ? 'rgba(79, 70, 229, 0.4)' : 'var(--glass-border)'}`,
@@ -359,7 +361,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
                              color: isActive ? 'var(--primary)' : 'var(--text-muted)'
                            }}
                          >
-                           {t === 'multiple_choice' ? 'Multiple' : 'Single'}
+                           {type === 'multiple_choice' ? t('deckmanager.multi') : t('deckmanager.single')}
                          </button>
                        )
                      })}
@@ -512,9 +514,9 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
             onClick={() => {
               setConfirmConfig({
                 isOpen: true,
-                title: "Abort Creation?",
-                description: "Are you sure you want to abort creating this deck? All input will be lost.",
-                confirmText: "Abort",
+                title: t('common.abortCreationTitle'),
+                description: t('common.abortCreationDesc'),
+                confirmText: t('common.abort'),
                 type: "danger",
                 icon: AlertTriangle,
                 onConfirm: () => {
@@ -527,7 +529,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
             className="btn btn-glass"
             style={{ flex: 1, padding: '1rem', borderRadius: '16px', fontWeight: 'bold' }}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button 
             onClick={handleCreateDeck}
@@ -535,7 +537,7 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
             style={{ flex: 2, padding: '1rem', borderRadius: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 10px 30px rgba(79,70,229,0.3)' }}
           >
             {activeTab === 'bulk' ? <Layers size={20} /> : <BookOpen size={20} />}
-            Create Deck Now
+            {t('deckmanager.createDeckNow')}
           </button>
         </div>
 

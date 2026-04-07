@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Download, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported, initialDeckId = '' }) {
+  const { t } = useTranslation();
   const [deckId, setDeckId] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState(null);
@@ -23,13 +25,13 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported,
     const userEmail = localStorage.getItem('g_email');
     
     if (!googleId || !userEmail) {
-      setMessage({ type: 'error', text: 'Please login to Google Drive to download the shared deck.' });
+      setMessage({ type: 'error', text: t('sharedeck.pleaseLoginDownload') });
       return;
     }
 
     const trimmedId = deckId.trim();
     if (!trimmedId) {
-      setMessage({ type: 'error', text: 'Please enter a Deck ID.' });
+      setMessage({ type: 'error', text: t('sharedeck.enterDeckId') });
       return;
     }
 
@@ -45,7 +47,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported,
       }
 
       if (!result.data) {
-        throw new Error('Downloaded deck data is invalid.');
+        throw new Error(t('sharedeck.invalidData'));
       }
 
       // CLONE LOGIC
@@ -66,7 +68,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported,
         }));
       }
 
-      setMessage({ type: 'success', text: 'Deck downloaded successfully! Saving to your library...' });
+      setMessage({ type: 'success', text: t('sharedeck.downloadSuccess') });
       
       setTimeout(() => {
         onDeckImported(clonedDeck);
@@ -146,7 +148,7 @@ export default function ImportSharedDeckModal({ isOpen, onClose, onDeckImported,
           style={{ padding: '0.8rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isImporting ? 0.7 : 1, width: '100%' }}
         >
           {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-          {isImporting ? 'Downloading...' : 'Download Deck'}
+          {isImporting ? t('common.loading') : t('common.download')}
         </button>
       </div>
     </div>

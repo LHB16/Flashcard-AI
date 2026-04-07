@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, ExternalLink } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 export default function NotificationBell({ userLoggedIn, userEmail, onOpenImportModal }) {
+  const { t } = useTranslation();
   const [showNotif, setShowNotif] = useState(false);
   const [readSysNotifs, setReadSysNotifs] = useState(() => {
     try {
@@ -146,7 +148,7 @@ export default function NotificationBell({ userLoggedIn, userEmail, onOpenImport
       <button 
         className="btn btn-glass btn-icon" 
         onClick={() => setShowNotif(!showNotif)}
-        title="Notifications"
+        title={t('common.notifications')}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -169,7 +171,7 @@ export default function NotificationBell({ userLoggedIn, userEmail, onOpenImport
         }}>
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Notifications</h3>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{t('common.notifications')}</h3>
             {notifications.some(n => n._type === 'system' && !readSysNotifs.includes(n.id)) && (
               <button 
                 onClick={markAllSysAsRead}
@@ -184,7 +186,7 @@ export default function NotificationBell({ userLoggedIn, userEmail, onOpenImport
           <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
             {notifications.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No notifications
+                {t('common.noNotifications')}
               </div>
             ) : (
               notifications.map(notif => {
