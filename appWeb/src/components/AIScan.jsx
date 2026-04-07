@@ -169,13 +169,13 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
     // Phase 0: Validate API Keys
     addLog(`\n── Checking ${config.api_keys.length} API key(s) ──`);
     const validKeys = await validateKeysParallel(config.api_keys, addLog);
-    
+
     if (validKeys.length === 0) {
       addLog('❌ All API keys are invalid. Scan aborted.');
       setScanState('done');
       return;
     }
-    
+
     const deadCount = config.api_keys.length - validKeys.length;
     addLog(`\n📊 Key check done: ${validKeys.length}/${config.api_keys.length} alive` + (deadCount ? `, ${deadCount} dead (excluded)` : ''));
 
@@ -304,295 +304,295 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
   return (
     <div className="scan-container animate-fade-in">
       <div className="scan-left">
-      {/* ─── Section 1: API Keys ─── */}
-      <div className="glass-panel scan-section">
-        <div className="scan-section-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Settings size={20} color="var(--primary)" />
-            <h3>{t('aiscan.configApiKeys')}</h3>
-            {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
+        {/* ─── Section 1: API Keys ─── */}
+        <div className="glass-panel scan-section">
+          <div className="scan-section-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Settings size={20} color="var(--primary)" />
+              <h3>{t('aiscan.configApiKeys')}</h3>
+              {configLoading && <Loader2 size={16} className="animate-spin" color="var(--text-muted)" />}
+            </div>
+            <a href="/guide.html#ai-scan" target="_blank" rel="noreferrer" title={t('aiscan.howToGetFreeApiKey')} style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', background: 'rgba(79, 70, 229, 0.1)', padding: '6px', borderRadius: '50%', textDecoration: 'none' }}>
+              <HelpCircle size={18} />
+            </a>
           </div>
-          <a href="/guide.html#ai-scan" target="_blank" rel="noreferrer" title={t('aiscan.howToGetFreeApiKey')} style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', background: 'rgba(79, 70, 229, 0.1)', padding: '6px', borderRadius: '50%', textDecoration: 'none' }}>
-            <HelpCircle size={18} />
-          </a>
-        </div>
 
-        {configError && (
-          <div style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
-            ⚠ {configError}
-          </div>
-        )}
+          {configError && (
+            <div style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+              ⚠ {configError}
+            </div>
+          )}
 
-        {config && (
-          <>
-            {/* Existing keys */}
-            <div className="key-chips-container">
-              {config.api_keys.map((key, i) => (
-                <ApiKeyChip
-                  key={i}
-                  apiKey={key}
-                  index={i}
-                  status="idle"
-                  onRemove={handleRemoveKey}
+          {config && (
+            <>
+              {/* Existing keys */}
+              <div className="key-chips-container">
+                {config.api_keys.map((key, i) => (
+                  <ApiKeyChip
+                    key={i}
+                    apiKey={key}
+                    index={i}
+                    status="idle"
+                    onRemove={handleRemoveKey}
+                  />
+                ))}
+                {config.api_keys.length === 0 && (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                    {t('aiscan.noApiKeysYet')}
+                  </p>
+                )}
+              </div>
+
+              {/* Add key input */}
+              <div className="key-add-row">
+                <input
+                  type="text"
+                  value={newKeyInput}
+                  onChange={(e) => setNewKeyInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddKey()}
+                  placeholder={t('aiscan.pasteApiKey')}
+                  className="key-input"
                 />
-              ))}
-              {config.api_keys.length === 0 && (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                  {t('aiscan.noApiKeysYet')}
-                </p>
+                <button className="btn btn-glass" onClick={handleAddKey} style={{ flexShrink: 0 }}>
+                  <Plus size={16} /> {t('aiscan.add')}
+                </button>
+              </div>
+
+              {/* Batch Size Config */}
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  {t('aiscan.imagesPerBatch')}
+                  <span title={t('aiscan.imagesPerBatchTooltip')} style={{ display: 'inline-flex', cursor: 'help' }}>
+                    <Info size={14} color="var(--primary)" />
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={config.batch_size || ''}
+                  onChange={(e) => {
+                    let val = parseInt(e.target.value, 10);
+                    if (isNaN(val)) val = '';
+                    else if (val > 30) val = 30;
+                    else if (val < 1) val = 1;
+                    setConfig({ ...config, batch_size: val });
+                    setConfigDirty(true);
+                  }}
+                  className="key-input"
+                  style={{ width: '100%' }}
+                  placeholder={t('aiscan.maxImages')}
+                />
+              </div>
+
+              {/* Save config button */}
+              {configDirty && (
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSaveConfig}
+                  disabled={savingConfig}
+                  style={{ marginTop: '0.75rem', width: '100%' }}
+                >
+                  {savingConfig ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                  {t('aiscan.saveKeysToDrive')}
+                </button>
               )}
-            </div>
-
-            {/* Add key input */}
-            <div className="key-add-row">
-              <input
-                type="text"
-                value={newKeyInput}
-                onChange={(e) => setNewKeyInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddKey()}
-                placeholder={t('aiscan.pasteApiKey')}
-                className="key-input"
-              />
-              <button className="btn btn-glass" onClick={handleAddKey} style={{ flexShrink: 0 }}>
-                <Plus size={16} /> {t('aiscan.add')}
-              </button>
-            </div>
-
-            {/* Batch Size Config */}
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                {t('aiscan.imagesPerBatch')}
-                <span title={t('aiscan.imagesPerBatchTooltip')} style={{ display: 'inline-flex', cursor: 'help' }}>
-                  <Info size={14} color="var(--primary)" />
-                </span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="30"
-                value={config.batch_size || ''}
-                onChange={(e) => {
-                  let val = parseInt(e.target.value, 10);
-                  if (isNaN(val)) val = '';
-                  else if (val > 30) val = 30;
-                  else if (val < 1) val = 1;
-                  setConfig({ ...config, batch_size: val });
-                  setConfigDirty(true);
-                }}
-                className="key-input"
-                style={{ width: '100%' }}
-                placeholder={t('aiscan.maxImages')}
-              />
-            </div>
-
-            {/* Save config button */}
-            {configDirty && (
-              <button
-                className="btn btn-primary"
-                onClick={handleSaveConfig}
-                disabled={savingConfig}
-                style={{ marginTop: '0.75rem', width: '100%' }}
-              >
-                {savingConfig ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                {t('aiscan.saveKeysToDrive')}
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* ─── Section 2: Folder Selection ─── */}
-      <div className="glass-panel scan-section">
-        <div className="scan-section-header">
-          <FolderOpen size={20} color="var(--primary)" />
-          <h3>{t('aiscan.selectImages')}</h3>
+            </>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            className="btn btn-glass"
-            onClick={() => fileInputRef.current?.click()}
-            style={{ flex: '0 0 auto' }}
-          >
-            <FolderOpen size={16} /> {t('aiscan.chooseFolder')}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            webkitdirectory=""
-            directory=""
-            multiple
-            onChange={handleFolderSelect}
-            style={{ display: 'none' }}
-          />
+        {/* ─── Section 2: Folder Selection ─── */}
+        <div className="glass-panel scan-section">
+          <div className="scan-section-header">
+            <FolderOpen size={20} color="var(--primary)" />
+            <h3>{t('aiscan.selectImages')}</h3>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-glass"
+              onClick={() => fileInputRef.current?.click()}
+              style={{ flex: '0 0 auto' }}
+            >
+              <FolderOpen size={16} /> {t('aiscan.chooseFolder')}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              webkitdirectory=""
+              directory=""
+              multiple
+              onChange={handleFolderSelect}
+              style={{ display: 'none' }}
+            />
+
+            {imageFiles.length > 0 && (
+              <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.9rem' }}>
+                ✓ {imageFiles.length} images found
+                {skippedCount > 0 && (
+                  <span style={{ color: 'var(--warning)', fontWeight: 400, marginLeft: '0.5rem' }}>
+                    (skipped {skippedCount} unsupported)
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
 
           {imageFiles.length > 0 && (
-            <span style={{ color: 'var(--success)', fontWeight: 600, fontSize: '0.9rem' }}>
-              ✓ {imageFiles.length} images found
-              {skippedCount > 0 && (
-                <span style={{ color: 'var(--warning)', fontWeight: 400, marginLeft: '0.5rem' }}>
-                  (skipped {skippedCount} unsupported)
-                </span>
-              )}
-            </span>
+            <div style={{ marginTop: '1rem' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem', display: 'block' }}>
+                Deck Name
+              </label>
+              <input
+                type="text"
+                value={deckName}
+                onChange={(e) => setDeckName(e.target.value)}
+                placeholder="Enter deck name"
+                className="key-input"
+                style={{ width: '100%' }}
+              />
+            </div>
           )}
         </div>
 
+        {/* ─── Start / Cancel Button ─── */}
         {imageFiles.length > 0 && (
-          <div style={{ marginTop: '1rem' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem', display: 'block' }}>
-              Deck Name
-            </label>
-            <input
-              type="text"
-              value={deckName}
-              onChange={(e) => setDeckName(e.target.value)}
-              placeholder="Enter deck name"
-              className="key-input"
-              style={{ width: '100%' }}
-            />
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {scanState !== 'scanning' ? (
+              <button
+                className="btn btn-primary"
+                onClick={handleStartScan}
+                disabled={!canStartScan}
+                style={{ flex: 1, padding: '1rem', fontSize: '1.05rem' }}
+              >
+                <Sparkles size={20} /> {t('aiscan.startAIScan', 'Start AI Scan')}
+              </button>
+            ) : (
+              <button
+                className="btn"
+                onClick={handleCancel}
+                style={{ flex: 1, padding: '1rem', fontSize: '1.05rem', background: 'var(--danger)', color: 'white' }}
+              >
+                <Square size={18} /> Cancel Scan
+              </button>
+            )}
           </div>
         )}
-      </div>
-
-      {/* ─── Start / Cancel Button ─── */}
-      {imageFiles.length > 0 && (
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          {scanState !== 'scanning' ? (
-            <button
-              className="btn btn-primary"
-              onClick={handleStartScan}
-              disabled={!canStartScan}
-              style={{ flex: 1, padding: '1rem', fontSize: '1.05rem' }}
-            >
-              <Sparkles size={20} /> {t('aiscan.startAIScan', 'Start AI Scan')}
-            </button>
-          ) : (
-            <button
-              className="btn"
-              onClick={handleCancel}
-              style={{ flex: 1, padding: '1rem', fontSize: '1.05rem', background: 'var(--danger)', color: 'white' }}
-            >
-              <Square size={18} /> Cancel Scan
-            </button>
-          )}
-        </div>
-      )}
       </div>
 
       <div className="scan-right">
-      {/* ─── Placeholder when Idle ─── */}
-      {scanState === 'idle' && (
-        <div className="glass-panel" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column', padding: '1.5rem', border: '1px dashed var(--glass-border)', background: 'transparent' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem', opacity: 0.5 }}>
-            <Terminal size={20} color="var(--text-muted)" />
-            <Skeleton width="120px" height="18px" />
+        {/* ─── Placeholder when Idle ─── */}
+        {scanState === 'idle' && (
+          <div className="glass-panel" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column', padding: '1.5rem', border: '1px dashed var(--glass-border)', background: 'transparent' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem', opacity: 0.5 }}>
+              <Terminal size={20} color="var(--text-muted)" />
+              <Skeleton width="120px" height="18px" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', opacity: 0.3 }}>
+              <Skeleton width="40%" height="14px" />
+              <Skeleton width="70%" height="14px" />
+              <Skeleton width="55%" height="14px" />
+              <Skeleton width="30%" height="14px" />
+              <Skeleton width="65%" height="14px" />
+            </div>
+            <div style={{ marginTop: 'auto', textAlign: 'center', padding: '2rem', opacity: 0.6 }}>
+              <Sparkles size={40} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.3 }} />
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('aiscan.logsPlaceholder', 'Select a folder and start AI Scan to see logs here.')}</p>
+            </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', opacity: 0.3 }}>
-            <Skeleton width="40%" height="14px" />
-            <Skeleton width="70%" height="14px" />
-            <Skeleton width="55%" height="14px" />
-            <Skeleton width="30%" height="14px" />
-            <Skeleton width="65%" height="14px" />
-          </div>
-          <div style={{ marginTop: 'auto', textAlign: 'center', padding: '2rem', opacity: 0.6 }}>
-            <Sparkles size={40} color="var(--text-muted)" style={{ marginBottom: '1rem', opacity: 0.3 }} />
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('aiscan.logsPlaceholder', 'Select a folder and start AI Scan to see logs here.')}</p>
-          </div>
-        </div>
-      )}
+        )}
 
 
-      {/* ─── Section 3: Progress ─── */}
-      {(scanState === 'scanning' || scanState === 'done' || scanState === 'cancelled') && (
-        <div className="glass-panel scan-section">
-          <div className="scan-section-header">
-            {scanState === 'scanning' ? (
-              <Loader2 size={20} className="animate-spin" color="var(--primary)" />
-            ) : (
-              <CheckCircle2 size={20} color={scanState === 'done' ? 'var(--success)' : 'var(--warning)'} />
-            )}
-            <h3>
-              {scanState === 'scanning'
-                ? (pdfState === 'generating'
+        {/* ─── Section 3: Progress ─── */}
+        {(scanState === 'scanning' || scanState === 'done' || scanState === 'cancelled') && (
+          <div className="glass-panel scan-section">
+            <div className="scan-section-header">
+              {scanState === 'scanning' ? (
+                <Loader2 size={20} className="animate-spin" color="var(--primary)" />
+              ) : (
+                <CheckCircle2 size={20} color={scanState === 'done' ? 'var(--success)' : 'var(--warning)'} />
+              )}
+              <h3>
+                {scanState === 'scanning'
+                  ? (pdfState === 'generating'
                     ? `Creating PDFs... (${pdfProgress.current + 1}/${pdfProgress.total})`
                     : `Processing batch... ${progressPercent}%`)
-                : scanState === 'done'
-                  ? `Done! ${scannedCards.length} cards extracted`
-                  : t('aiscan.scanCancelled')}
-            </h3>
-          </div>
-
-          {/* Progress bar */}
-          {progress.total > 0 && (
-            <div className="scan-progress-bar">
-              <div
-                className="scan-progress-fill"
-                style={{ width: `${progressPercent}%` }}
-              />
+                  : scanState === 'done'
+                    ? `Done! ${scannedCards.length} cards extracted`
+                    : t('aiscan.scanCancelled')}
+              </h3>
             </div>
-          )}
 
-          {progress.total > 0 && (
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-              {progress.processed} / {progress.total} images processed
-              {failedBatches.length > 0 && (
-                <span style={{ color: 'var(--danger)', marginLeft: '0.5rem' }}>
-                  ({failedBatches.length} batch(es) failed)
-                </span>
-              )}
-            </p>
-          )}
-
-          {/* Log console */}
-          <div className="scan-log" style={{ minHeight: '180px' }} ref={logContainerRef}>
-            {logs.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <Skeleton width="30%" height="12px" style={{ opacity: 0.2 }} />
-                <Skeleton width="50%" height="12px" style={{ opacity: 0.2 }} />
+            {/* Progress bar */}
+            {progress.total > 0 && (
+              <div className="scan-progress-bar">
+                <div
+                  className="scan-progress-fill"
+                  style={{ width: `${progressPercent}%` }}
+                />
               </div>
-            ) : (
-              logs.map((log, i) => (
-                <div key={i} className="scan-log-line">{log}</div>
-              ))
             )}
-          </div>
-        </div>
-      )}
 
+            {progress.total > 0 && (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                {progress.processed} / {progress.total} images processed
+                {failedBatches.length > 0 && (
+                  <span style={{ color: 'var(--danger)', marginLeft: '0.5rem' }}>
+                    ({failedBatches.length} batch(es) failed)
+                  </span>
+                )}
+              </p>
+            )}
 
-      {/* ─── Section 4: Results ─── */}
-      {scanState === 'done' && scannedCards.length > 0 && (
-        <div className="glass-panel scan-section">
-          <div className="scan-section-header">
-            <CheckCircle2 size={20} color="var(--success)" />
-            <h3>{t('aiscan.results')}</h3>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <div className="scan-stat">
-              <span className="scan-stat-value" style={{ color: 'var(--success)' }}>{scannedCards.length}</span>
-              <span className="scan-stat-label">Cards Extracted</span>
+            {/* Log console */}
+            <div className="scan-log" style={{ minHeight: '180px' }} ref={logContainerRef}>
+              {logs.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <Skeleton width="30%" height="12px" style={{ opacity: 0.2 }} />
+                  <Skeleton width="50%" height="12px" style={{ opacity: 0.2 }} />
+                </div>
+              ) : (
+                logs.map((log, i) => (
+                  <div key={i} className="scan-log-line">{log}</div>
+                ))
+              )}
             </div>
-            <div className="scan-stat">
-              <span className="scan-stat-value" style={{ color: 'var(--danger)' }}>{failedBatches.length}</span>
-              <span className="scan-stat-label">Failed Batches</span>
-            </div>
-            <div className="scan-stat">
-              <span className="scan-stat-value" style={{ color: 'var(--primary)' }}>{imageFiles.length}</span>
-              <span className="scan-stat-label">Total Images</span>
-            </div>
           </div>
+        )}
 
-          <button
-            className="btn btn-primary"
-            onClick={handleSaveAndSync}
-            style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }}
-          >
-            <Save size={18} /> Save Deck & Sync to Drive
-          </button>
-        </div>
-      )}
+
+        {/* ─── Section 4: Results ─── */}
+        {scanState === 'done' && scannedCards.length > 0 && (
+          <div className="glass-panel scan-section">
+            <div className="scan-section-header">
+              <CheckCircle2 size={20} color="var(--success)" />
+              <h3>{t('aiscan.results')}</h3>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+              <div className="scan-stat">
+                <span className="scan-stat-value" style={{ color: 'var(--success)' }}>{scannedCards.length}</span>
+                <span className="scan-stat-label">Cards Extracted</span>
+              </div>
+              <div className="scan-stat">
+                <span className="scan-stat-value" style={{ color: 'var(--danger)' }}>{failedBatches.length}</span>
+                <span className="scan-stat-label">Failed Batches</span>
+              </div>
+              <div className="scan-stat">
+                <span className="scan-stat-value" style={{ color: 'var(--primary)' }}>{imageFiles.length}</span>
+                <span className="scan-stat-label">Total Images</span>
+              </div>
+            </div>
+
+            <button
+              className="btn btn-primary"
+              onClick={handleSaveAndSync}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }}
+            >
+              <Save size={18} /> Save Deck & Sync to Drive
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

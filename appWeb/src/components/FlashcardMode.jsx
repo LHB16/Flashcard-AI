@@ -443,7 +443,8 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
   const cardBorder = getCardBorderStyle();
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', padding: '0 0 2rem 0', overflow: 'hidden' }}>
+    <>
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', padding: '0 0 2rem 0', overflow: 'hidden' }}>
 
       {/* Header */}
       <div style={{ 
@@ -559,9 +560,9 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
           <Check size={32} color="var(--success)" strokeWidth={3} />
         </button>
       </div>
-
-      <ChatBubble currentCard={currentCard} userLoggedIn={userLoggedIn} />
     </div>
+    <ChatBubble currentCard={currentCard} userLoggedIn={userLoggedIn} />
+  </>
   );
 };
 

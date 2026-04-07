@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save, Layers, Shuffle } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save, Layers, Shuffle, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
 import ConfirmationModal from './ConfirmationModal';
 import ShareDeckView from './ShareDeckView';
+import Taskbar from './Taskbar';
 
 const CARDS_PER_PAGE = 30;
 const DEDUP_PAIRS_PER_PAGE = 15;
@@ -308,31 +309,33 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
 
       {/* Tab Bar - Hidden in Edit Mode and Import Mode */}
       {(tab !== 'edit' && tab !== 'import') && (
-        <div className="deck-manager-tabs" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <button
-            className={`btn ${tab === 'view' ? 'btn-primary' : 'btn-glass'}`}
-            onClick={() => setTab('view')}
-            style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
-          >
-            {t('deckmanager.viewAndEdit')}
-          </button>
-          <button
-            className={`btn ${tab === 'dedup' ? 'btn-primary' : 'btn-glass'}`}
-            onClick={() => { setTab('dedup'); if (!dedupResults && !dedupRunning) runDedup(); }}
-            style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem' }}
-          >
-            {t('deckmanager.checkDuplicates')}
-          </button>
-          <button
-            className={`btn ${tab === 'share' ? 'btn-primary' : 'btn-glass'}`}
-            onClick={() => userLoggedIn && setTab('share')}
-            disabled={!userLoggedIn}
-            title={!userLoggedIn ? t('deckmanager.loginToDriveFirst') : ''}
-            style={{ padding: '0.6rem 1.5rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <Share2 size={18} /> {t('deckmanager.shareDeck')}
-          </button>
-        </div>
+        <Taskbar
+          items={[
+            {
+              id: 'view',
+              icon: <BookOpen size={20} />,
+              label: t('deckmanager.viewAndEdit'),
+              isActive: tab === 'view',
+              onClick: () => setTab('view')
+            },
+            {
+              id: 'dedup',
+              icon: <Layers size={20} />,
+              label: t('deckmanager.checkDuplicates'),
+              isActive: tab === 'dedup',
+              onClick: () => { setTab('dedup'); if (!dedupResults && !dedupRunning) runDedup(); }
+            },
+            {
+              id: 'share',
+              icon: <Share2 size={20} />,
+              label: t('deckmanager.shareDeck'),
+              isActive: tab === 'share',
+              disabled: !userLoggedIn,
+              title: !userLoggedIn ? t('deckmanager.loginToDriveFirst') : '',
+              onClick: () => userLoggedIn && setTab('share')
+            }
+          ]}
+        />
       )}
 
       {/* ─── VIEW TAB ─── */}

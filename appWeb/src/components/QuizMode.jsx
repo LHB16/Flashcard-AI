@@ -462,15 +462,16 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className="animate-fade-in" 
-      style={{ width: '100%', margin: '0 auto', padding: '1rem', position: 'relative', touchAction: 'pan-y' }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
-    >
+    <>
+      <div 
+        ref={containerRef}
+        className="animate-fade-in" 
+        style={{ width: '100%', margin: '0 auto', padding: '1rem', position: 'relative', touchAction: 'pan-y' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
       {/* Fixed Swipe Indicator (Direct DOM via Ref) */}
       <div ref={startPointRef} style={{
         position: 'fixed',
@@ -703,9 +704,10 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
         </div>
       )}
       {/* Confirmation Modal */}
+      </div>
 
       <ChatBubble currentCard={currentCard} userLoggedIn={userLoggedIn} />
-    </div>
+    </>
   );
 });
 

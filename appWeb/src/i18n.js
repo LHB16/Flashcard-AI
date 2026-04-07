@@ -138,7 +138,7 @@ const resources = {
         aiScan: 'AI Scan',
         signInGoogle: 'Sign in with Google to experience full features',
         orLocalUpload: 'or Local Upload',
-        selectADeck: 'Select a Deck',
+        selectADeck: 'Home',
         synced: 'Synced',
         driveSynced: 'Drive Synced',
         goBack: 'Go back',
@@ -204,8 +204,11 @@ const resources = {
         maxImages: 'Maximum 30 images',
         saveKeysToDrive: 'Save Keys to Drive',
         selectImages: 'Select Images',
+        selectImages: 'Select Images',
         chooseFolder: 'Choose Folder',
-        noApiKeysConfigured: 'No API keys configured. Add keys above first.'
+        noApiKeysConfigured: 'No API keys configured. Add keys above first.',
+        results: 'Results',
+        howToGetFreeApiKey: 'How to get a free Gemini API Key'
       },
       deckmanager: {
         deck: 'Deck',
@@ -357,10 +360,6 @@ const resources = {
         jumpTo: 'Jump to',
         firstUnanswered: 'first unanswered question'
       },
-      aiscan: {
-        results: 'Results',
-        howToGetFreeApiKey: 'How to get a free Gemini API Key'
-      },
       chat: {
         assistantGreeting: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!',
         assistantName: 'AI Assistant',
@@ -506,7 +505,7 @@ const resources = {
         aiScan: 'Quét AI',
         signInGoogle: 'Đăng nhập Google để trải nghiệm đầy đủ tính năng',
         orLocalUpload: 'hoặc Tải lên từ máy',
-        selectADeck: 'Chọn bộ thẻ',
+        selectADeck: 'Trang chủ',
         synced: 'Đã đồng bộ',
         driveSynced: 'Đã đồng bộ Drive',
         goBack: 'Quay lại',
@@ -572,8 +571,11 @@ const resources = {
         maxImages: 'Tối đa 30 ảnh',
         saveKeysToDrive: 'Lưu khóa lên Drive',
         selectImages: 'Chọn ảnh',
+        selectImages: 'Chọn ảnh',
         chooseFolder: 'Chọn thư mục',
-        noApiKeysConfigured: 'Chưa cấu hình khóa API. Thêm khóa ở trên trước.'
+        noApiKeysConfigured: 'Chưa cấu hình khóa API. Thêm khóa ở trên trước.',
+        results: 'Kết quả',
+        howToGetFreeApiKey: 'Cách lấy một Khóa API Gemini miễn phí'
       },
       deckmanager: {
         deck: 'Bộ thẻ',
@@ -724,10 +726,6 @@ const resources = {
         goBackToPrevCard: 'Quay lại thẻ trước',
         jumpTo: 'Nhảy đến',
         firstUnanswered: 'câu hỏi chưa trả lời đầu tiên'
-      },
-      aiscan: {
-        results: 'Kết quả',
-        howToGetFreeApiKey: 'Cách lấy một Khóa API Gemini miễn phí'
       },
       chat: {
         assistantGreeting: '👋 Chào bạn! Tôi có thể thấy thẻ bạn đang học.\nHãy gửi câu trả lời và tôi sẽ kiểm tra xem có đúng không, hoặc hỏi tôi giải thích thêm nhé!',

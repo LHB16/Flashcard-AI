@@ -5,10 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import ConfirmationModal from './ConfirmationModal';
 
 /**
- * AddDeckModal — Create a new deck via Bulk Import or Manual Entry
- * Props: isOpen, onClose, onDeckCreated
+ * AddDeckView — Create a new deck via Bulk Import or Manual Entry
+ * Props: onClose, onDeckCreated, onOpenImport, setConfirmConfig
  */
-export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImport, setConfirmConfig }) {
+export default function AddDeckView({ onClose, onDeckCreated, onOpenImport, setConfirmConfig }) {
   const { t } = useTranslation();
   const [deckName, setDeckName] = useState('');
   const [activeTab, setActiveTab] = useState('bulk'); // 'bulk' | 'manual'
@@ -39,7 +39,6 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
     });
   };
 
-  if (!isOpen) return null;
 
   const handleCreateDeck = () => {
     if (!deckName.trim()) {
@@ -183,16 +182,15 @@ export default function AddDeckModal({ isOpen, onClose, onDeckCreated, onOpenImp
   };
 
   return (
-    <div className="animate-fade-in" style={{
-      position: 'fixed', inset: 0, zIndex: 1000,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '1.5rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)'
+    <div className="add-deck-container animate-fade-in" style={{
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      paddingBottom: '2rem', width: '100%'
     }}>
       <div className="glass-panel" style={{
-        width: '100%', maxWidth: '900px', maxHeight: '90vh',
+        width: '100%', maxWidth: '900px',
         display: 'flex', flexDirection: 'column', 
         background: 'var(--card-bg)', borderRadius: '24px', overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+        boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
       }}>
         
         {/* Header */}

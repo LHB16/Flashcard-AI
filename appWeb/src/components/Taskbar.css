@@ -1,0 +1,235 @@
+/* ═══════════════════════════════════════════════
+   Gooey Taskbar — Two-Layer Architecture
+   Layer 1: Gooey blobs (SVG filter, no text)
+   Layer 2: Content (icons, text, no filter)
+   ═══════════════════════════════════════════════ */
+
+:root {
+    --taskbar-blob-bg: rgba(30, 41, 59, 0.95);
+    --taskbar-shadow: drop-shadow(2px 6px 16px rgba(0, 0, 0, 0.4)) drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.3));
+}
+[data-theme="light"] {
+    --taskbar-blob-bg: rgba(255, 255, 255, 0.95);
+    --taskbar-shadow: drop-shadow(2px 6px 16px rgba(0, 0, 0, 0.15)) drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* ─── LAYER 1: GOOEY BLOBS ─── */
+.gooey-layer {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    /* Chain the gooey effect and the drop-shadow so the shadow perfectly tracks the liquid shape without outline artifacts */
+    filter: url(#gooey) var(--taskbar-shadow);
+    z-index: 999;
+}
+
+/* Center Y is at 70px from bottom (30 + 80/2 = 70) */
+.blob-btn {
+    position: absolute;
+    left: -40px; /* Half circle off-screen = completely flush with left edge */
+    bottom: 30px;
+    width: 80px;
+    height: 80px;
+    background-color: var(--taskbar-blob-bg);
+    border-radius: 40px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blob-connector {
+    position: absolute;
+    left: 0px;
+    bottom: 55px; /* (70 - 30/2 = 55) */
+    width: 20px;
+    height: 30px;
+    background-color: var(--taskbar-blob-bg);
+    border-radius: 15px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blob-menu {
+    position: absolute;
+    left: -40px;
+    bottom: 39px; /* (70 - 62/2 = 39) */
+    width: 80px;
+    height: 62px;
+    background-color: var(--taskbar-blob-bg);
+    border-radius: 31px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* OPEN STATE — menu slides out, connector stretches thick */
+.gooey-layer.is-open .blob-menu {
+    left: 55px;
+    width: var(--menu-width, 240px);
+}
+
+.gooey-layer.is-open .blob-connector {
+    left: 0px;
+    width: 80px;
+    height: 30px;
+}
+
+/* ─── LAYER 2: CONTENT (no filter) ─── */
+.gooey-content-layer {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Toggle Button Hitbox — covers only the visible 40px on-screen */
+.gooey-btn-hitbox {
+    position: absolute;
+    left: 0;
+    bottom: 30px;
+    width: 40px;
+    height: 80px;
+    pointer-events: auto;
+    cursor: pointer;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted, #b3b3b3);
+    padding: 0;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.gooey-btn-hitbox:hover {
+    color: var(--primary, #6366f1);
+}
+
+.gooey-btn-hitbox:active {
+    transform: scale(0.92);
+}
+
+.gooey-hitbox-icon {
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.gooey-hitbox-icon.rotated {
+    transform: rotate(180deg);
+}
+
+/* Menu Items Container */
+.gooey-menu-items {
+    position: absolute;
+    left: 55px;
+    bottom: 39px;
+    height: 62px;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease 0s;
+}
+
+.gooey-content-layer.is-open .gooey-menu-items {
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0.15s;
+}
+
+/* ─── ANIMATED TASKBAR (shared styles) ─── */
+.animated-taskbar {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px;
+    height: 100%;
+    align-items: center;
+}
+
+/* Inline mode (non-fixed) background */
+.animated-taskbar-inline {
+    background-color: var(--glass-bg, #2d2d2d);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border, transparent);
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    padding: 10px 16px;
+}
+
+/* ─── Task Items ─── */
+.animated-taskbar .task-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background-color: transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    color: var(--text-muted, #b3b3b3);
+    overflow: hidden;
+}
+
+.animated-taskbar .task-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.animated-taskbar .task-item .task-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.animated-taskbar .task-item .text {
+    max-width: 0;
+    opacity: 0;
+    margin-left: 0;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.animated-taskbar .task-item:hover:not(.disabled),
+.animated-taskbar .task-item.active {
+    background-color: var(--primary, #4a4a4a);
+    color: #ffffff;
+}
+
+.animated-taskbar .task-item:hover:not(.disabled) .text,
+.animated-taskbar .task-item.active .text {
+    max-width: 150px;
+    opacity: 1;
+    margin-left: 10px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+    /* Mobile Center Y = 50px (bottom 20 + 60/2) */
+    .blob-btn { 
+        width: 60px; height: 60px; border-radius: 30px; 
+        left: -30px; bottom: 20px; 
+    }
+    .blob-menu { 
+        width: 60px; height: 50px; border-radius: 25px; 
+        left: -30px; bottom: 25px; /* (50 - 50/2 = 25) */
+    }
+    .blob-connector { 
+        width: 16px; height: 24px; border-radius: 12px; 
+        left: 0; bottom: 38px; /* (50 - 24/2 = 38) */
+    }
+    .gooey-btn-hitbox { 
+        width: 30px; height: 60px; bottom: 20px; 
+    }
+    .gooey-layer.is-open .blob-menu { 
+        left: 45px; 
+    }
+    .gooey-layer.is-open .blob-connector { 
+        width: 60px; height: 24px; 
+    }
+    .gooey-menu-items { 
+        left: 45px; bottom: 25px; height: 50px; 
+    }
+    .animated-taskbar .task-item {
+        padding: 8px 12px;
+    }
+    .animated-taskbar .task-item .text {
+        font-size: 14px;
+    }
+}

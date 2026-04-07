@@ -6,7 +6,7 @@ import QuizMode from './components/QuizMode';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import AIScan from './components/AIScan';
 import DeckManager from './components/DeckManager';
-import AddDeckModal from './components/AddDeckModal';
+import AddDeckView from './components/AddDeckView';
 import ImportSharedDeckModal from './components/ImportSharedDeckModal';
 import NotificationBell from './components/NotificationBell';
 import ChatBubble from './components/ChatBubble';
@@ -17,6 +17,7 @@ import { initGoogleIdentity, loginGoogle, logoutGoogle, fetchDecksFromDrive, upl
 import Footer from './components/Footer';
 import Skeleton, { HomeSkeleton } from './components/Skeleton';
 import ConfirmationModal from './components/ConfirmationModal';
+import Taskbar from './components/Taskbar';
 
 
 function App() {
@@ -28,7 +29,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('decks');
-  const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importModalInitialId, setImportModalInitialId] = useState('');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -644,13 +644,7 @@ function App() {
 
           <Footer />
         </main>
-        <AddDeckModal
-          isOpen={isAddDeckModalOpen}
-          onClose={() => setIsAddDeckModalOpen(false)}
-          onDeckCreated={handleDeckCreated}
-          onOpenImport={() => { setIsAddDeckModalOpen(false); setImportModalInitialId(''); setIsImportModalOpen(true); }}
-          setConfirmConfig={setConfirmConfig}
-        />
+
         <ImportSharedDeckModal
           isOpen={isImportModalOpen}
           initialDeckId={importModalInitialId}
@@ -809,58 +803,38 @@ function App() {
                 </div>
               </header>
 
-              {/* Tab Switcher */}
-              <div className="tab-switcher" style={{ position: 'relative', zIndex: 50, pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
-                <button
-                  className={`tab-btn${activeTab === 'decks' ? ' active' : ''}`}
-                  onClick={() => setActiveTab('decks')}
-                >
-                  <BookOpen size={16} /> {t('app.myDecks')}
-                </button>
-                <button
-                  className={`tab-btn${activeTab === 'scan' ? ' active' : ''}`}
-                  onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setActiveTab('scan')}
-                  disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
-                  title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : ''}
-                >
-                  <Sparkles size={16} /> {t('app.aiScan')}
-                </button>
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setIsAddDeckModalOpen(true)}
-                    disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
-                    title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : ''}
-                    style={{
-                      padding: '0.4rem 1.25rem',
-                      fontSize: '0.85rem',
-                      height: '36px',
-                      borderRadius: '10px'
-                    }}
-                  >
-                    <Plus size={16} /> {t('app.addDeck')}
-                  </button>
-                </div>
-              </div>
-
-              {activeTab === 'decks' && (
-                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', maxWidth: '600px', position: 'relative', zIndex: 50, pointerEvents: isHeaderCollapsed ? 'none' : 'auto' }}>
-                  <div style={{ position: 'relative', flex: 1 }}>
-                    <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-                    <input
-                      type="text"
-                      placeholder={t('app.searchDecks')}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
-                    />
-                  </div>
-                  <button className="btn btn-glass" onClick={toggleSort} style={{ width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title={t('app.sort')}>
-                    {sortOrder === 'asc' ? 'A-Z↓' : sortOrder === 'desc' ? 'Z-A↑' : t('app.sort')}
-                  </button>
-                </div>
-              )}
             </div>
+
+            {/* Fixed Bottom Taskbar for Home */}
+            <Taskbar
+              items={[
+                {
+                  id: 'decks',
+                  icon: <BookOpen size={20} />,
+                  label: t('app.myDecks'),
+                  isActive: activeTab === 'decks',
+                  onClick: () => setActiveTab('decks')
+                },
+                {
+                  id: 'scan',
+                  icon: <Sparkles size={20} />,
+                  label: t('app.aiScan'),
+                  isActive: activeTab === 'scan',
+                  disabled: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true'),
+                  title: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : '',
+                  onClick: () => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setActiveTab('scan')
+                },
+                {
+                  id: 'add',
+                  icon: <Plus size={20} />,
+                  label: t('app.addDeck'),
+                  isActive: activeTab === 'add',
+                  disabled: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true'),
+                  title: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : '',
+                  onClick: () => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setActiveTab('add')
+                }
+              ]}
+            />
 
             {/* Toggle Button as a Tab - Rectangular with 4 rounded corners and higher transparency */}
             <div style={{
@@ -897,6 +871,23 @@ function App() {
 
           {activeTab === 'decks' ? (
             <>
+              {/* Search and Sort (Body) */}
+              <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', maxWidth: '800px', margin: '0 auto 1.5rem', position: 'relative', zIndex: 50 }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <Search size={20} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    placeholder={t('app.searchDecks')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+                  />
+                </div>
+                <button className="btn btn-glass" onClick={toggleSort} style={{ width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title={t('app.sort')}>
+                  {sortOrder === 'asc' ? 'A-Z↓' : sortOrder === 'desc' ? 'Z-A↑' : t('app.sort')}
+                </button>
+              </div>
+
               {/* Selection Action Bar - sticky top */}
               {isSelectionMode && (
                 <div style={{
@@ -1033,18 +1024,17 @@ function App() {
                 })}
               </div>
             </>
-          ) : (
+          ) : activeTab === 'scan' ? (
             <AIScan userLoggedIn={userLoggedIn} onScanComplete={handleScanComplete} />
-          )}
-          <Footer />
+          ) : activeTab === 'add' ? (
+            <AddDeckView
+              onClose={() => setActiveTab('decks')}
+               onDeckCreated={handleDeckCreated}
+               onOpenImport={() => { setImportModalInitialId(''); setIsImportModalOpen(true); }}
+               setConfirmConfig={setConfirmConfig}
+            />
+          ) : null}
         </main>
-        <AddDeckModal
-          isOpen={isAddDeckModalOpen}
-          onClose={() => setIsAddDeckModalOpen(false)}
-          onDeckCreated={handleDeckCreated}
-          onOpenImport={() => { setIsAddDeckModalOpen(false); setImportModalInitialId(''); setIsImportModalOpen(true); }}
-          setConfirmConfig={setConfirmConfig}
-        />
         <ImportSharedDeckModal
           isOpen={isImportModalOpen}
           initialDeckId={importModalInitialId}
@@ -1266,12 +1256,7 @@ function App() {
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
           {mode === 'manage' && <DeckManager deck={selectedDeck} allDecks={data} onBack={() => { setMode('home'); setManagerTab('view'); }} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} initialTab={managerTab} />}
         </div>
-        <AddDeckModal
-          isOpen={isAddDeckModalOpen}
-          onClose={() => setIsAddDeckModalOpen(false)}
-          onDeckCreated={handleDeckCreated}
-          setConfirmConfig={setConfirmConfig}
-        />
+
 
         {/* Delete Deck Confirmation Modal */}
         {showDeleteConfirm && (

@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.8 | **Last Updated:** 2026-04-06 | **Status:** Stable
+> **Version:** 2.9 | **Last Updated:** 2026-04-07 | **Status:** Stable
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -18,6 +18,7 @@ A comprehensive technical reference for all four platforms in the Flashcard AI e
 8. [Shared Infrastructure](#8-shared-infrastructure)
 9. [Development Guide](#9-development-guide)
 10. [Deployment Guide](#10-deployment-guide)
+11. [Internationalization (i18n)](#11-internationalization-i18n)
 
 ---
 
@@ -331,7 +332,7 @@ appWeb/
 │   ├── components/
 │   │   ├── AdminDashboard.jsx   # Admin panel for API keys and stats
 │   │   ├── AIScan.jsx           # AI Scan orchestration UI
-│   │   ├── AddDeckModal.jsx     # Create deck via Bulk Import or Manual Entry
+│   │   ├── AddDeckView.jsx      # Create deck via Bulk Import or Manual Entry (Full Page)
 │   │   ├── ApiKeyChip.jsx       # API key display chip component
 │   │   ├── ChatBubble.jsx       # Floating AI chat assistant
 │   │   ├── ConfirmationModal.jsx# Reusable glassmorphism modal (danger/warning/info)
@@ -344,6 +345,7 @@ appWeb/
 │   │   ├── KeyboardShortcuts.jsx# Keyboard shortcut overlay
 │   │   ├── ShareDeckView.jsx    # Share deck UI (email invite + Copy ID)
 │   │   ├── SettingsPage.jsx     # Centralized user configurations + Danger zone
+│   │   ├── Taskbar.jsx          # New animated main navigation (Home, Add, Scan, Share, Settings)
 │   │   └── QuizMode.jsx         # Multiple-choice quiz engine
 │   └── services/
 │       ├── configService.js     # config.json CRUD on Drive
@@ -364,9 +366,11 @@ appWeb/
         └── share.js             # Share deck creation + shared deck fetch
 ```
 
-### 4.2 App.jsx — Component State
+### 4.2 App.jsx — Component State & Layout
 
 **Global State (`App.jsx`)**
+
+Added on **2026-04-07**: The search and sort controls were moved from the sticky header to the main body to improve layout stability during scroll and provide more horizontal space for filters on mobile.
 
 | State Variable | Type | Description |
 | :--- | :--- | :--- |
@@ -375,7 +379,7 @@ appWeb/
 | `mode` | `'flashcard'` \| `'quiz'` \| `'manage'` \| `'home'` \| `null` | Current study/view mode |
 | `theme` | `'dark'` \| `'light'` | Current UI theme, persisted in `localStorage` |
 | `isHeaderCollapsed` | `boolean` | Collapsible header state (auto-collapses on scroll > 80px) |
-| `activeTab` | `'decks'` \| `'scan'` | Deck selection tab (My Decks vs AI Scan) |
+| `activeTab` | `'decks'` \| `'scan'` \| `'add'` | Main navigation state (My Decks vs AI Scan vs Create Deck) |
 | `pinnedDecks` | `string[]` | Array of `deck_id` values, persisted in `localStorage` |
 | `sortOrder` | `'none'` \| `'asc'` \| `'desc'` | Deck list sort state, persisted in `localStorage` |
 | `userLoggedIn` | `boolean` | Whether Google session is active |
@@ -383,7 +387,6 @@ appWeb/
 | `isSyncing` | `boolean` | Shows top progress bar during sync |
 | `isSelectionMode` | `boolean` | Whether bulk-delete selection mode is active on deck list |
 | `selectedDecks` | `Set<string>` | Set of `deck_id` values selected for bulk deletion |
-| `isAddDeckModalOpen` | `boolean` | Controls visibility of the `AddDeckModal` |
 | `isImportModalOpen` | `boolean` | Controls visibility of the `ImportSharedDeckModal` |
 | `importModalInitialId` | `string` | Holds the pre-filled ID passed to `ImportSharedDeckModal` (e.g., from notifications) |
 | `showDeleteConfirm` | `boolean` | Controls visibility of the deck-delete `ConfirmationModal` |
@@ -395,7 +398,10 @@ appWeb/
 ```
 App.jsx renders (single return block — three conditional branches):
   1. !data         → Login Screen (FileLoader + Google Sign-in header)
-  2. !selectedDeck → Deck Selection (DeckList grid, search, sort, bulk-delete)
+  2. !selectedDeck → Main Interface (Sticky Header + Body Content + Taskbar)
+      2a. activeTab = 'decks' → My Decks list + Search/Sort (now in main body)
+      2b. activeTab = 'scan'  → AI Scan Interface (<AIScan />)
+      2c. activeTab = 'add'   → Create Deck Interface (<AddDeckView />)
   3. selectedDeck  → Study Mode Shell (sticky header with tabs: Modes | Manage)
       3a. mode is null or 'home' → Mode picker (Flashcards / Quiz Mode cards)
       3b. mode = 'flashcard'     → <FlashcardMode />
@@ -403,13 +409,20 @@ App.jsx renders (single return block — three conditional branches):
       3d. mode = 'manage'        → <DeckManager />
 
 Globally-mounted modals (outside all branches, always in DOM):
-  - <AddDeckModal>            create deck via Bulk Import or Manual Entry
+  - <Taskbar>                 Fixed navigation with animated expansions
   - <ImportSharedDeckModal>   clone a deck by shared ID
   - <ConfirmationModal>       deck delete (showDeleteConfirm + isDeleting)
   - <ConfirmationModal>       all other dialogs (confirmConfig object)
 ```
 
 ### 4.3 Component Reference
+
+#### `Taskbar.jsx` (New — 2026-04-07)
+
+- **Purpose**: Centralized navigation component that remains visible even when the header collapses.
+- **Design**: Fixed bottom position (`position: fixed; bottom: 30px`). Uses `lucide-react` icons and high-performance CSS transitions (`cubic-bezier`) for smooth "text expansion" effects on hover/active.
+- **State Integration**: Toggles `activeTab` ('decks', 'add', 'scan') or `setMode('manage')` depending on the current app view.
+- **Logic**: Automatically highlights the active item based on the application's current `activeTab` or `mode`.
 
 #### `AIScan.jsx`
 
@@ -420,6 +433,13 @@ Globally-mounted modals (outside all branches, always in DOM):
   2. User selects a folder → images filtered (jpg/png/webp/bmp)
   3. On "Start AI Scan": validate all keys in parallel → generate PDFs → process via Worker Pool
   4. On complete: call `onScanComplete(newDeck)` which triggers Drive upload
+
+#### `AddDeckView.jsx` (Upgraded — 2026-04-07)
+
+- **Purpose**: Create a new deck via Bulk Import or Manual Entry.
+- **Evolution**: Converted from a Modal (`AddDeckModal`) to a **full-page view** to provide more space for manual entry and bulk parsing.
+- **Access**: Directly via the **Taskbar** (Add icon).
+- **Format**: Integrated into the `activeTab === 'add'` rendering branch. Includes its own glass-panel container with centered alignment.
 
 #### `AdminDashboard.jsx`
 
@@ -1175,9 +1195,9 @@ return (
 | `App.jsx` | `window.confirm` (bulk delete) | Delete button in selection mode |
 | `App.jsx` | `alert` (sync failed) | Drive sync error |
 | `AdminDashboard.jsx` | `window.confirm` | Deleting a Groq API key |
-| `AddDeckModal.jsx` | `window.confirm` (discard new deck) | Cancel button |
-| `AddDeckModal.jsx` | `alert` (empty name / no cards) | Save validation (e.g. "Missing Name") |
-| `AddDeckModal.jsx` | `alert` (empty card question) | Manual entry - "Empty Question" |
+| `AddDeckView.jsx` | `window.confirm` (discard new deck) | Cancel button |
+| `AddDeckView.jsx` | `alert` (empty name / no cards) | Save validation (e.g. "Missing Name") |
+| `AddDeckView.jsx` | `alert` (empty card question) | Manual entry - "Empty Question" |
 | `DeckManager.jsx` | `window.confirm` (delete card) | Trash icon on card |
 | `DeckManager.jsx` | `window.confirm` (discard edit) | Back arrow in edit form |
 | `DeckManager.jsx` | `alert` (invalid card data) | Multiple validations (Empty Question, No Correct Answer, etc.) |
@@ -1268,7 +1288,7 @@ To safely accommodate offline access while protecting data integrity, core deck 
 
 | Feature | Component | Condition | Rule |
 | :--- | :--- | :--- | :--- |
-| **Add Deck** | `App.jsx` (Header) | `!userLoggedIn` | Disabled. Prevents users from drafting decks that will be lost on refresh. |
+| **Add Deck** | `App.jsx` (Taskbar) | `!userLoggedIn` | Disabled. Prevents users from drafting decks that will be lost on refresh. |
 | **Share Deck** | `DeckManager.jsx` (Tab btn) | `!userLoggedIn` | Disabled. Sharing requires inserting data into Supabase bound to a Google ID. |
 | **AI Chat** | `ChatBubble.jsx` (Toggle) | `!userLoggedIn` | Disabled. Chat history and AI API requests are tied to user session continuity. |
 | **AI Scan** | `App.jsx` (Tab btn) | `!userLoggedIn` | Disabled. Requires Drive authentication for API key resolution. |
@@ -1281,6 +1301,44 @@ When `processedDecks.length === 0` (e.g., brand new users, or users who have cle
 > *"You don't have any decks yet. Try clicking the **+ Add Deck** or **AI Scan** button to get started!"*
 
 This ensures users aren't left staring at a blank UI while awaiting structure creation.
+
+---
+
+### 4.16 Gooey Taskbar & Global Widget Positioning
+
+Introduced on **2026-04-07**, the application features a modern, fluid `Gooey Taskbar` and a globally accessible `ChatBubble` widget, resolving longstanding architectural challenges related to fixed positioning inside CSS-transformed containers.
+
+#### 4.16.1 Two-Layer Gooey SVG Architecture
+The `Taskbar` implements a liquid-like "gooey" animation when merging blobs (the toggle button, connector, and menu strip).
+- **The Filter Problem**: SVG filters like `feGaussianBlur` combined with `feColorMatrix` natively destroy standard CSS properties such as `border` and `box-shadow` because they intercept and alter the alpha channel, creating artifacts (inner rings and visual gaps).
+- **The Solution**: 
+  1. **Layer 1 (The Geometric Shell)**: Contains the pure css blobs without any styling. It sits behind everything and receives the `url(#gooey)` filter to merge the shapes seamlessly.
+  2. **Layer 2 (The Content)**: Contains the text, icons, and transparent hitboxes, completely immune to the blur filter.
+  3. **Global Drop Shadow**: To apply a clean border or glow around the liquid effect without mangling the shapes, a chained native CSS `drop-shadow()` is mapped *after* the SVG gooey filter on the entire container: `filter: url(#gooey) drop-shadow(...)`.
+
+#### 4.16.2 Portal-Based Sub-rendering (Overcoming the Transform Trap)
+A critical issue occurred where `position: fixed` elements (like the `Taskbar` and `ChatBubble`) would erroneously latch onto their parent containers instead of the actual screen viewport whenever the parent layer had a CSS `transform` applied (e.g., `<div className="animate-fade-in">` in `DeckManager.jsx` or `FlashcardMode.jsx`).
+
+- **Taskbar Resolution**: Instead of returning the component DOM directly into the virtual React hierarchy where it's deeply vulnerable to localized bounding grids, the entire Taskbar structure is ported using `ReactDOM.createPortal(..., document.body)`. This forces the fixed absolute blobs to permanently bind to the uncompromised margins of the root layout document.
+- **Perfect Alignment Math**: Blobs use mathematically exact Cartesian center-points (`Center Y = 70px` on PC, `Center Y = 50px` on mobile). The expansion button forces a static `left: -40px` off-screen pull against a matching `width: 80px` geometric bounding box, organically snapping to a flush left edge monitor split.
+
+---
+
+## 11. Internationalization (i18n)
+
+The application uses `react-i18next` for full multi-language support (English and Vietnamese).
+
+#### 11.1 Architecture
+
+- **Config File**: `src/i18n.js` contains the dictionary of all translation keys.
+- **Hook Usage**: Components use the `useTranslation()` hook to access the `t()` function.
+- **Labels**: All UI labels, tooltips, and confirmation messages are assigned unique keys (e.g., `app.title`, `common.cancel`).
+
+#### 11.2 Core Language Updates (2026-04-07)
+
+- **Consolidation**: Fixed a critical bug where duplicate `aiscan` objects in `i18n.js` caused keys to be overwritten, resulting in raw keys showing in the UI. All `aiscan` keys are now merged into a single source of truth.
+- **Home Branding**: The main landing screen was renamed from "Select a Deck" to **"Home" (English)** and **"Trang chủ" (Vietnamese)** to create a more intuitive entry point.
+- **Taskbar Integration**: Navigation icons in the Taskbar use dynamic labels provided by the i18n system.
 
 ---
 
@@ -1930,4 +1988,4 @@ build_apk_release.bat
 
 ---
 
-*Flashcard AI — Technical Documentation | Generated: 2026-04-03 | Author: [LHB16](https://github.com/LHB16)*
+*Flashcard AI — Technical Documentation | Generated: 2026-04-07 | Author: [LHB16](https://github.com/LHB16)*
