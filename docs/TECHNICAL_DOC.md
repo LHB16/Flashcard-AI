@@ -908,6 +908,34 @@ setSelectedDeck(prev => {
 // Before: reads stale selectedDeck from closure
 const known = selectedDeck.cards.filter(c => c.status === 2).length;
 
+#### 4.11.6 Shuffle Functionality (Added 2026-04-07)
+
+`DeckManager.jsx` now provides two randomization tools to help users vary their study materials: **Shuffle Questions** and **Shuffle Options**.
+
+**1. Shuffle Questions:**
+Randomizes the entire `deck.cards` array using the Fisher-Yates shuffle algorithm. This permanently changes the order of cards in the deck stored in Google Drive.
+- **Icon**: `Shuffle` (color: `var(--warning)`)
+- **Trigger**: Menu "Add Card" -> "Shuffle Questions"
+
+**2. Shuffle Options:**
+Randomizes the order of options (A, B, C, D...) for selected cards or all cards if none are selected.
+- **Icon**: `Shuffle` (color: `#3b82f6`)
+- **Preservation of Correct Answers**: The logic extracts the raw text of the correct answer before shuffling, randomizes the options, and then re-maps the `correct_answers` array to the new letters (A, B, C, D) tương ứng với nội dung đáp án đúng.
+- **Trigger**: Menu "Add Card" -> "Shuffle Options"
+
+```javascript
+// Mapping correct answers after option shuffle
+const correctTexts = card.correct_answers.map(ans => {
+  const matchingOpt = card.options.find(o => o.startsWith(ans + '.') || o === ans);
+  return matchingOpt ? getRaw(matchingOpt) : ans;
+});
+// ... shuffle rawOptions ...
+card.options = rawOptions.map((text, i) => `${String.fromCharCode(65 + i)}. ${text}`);
+card.correct_answers = card.options
+  .filter(opt => correctTexts.some(txt => getRaw(opt) === txt))
+  .map(opt => opt.charAt(0));
+```
+
 // After: finds the fresh deck from the always-current dataRef
 const freshDeck = freshData.find(d => d.deck_id === selectedDeck?.deck_id);
 const known = freshDeck.cards.filter(c => c.status === 2).length;
