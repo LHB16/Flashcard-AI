@@ -416,7 +416,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
     return (
       <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', padding: '1rem 0' }}>
         <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', width: '100%', maxWidth: '500px' }}>
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', color: 'var(--text-main)' }}>Results</h2>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', color: 'var(--text-main)' }}>{t('flashcardmode.results')}</h2>
           <div style={{ fontSize: '4rem', margin: '1rem 0' }}>
             {pct >= 70 ? '🎉' : pct >= 50 ? '😐' : '😓'}
           </div>
@@ -424,11 +424,11 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
             {pct}%
           </div>
           <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            ✅ Known: <strong style={{ color: 'var(--success)', fontSize: '1.2rem' }}>{known}</strong> &nbsp;  ❌ Unknown: <strong style={{ color: 'var(--danger)', fontSize: '1.2rem' }}>{unknown}</strong>
+            ✅ {t('flashcardmode.known')}: <strong style={{ color: 'var(--success)', fontSize: '1.2rem' }}>{known}</strong> &nbsp;  ❌ {t('flashcardmode.unknown')}: <strong style={{ color: 'var(--danger)', fontSize: '1.2rem' }}>{unknown}</strong>
           </p>
 
           <button className="btn" style={{ background: 'var(--primary)', color: 'white', padding: '1rem', width: '100%', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '1rem', cursor: 'pointer' }} onClick={restartStudy}>
-            Try again
+            {t('flashcardmode.tryAgain')}
           </button>
           <button className="btn btn-glass" style={{ width: '100%', padding: '1rem' }} onClick={onBack}>
             {t('common.back')}
@@ -502,7 +502,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
       >
         <div className="flip-card-inner" style={cardBorder}>
           <div className="flip-card-front" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>QUESTION</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>{t('flashcardmode.questionText')}</span>
             <div
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
             >
@@ -522,12 +522,12 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
             </div>
 
             <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.85rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
-              Tap to flip
+              {t('flashcardmode.tapToFlip')}
             </p>
           </div>
 
           <div className="flip-card-back" style={{ display: 'flex', flexDirection: 'column', ...cardBorder }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>ANSWER</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1.5px', color: 'var(--success)', textTransform: 'uppercase', marginBottom: '1rem', display: 'block', textAlign: 'left', width: '100%' }}>{t('flashcardmode.answerText')}</span>
             <div
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
             >
@@ -541,7 +541,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
               )}
             </div>
             <p style={{ marginTop: '1rem', opacity: 0.8, fontSize: '0.85rem', color: 'var(--primary)', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', width: '100%' }}>
-              Tap to flip back
+              {t('flashcardmode.tapToFlipBack')}
             </p>
           </div>
         </div>

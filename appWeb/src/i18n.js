@@ -281,7 +281,14 @@ const resources = {
       flashcardmode: {
         flipCard: 'Flip card',
         stillLearning: 'Still learning',
-        known: 'Known'
+        known: 'Known',
+        unknown: 'Unknown',
+        results: 'Results',
+        tryAgain: 'Try again',
+        questionText: 'QUESTION',
+        answerText: 'ANSWER',
+        tapToFlip: 'Tap to flip',
+        tapToFlipBack: 'Tap to flip back'
       },
       quizmode: {
         selectOption: 'Select option',
@@ -290,7 +297,12 @@ const resources = {
         previous: 'Previous',
         jumpTo: 'Jump to',
         firstUnanswered: 'first unanswered question',
-        loadingQuizSession: 'Loading quiz session...'
+        loadingQuizSession: 'Loading quiz session...',
+        results: 'Results',
+        correct: 'Correct',
+        wrong: 'Wrong',
+        questions: 'questions',
+        answeredPct: 'answered ({{pct}}%)'
       },
       sharedeck: {
         pleaseLogin: 'Please login to Google Drive to share the deck.',
@@ -344,6 +356,20 @@ const resources = {
         goBackToPrevCard: 'Go back to previous card',
         jumpTo: 'Jump to',
         firstUnanswered: 'first unanswered question'
+      },
+      aiscan: {
+        results: 'Results',
+        howToGetFreeApiKey: 'How to get a free Gemini API Key'
+      },
+      chat: {
+        assistantGreeting: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!',
+        assistantName: 'AI Assistant',
+        checkingAnswers: 'Checking your answers',
+        viewing: '📖 Viewing:',
+        noCardSelected: 'No card selected',
+        typePlaceholder: 'Type your answer or question...',
+        checking: 'Checking...',
+        connError: '⚠️ Connection error. Please check your internet and try again.'
       }
     }
   },
@@ -623,7 +649,14 @@ const resources = {
       flashcardmode: {
         flipCard: 'Lật thẻ',
         stillLearning: 'Vẫn đang học',
-        known: 'Đã biết'
+        known: 'Đã biết',
+        unknown: 'Chưa biết',
+        results: 'Kết quả',
+        tryAgain: 'Thử lại',
+        questionText: 'CÂU HỎI',
+        answerText: 'ĐÁP ÁN',
+        tapToFlip: 'Chạm để lật',
+        tapToFlipBack: 'Chạm để lật ngược lại'
       },
       quizmode: {
         selectOption: 'Chọn tùy chọn',
@@ -632,7 +665,12 @@ const resources = {
         previous: 'Trước đó',
         jumpTo: 'Nhảy đến',
         firstUnanswered: 'câu hỏi chưa trả lời đầu tiên',
-        loadingQuizSession: 'Đang tải phiên trắc nghiệm...'
+        loadingQuizSession: 'Đang tải phiên trắc nghiệm...',
+        results: 'Kết quả',
+        correct: 'Đúng',
+        wrong: 'Sai',
+        questions: 'câu hỏi',
+        answeredPct: 'đã trả lời ({{pct}}%)'
       },
       sharedeck: {
         pleaseLogin: 'Vui lòng đăng nhập vào Google Drive để chia sẻ bộ thẻ.',
@@ -686,6 +724,20 @@ const resources = {
         goBackToPrevCard: 'Quay lại thẻ trước',
         jumpTo: 'Nhảy đến',
         firstUnanswered: 'câu hỏi chưa trả lời đầu tiên'
+      },
+      aiscan: {
+        results: 'Kết quả',
+        howToGetFreeApiKey: 'Cách lấy một Khóa API Gemini miễn phí'
+      },
+      chat: {
+        assistantGreeting: '👋 Chào bạn! Tôi có thể thấy thẻ bạn đang học.\nHãy gửi câu trả lời và tôi sẽ kiểm tra xem có đúng không, hoặc hỏi tôi giải thích thêm nhé!',
+        assistantName: 'Trợ Lý AI',
+        checkingAnswers: 'Đang kiểm tra...',
+        viewing: '📖 Đang xem:',
+        noCardSelected: 'Chưa chọn thẻ nào',
+        typePlaceholder: 'Nhập câu trả lời hoặc câu hỏi...',
+        checking: 'Đang kiểm tra...',
+        connError: '⚠️ Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.'
       }
     }
   }

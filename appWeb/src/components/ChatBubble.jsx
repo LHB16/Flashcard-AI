@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const ChatBubble = ({ currentCard, userLoggedIn = true }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isAwake, setIsAwake] = useState(false); // false = mờ, true = rõ
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!' }
+    { role: 'assistant', content: t('chat.assistantGreeting') }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +28,7 @@ const ChatBubble = ({ currentCard, userLoggedIn = true }) => {
   // Reset conversation history khi đổi Flashcard
   useEffect(() => {
     setMessages([
-      { role: 'assistant', content: '👋 Hi! I can see the card you\'re studying.\nSend me your answer and I\'ll check if it\'s correct, or ask me to explain anything!' }
+      { role: 'assistant', content: t('chat.assistantGreeting') }
     ]);
   }, [currentCard]);
 
@@ -118,7 +120,7 @@ YOUR ROLE:
       console.error('Chat error:', err);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '⚠️ Connection error. Please check your internet and try again.'
+        content: t('chat.connError')
       }]);
     } finally {
       setIsLoading(false);
@@ -136,7 +138,7 @@ YOUR ROLE:
   // Show what card the AI is seeing (mini context bar)
   const cardPreview = currentCard
     ? (currentCard.question || '').slice(0, 60) + ((currentCard.question || '').length > 60 ? '...' : '')
-    : 'No card selected';
+    : t('chat.noCardSelected');
 
   return (
     <>
@@ -149,8 +151,8 @@ YOUR ROLE:
               <MessageCircle size={18} />
             </div>
             <div>
-              <h4 className="chat-header-title">AI Assistant</h4>
-              <span className="chat-header-subtitle">Checking your answers</span>
+              <h4 className="chat-header-title">{t('chat.assistantName')}</h4>
+              <span className="chat-header-subtitle">{t('chat.checkingAnswers')}</span>
             </div>
           </div>
           <button
@@ -165,7 +167,7 @@ YOUR ROLE:
         {/* Card Context Bar */}
         <div className="chat-context-bar-v2">
           <div className="chat-context-inner">
-            <span className="chat-context-label">📖 Viewing:</span>
+            <span className="chat-context-label">{t('chat.viewing')}</span>
             <span className="chat-context-text">{cardPreview}</span>
           </div>
         </div>
@@ -186,7 +188,7 @@ YOUR ROLE:
             <div className="chat-message chat-message--bot">
               <div className="chat-bubble-msg chat-bubble-msg--bot chat-typing">
                 <Loader2 size={16} className="animate-spin" />
-                <span>Checking...</span>
+                <span>{t('chat.checking')}</span>
               </div>
             </div>
           )}
@@ -199,7 +201,7 @@ YOUR ROLE:
             ref={inputRef}
             type="text"
             className="chat-input"
-            placeholder="Type your answer or question..."
+            placeholder={t('chat.typePlaceholder')}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}

@@ -443,7 +443,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
     const pct = cards.length > 0 ? Math.round((score / cards.length) * 100) : 0;
     return (
       <div className="glass-panel animate-fade-in" style={{ padding: '3rem', textAlign: 'center', maxWidth: '600px', margin: '4rem auto' }}>
-        <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem' }} className="text-gradient">Results</h2>
+        <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem' }} className="text-gradient">{t('quizmode.results')}</h2>
         <div style={{ fontSize: '4rem', margin: '1rem 0' }}>
           {pct >= 70 ? '🎉' : pct >= 50 ? '😐' : '😓'}
         </div>
@@ -451,7 +451,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
           {pct}%
         </div>
         <p style={{ marginBottom: '2.5rem', color: 'var(--text-muted)', fontSize: '1.1rem' }}>
-          ✅ Correct: <strong style={{ color: 'var(--success)' }}>{score}</strong> &nbsp; ❌ Wrong: <strong style={{ color: 'var(--danger)' }}>{wrongCount}</strong> &nbsp; / &nbsp; {cards.length} questions
+          ✅ {t('quizmode.correct')}: <strong style={{ color: 'var(--success)' }}>{score}</strong> &nbsp; ❌ {t('quizmode.wrong')}: <strong style={{ color: 'var(--danger)' }}>{wrongCount}</strong> &nbsp; / &nbsp; {cards.length} {t('quizmode.questions')}
         </p>
         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
           <button className="btn btn-glass" onClick={resetQuiz}>{t('common.reset')}</button>
@@ -563,7 +563,7 @@ const QuizMode = React.memo(({ deck, onBack, onDeckModified, setConfirmConfig, u
         <div style={{ width: `${progressPct}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease-out' }}></div>
       </div>
       <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-        {answeredCount} / {cards.length} answered ({progressPct}%)
+        {answeredCount} / {cards.length} {t('quizmode.answeredPct', { pct: progressPct })}
       </div>
 
       <div className="glass-panel quiz-question-card" aria-describedby="leo-ai-context" style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
