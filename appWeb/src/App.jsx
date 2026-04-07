@@ -107,17 +107,49 @@ function App() {
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // Kích hoạt nhận diện Google ngầm từ Backend Auth Flow
-    initGoogleIdentity(
-      (token) => {
-        setUserLoggedIn(true);
-        handleSyncFromDrive();
-      },
-      (err) => {
-        console.warn("Not logged into Google or session expired:", err);
-        setIsSyncing(false);
-      }
-    );
+    // Check if we're in dev mode with mock user
+    if (import.meta.env.VITE_DEV_MODE === 'true') {
+      // Simulate a logged-in user for development
+      setUserLoggedIn(true);
+      // Set mock data
+      const mockData = [
+        {
+          deck_id: 'mock_deck_1',
+          name: 'Sample Deck 1',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          cards: [
+            { front: 'Hello', back: 'Xin chào', status: 0 },
+            { front: 'World', back: 'Thế giới', status: 0 }
+          ]
+        },
+        {
+          deck_id: 'mock_deck_2',
+          name: 'Sample Deck 2',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          cards: [
+            { front: 'Apple', back: 'Quả táo', status: 0 },
+            { front: 'Banana', back: 'Quả chuối', status: 0 }
+          ]
+        }
+      ];
+      handleDataLoaded(mockData, false);
+      console.log('DEV MODE: Using mock user and mock data');
+    } else {
+      // Kích hoạt nhận diện Google ngầm từ Backend Auth Flow
+      initGoogleIdentity(
+        (token) => {
+          setUserLoggedIn(true);
+          handleSyncFromDrive();
+        },
+        (err) => {
+          console.warn("Not logged into Google or session expired:", err);
+          setIsSyncing(false);
+        }
+      );
+    }
+
     // Tự động thu gọn header khi cuộn xuống
     const lastScrollYRef = { current: window.scrollY };
     const handleScroll = () => {
@@ -154,7 +186,9 @@ function App() {
       type: "danger",
       icon: LogOut,
       onConfirm: () => {
-        logoutGoogle();
+        if (import.meta.env.VITE_DEV_MODE !== 'true') {
+          logoutGoogle();
+        }
         setUserLoggedIn(false);
         setDriveFileId(null);
         setSyncMessage(null);
@@ -168,6 +202,11 @@ function App() {
   };
 
   const handleSyncFromDrive = async (goToScan = false) => {
+    if (import.meta.env.VITE_DEV_MODE === 'true') {
+      // In DEV mode, we don't sync from drive
+      return;
+    }
+
     setIsSyncing(true);
     setSyncMessage(null);
     try {
@@ -213,7 +252,7 @@ function App() {
     setMode(null);
 
     // Automatically sync to Google Drive if a user uploads manually and is logged in
-    if (isManualUpload && userLoggedIn) {
+    if (isManualUpload && userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
       setIsSyncing(true);
       try {
         const res = await uploadDecksToDrive(decksData, driveFileId);
@@ -240,7 +279,7 @@ function App() {
     setData(updated);
 
     // Sync to Drive
-    if (userLoggedIn) {
+    if (userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
       setIsSyncing(true);
       try {
         const res = await uploadDecksToDrive(updated, driveFileId);
@@ -268,7 +307,7 @@ function App() {
     setMode('home');
 
     // Sync to Drive
-    if (userLoggedIn) {
+    if (userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
       setIsSyncing(true);
       try {
         const res = await uploadDecksToDrive(updated, driveFileId);
@@ -291,7 +330,7 @@ function App() {
     setMode('home');
 
     // Sync to Drive
-    if (userLoggedIn) {
+    if (userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
       setIsSyncing(true);
       try {
         const res = await uploadDecksToDrive(updated, driveFileId);
@@ -389,7 +428,7 @@ function App() {
     });
     setData(updatedDecks);
 
-    if (userLoggedIn) {
+    if (userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
       try {
         await Promise.all([
           uploadDecksToDrive(updatedDecks, driveFileId),
@@ -430,7 +469,9 @@ function App() {
         if (!freshData) return;
 
         // 1. Upload structurally modified JSON to Google Drive directly without blocking UI
-        uploadDecksToDrive(freshData, driveFileId).catch(e => console.warn('Drive sync failed:', e));
+        if (import.meta.env.VITE_DEV_MODE !== 'true') {
+          uploadDecksToDrive(freshData, driveFileId).catch(e => console.warn('Drive sync failed:', e));
+        }
 
         // 2. Sync progress to Supabase — use freshData to find the current deck
         const gId = localStorage.getItem('g_id');
@@ -643,7 +684,9 @@ function App() {
               onBack={() => setShowSettings(false)}
               onDataChange={(newData) => {
                 setData(newData);
-                uploadDecksToDrive(newData, driveFileId);
+                if (import.meta.env.VITE_DEV_MODE !== 'true') {
+                  uploadDecksToDrive(newData, driveFileId);
+                }
               }}
               onOpenConfirm={(config) => setConfirmConfig({ ...config, isOpen: config.isOpen !== undefined ? config.isOpen : true })}
               onShareDeck={(deck) => {
@@ -706,10 +749,18 @@ function App() {
                   {isSyncing && <Loader2 size={16} className="animate-spin" color="var(--primary)" />}
                 </div>
                 <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  {userLoggedIn && (
+                  {(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                       <span className="header-sync-label" style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <Cloud size={14} /> Synced {displayName && `(${displayName})`}
+                        {import.meta.env.VITE_DEV_MODE === 'true' ? (
+                          <>
+                            <Cloud size={14} /> DEV MODE (demo@example.com)
+                          </>
+                        ) : (
+                          <>
+                            <Cloud size={14} /> Synced {displayName && `(${displayName})`}
+                          </>
+                        )}
                       </span>
                       <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
                         <CloudOff size={16} strokeWidth={2} />
@@ -727,14 +778,14 @@ function App() {
                   />
                   <button
                     className="btn btn-glass btn-icon"
-                    onClick={() => userLoggedIn && setShowSettings(true)}
-                    disabled={!userLoggedIn}
-                    title={userLoggedIn ? "Settings" : "Login to access settings"}
+                    onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setShowSettings(true)}
+                    disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
+                    title={(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? "Settings" : "Login to access settings"}
                     aria-label="Open Settings"
-                    style={{ 
+                    style={{
                       color: 'var(--text-muted)',
-                      cursor: userLoggedIn ? 'pointer' : 'not-allowed',
-                      opacity: userLoggedIn ? 1 : 0.4
+                      cursor: (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 'pointer' : 'not-allowed',
+                      opacity: (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 1 : 0.4
                     }}
                   >
                     <Settings size={18} />
@@ -766,18 +817,18 @@ function App() {
                 </button>
                 <button
                   className={`tab-btn${activeTab === 'scan' ? ' active' : ''}`}
-                  onClick={() => userLoggedIn && setActiveTab('scan')}
-                  disabled={!userLoggedIn}
-                  title={!userLoggedIn ? 'Login to Google Drive first' : ''}
+                  onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setActiveTab('scan')}
+                  disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
+                  title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 'Login to Google Drive first' : ''}
                 >
                   <Sparkles size={16} /> AI Scan
                 </button>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
                   <button
                     className="btn btn-primary"
-                    onClick={() => userLoggedIn && setIsAddDeckModalOpen(true)}
-                    disabled={!userLoggedIn}
-                    title={!userLoggedIn ? 'Login to Google Drive first' : ''}
+                    onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setIsAddDeckModalOpen(true)}
+                    disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
+                    title={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 'Login to Google Drive first' : ''}
                     style={{
                       padding: '0.4rem 1.25rem',
                       fontSize: '0.85rem',
@@ -1068,10 +1119,18 @@ function App() {
                 </span>
               </div>
               <div className="app-header-right" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                {userLoggedIn && (
+                {(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                     <span className="header-sync-label" style={{ color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
+                      {import.meta.env.VITE_DEV_MODE === 'true' ? (
+                        <>
+                          <Cloud size={14} /> DEV MODE (demo@example.com)
+                        </>
+                      ) : (
+                        <>
+                          <Cloud size={14} /> Drive Synced {displayName && `(${displayName})`}
+                        </>
+                      )}
                     </span>
                     <button onClick={handleLogoutClick} className="btn-glass btn-icon" style={{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', color: 'var(--danger)', padding: 0 }} title="Logout">
                       <CloudOff size={16} strokeWidth={2} />

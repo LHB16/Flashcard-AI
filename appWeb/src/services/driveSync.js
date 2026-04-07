@@ -3,6 +3,15 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 let accessToken = localStorage.getItem('g_token');
 let googleId = localStorage.getItem('g_id');
 
+// In DEV mode, simulate a logged-in user
+if (import.meta.env.VITE_DEV_MODE === 'true') {
+  accessToken = 'mock-token-for-dev';
+  googleId = 'mock-google-id-for-dev';
+  localStorage.setItem('g_token', accessToken);
+  localStorage.setItem('g_id', googleId);
+  localStorage.setItem('g_email', 'demo@example.com');
+}
+
 export const initGoogleIdentity = async (onSuccess, onError) => {
   // 1. Kiểm tra tham số Callback từ Backend URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -42,6 +51,11 @@ export const initGoogleIdentity = async (onSuccess, onError) => {
 };
 
 export const getValidToken = async () => {
+  if (import.meta.env.VITE_DEV_MODE === 'true') {
+    // In DEV mode, return the mock token
+    return accessToken;
+  }
+
   if (!googleId) {
     throw new Error('Bạn cần đồng bộ với Google trước');
   }
@@ -64,7 +78,7 @@ export const getValidToken = async () => {
        logoutGoogle();
        throw new Error('Failed to refresh token from server. Please log in again.');
     }
-    
+
     const data = await res.json();
     accessToken = data.access_token;
     localStorage.setItem('g_token', accessToken);
@@ -78,11 +92,29 @@ export const getValidToken = async () => {
 };
 
 export const loginGoogle = () => {
+  if (import.meta.env.VITE_DEV_MODE === 'true') {
+    // In DEV mode, we don't need to actually log in
+    console.log("DEV MODE: Skipping Google login");
+    return;
+  }
+
   // Gọi redirect thẳng sang Express Backend để tạo chuỗi xoay vòng OAuth
   window.location.href = `${BACKEND_URL}/auth/google`;
 };
 
 export const logoutGoogle = () => {
+  if (import.meta.env.VITE_DEV_MODE === 'true') {
+    // In DEV mode, clear mock user data
+    accessToken = null;
+    googleId = null;
+    localStorage.removeItem('g_token');
+    localStorage.removeItem('g_id');
+    localStorage.removeItem('g_expiry');
+    localStorage.removeItem('g_email');
+    localStorage.removeItem('decks_data'); // Also clear mock decks data
+    return;
+  }
+
   accessToken = null;
   googleId = null;
   localStorage.removeItem('g_token');
@@ -92,17 +124,32 @@ export const logoutGoogle = () => {
 };
 
 export const fetchDecksFromDrive = async () => {
+  // In DEV mode, use localStorage instead of Google Drive
+  if (import.meta.env.VITE_DEV_MODE === 'true') {
+    try {
+      const storedData = localStorage.getItem('decks_data');
+      if (storedData) {
+        const jsonData = JSON.parse(storedData);
+        return { fileId: 'mock-file-id', data: jsonData };
+      }
+      return null;
+    } catch (e) {
+      console.error("Error reading mock decks data:", e);
+      return null;
+    }
+  }
+
   const validToken = await getValidToken();
 
   const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='decks.json'&fields=files(id,name)`, {
     headers: { Authorization: `Bearer ${validToken}` }
   });
-  
+
   if (!searchRes.ok) {
      if (searchRes.status === 401) logoutGoogle();
      throw new Error("Failed to search file on Google Drive.");
   }
-  
+
   const searchData = await searchRes.json();
   const file = searchData.files && searchData.files.length > 0 ? searchData.files[0] : null;
 
@@ -111,9 +158,9 @@ export const fetchDecksFromDrive = async () => {
   const downloadRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
     headers: { Authorization: `Bearer ${validToken}` }
   });
-  
+
   if (!downloadRes.ok) throw new Error("Failed to download file from Google Drive.");
-  
+
   const jsonData = await downloadRes.json();
 
   // Merge Supabase flashcard card_progress back into jsonData
@@ -128,7 +175,7 @@ export const fetchDecksFromDrive = async () => {
           const result = await progressRes.json();
           if (result.data && typeof result.data === 'object' && Object.keys(result.data).length > 0) {
             const statusMap = result.data;
-            
+
             // Loop through local deck cards and update status
             if (Array.isArray(deck.cards)) {
               deck.cards.forEach(card => {
@@ -149,8 +196,20 @@ export const fetchDecksFromDrive = async () => {
 };
 
 export const uploadDecksToDrive = async (jsonData, existingFileId = null) => {
+  // In DEV mode, save to localStorage instead of Google Drive
+  if (import.meta.env.VITE_DEV_MODE === 'true') {
+    try {
+      localStorage.setItem('decks_data', JSON.stringify(jsonData, null, 2));
+      // Return a mock response object
+      return { id: 'mock-file-id', name: 'decks.json', mimeType: 'application/json' };
+    } catch (e) {
+      console.error("Error saving mock decks data:", e);
+      throw new Error("Failed to save data locally in DEV mode.");
+    }
+  }
+
   const validToken = await getValidToken();
-  
+
   const metadata = {
     name: 'decks.json',
     parents: existingFileId ? undefined : ['appDataFolder']
@@ -160,10 +219,10 @@ export const uploadDecksToDrive = async (jsonData, existingFileId = null) => {
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' }));
 
-  const url = existingFileId 
+  const url = existingFileId
     ? `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=multipart`
     : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
-    
+
   const method = existingFileId ? 'PATCH' : 'POST';
 
   const res = await fetch(url, {
@@ -171,12 +230,12 @@ export const uploadDecksToDrive = async (jsonData, existingFileId = null) => {
     headers: { Authorization: `Bearer ${validToken}` },
     body: form
   });
-  
+
   if (!res.ok) {
      if (res.status === 401) logoutGoogle();
      throw new Error("Failed to upload file to Google Drive.");
   }
-  
+
   return res.json();
 };
 
@@ -184,6 +243,11 @@ export const uploadDecksToDrive = async (jsonData, existingFileId = null) => {
  * Xóa tiến trình của nhiều deck trên Supabase (Clean up database)
  */
 export const deleteDecksProgress = async (deckIds) => {
+  if (import.meta.env.VITE_DEV_MODE === 'true') {
+    // In DEV mode, we don't need to delete progress from backend
+    return null;
+  }
+
   if (!googleId || !deckIds || deckIds.length === 0) return null;
 
   try {
@@ -209,17 +273,22 @@ export const deleteDecksProgress = async (deckIds) => {
  * Thông báo thay đổi cấu trúc bộ thẻ (Thêm/Sửa/Xóa) để dọn dẹp DB
  */
 export const notifyDeckStructureChanged = async (deckId, cardId = null, action = 'edit') => {
+  if (import.meta.env.VITE_DEV_MODE === 'true') {
+    // In DEV mode, we don't need to notify backend about changes
+    return null;
+  }
+
   if (!googleId || !deckId) return null;
 
   try {
     const res = await fetch(`${BACKEND_URL}/progress/deck/on-modified`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        google_id: googleId, 
-        deck_id: deckId, 
-        card_id: cardId, 
-        action 
+      body: JSON.stringify({
+        google_id: googleId,
+        deck_id: deckId,
+        card_id: cardId,
+        action
       })
     });
 

@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Settings, Mail, Key, Layers, AlertTriangle, Info, Pencil, Trash2, Plus, RotateCcw, Share2, Loader2, Check, X } from 'lucide-react';
+import { ArrowLeft, Settings, Mail, Key, Layers, AlertTriangle, Info, Pencil, Trash2, Plus, RotateCcw, Share2, Loader2, Check, X, Languages } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
 import { getValidToken } from '../services/driveSync';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 const SECTIONS = [
-  { id: 'email', label: 'Email Notifications', icon: Mail },
-  { id: 'apikeys', label: 'Gemini API Keys', icon: Key },
-  { id: 'decks', label: 'My Decks', icon: Layers },
-  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, isDanger: true },
+  { id: 'general', label: 'settings.general', icon: Languages },
+  { id: 'email', label: 'settings.emailNotifications', icon: Mail },
+  { id: 'apikeys', label: 'settings.geminiApiKeys', icon: Key },
+  { id: 'decks', label: 'settings.myDecks', icon: Layers },
+  { id: 'danger', label: 'settings.dangerZone', icon: AlertTriangle, isDanger: true },
 ];
 
 // ───── Toggle Switch Component ─────
@@ -52,7 +54,8 @@ function SettingsPage({
   onOpenConfirm,
   onShareDeck,
 }) {
-  const [activeSection, setActiveSection] = useState('email');
+  const { t, i18n } = useTranslation();
+  const [activeSection, setActiveSection] = useState('general');
 
   // ═══════ Email Section State ═══════
   const [receiveEmailEnabled, setReceiveEmailEnabled] = useState(false);
@@ -333,6 +336,7 @@ function SettingsPage({
   // ════════════════════════════════════
   const renderContent = () => {
     switch (activeSection) {
+      case 'general': return renderGeneralSection();
       case 'email': return renderEmailSection();
       case 'apikeys': return renderApiKeysSection();
       case 'decks': return renderDecksSection();
@@ -340,6 +344,135 @@ function SettingsPage({
       default: return null;
     }
   };
+
+  // ───── Language Dropdown Component ─────
+  const LanguageDropdown = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const buttonRef = useRef(null);
+
+    const languages = [
+      { code: 'en', name: 'English' },
+      { code: 'vi', name: 'Tiếng Việt' }
+    ];
+
+    const handleButtonClick = () => {
+      setIsOpen(!isOpen);
+    };
+
+    // Close dropdown when resizing from mobile to desktop or vice versa
+    useEffect(() => {
+      const handleResize = () => setIsOpen(false);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return (
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <button
+          ref={buttonRef}
+          className="btn btn-glass"
+          onClick={handleButtonClick}
+          style={{
+            padding: '0.6rem 1rem',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.9rem',
+            border: '1px solid var(--glass-border)',
+            background: 'var(--glass-bg)',
+            color: 'var(--text-main)'
+          }}
+        >
+          <Languages size={16} />
+          {languages.find(lang => lang.code === i18n.language)?.name || 'Language'}
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            style={{
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+              marginLeft: '0.5rem'
+            }}
+          >
+            <polyline points="4,6 8,10 12,6" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <>
+            <div
+              onClick={() => setIsOpen(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+            />
+            <div
+              className="glass-panel scale-in"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                left: window.innerWidth < 768 ? '0' : 'auto',
+                right: window.innerWidth >= 768 ? 0 : 'auto',
+                width: '200px',
+                zIndex: 1000,
+                padding: '0.5rem',
+                boxShadow: '0 15px 35px rgba(0,0,0,0.4)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem',
+                background: 'var(--card-bg)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '12px',
+                maxHeight: window.innerWidth < 768 ? '40vh' : 'none',
+                overflowY: window.innerWidth < 768 ? 'auto' : 'visible'
+              }}
+            >
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  className={`btn ${i18n.language === lang.code ? 'btn-primary' : 'btn-glass'}`}
+                  style={{
+                    justifyContent: 'flex-start',
+                    padding: '0.8rem 1rem',
+                    border: 'none',
+                    width: '100%',
+                    fontSize: '0.9rem',
+                    gap: '0.8rem',
+                    textAlign: 'left'
+                  }}
+                  onClick={() => {
+                    i18n.changeLanguage(lang.code);
+                    setIsOpen(false);
+                  }}
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  // ───── General Section ─────
+  const renderGeneralSection = () => (
+    <section className="settings-section animate-fade-in">
+      <h2>{t('settings.general')}</h2>
+      <p className="section-desc">{t('settings.selectLanguage')}</p>
+
+      <div className="setting-row">
+        <div className="setting-info">
+          <label>{t('settings.language')}</label>
+          <p>{t('settings.selectLanguage')}</p>
+        </div>
+        <LanguageDropdown />
+      </div>
+    </section>
+  );
 
   // ───── Email Section ─────
   const renderEmailSection = () => (
@@ -676,11 +809,11 @@ function SettingsPage({
     <div className="settings-page">
       {/* Header */}
       <div className="settings-header">
-        <button className="btn btn-glass btn-icon" onClick={onBack} title="Back" style={{ borderRadius: '12px', padding: '0.6rem' }}>
+        <button className="btn btn-glass btn-icon" onClick={onBack} title={t('common.back')} style={{ borderRadius: '12px', padding: '0.6rem' }}>
           <ArrowLeft size={20} />
         </button>
         <Settings size={22} color="var(--primary)" />
-        <h1 className="text-gradient" style={{ fontSize: '1.4rem', margin: 0 }}>Settings</h1>
+        <h1 className="text-gradient" style={{ fontSize: '1.4rem', margin: 0 }}>{t('settings.title')}</h1>
       </div>
 
       {/* Body: Sidebar + Content */}
@@ -693,7 +826,7 @@ function SettingsPage({
               onClick={() => setActiveSection(sec.id)}
             >
               <sec.icon size={18} />
-              <span>{sec.label}</span>
+              <span>{t(sec.label)}</span>
             </button>
           ))}
         </nav>
