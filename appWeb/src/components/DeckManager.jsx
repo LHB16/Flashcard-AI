@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save, Layers } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, X, Pencil, Plus, Trash, Share2, Settings, Save, Layers, Shuffle } from 'lucide-react';
 import { findDuplicateQuestions } from '../services/dedupService';
 import { v4 as uuidv4 } from 'uuid';
 import { notifyDeckStructureChanged } from '../services/driveSync';
@@ -191,14 +191,83 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
       const pair = dedupResults[parseInt(pairIdx)];
       if (pair) indicesToDelete.add(slot === 'a' ? pair.indexA : pair.indexB);
     });
-    
+
     // Immutable update
     deck.cards = deck.cards.filter((_, idx) => !indicesToDelete.has(idx));
-    
+
     onDeckModified();
     setDedupResults(null);
     setDedupSelected(new Set());
   }, [deck, dedupResults, dedupSelected, onDeckModified]);
+
+  const handleShuffleCards = useCallback(() => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Shuffle Cards?",
+      description: "Are you sure you want to shuffle all cards in this deck? The order will be permanently changed.",
+      confirmText: "Shuffle",
+      type: "warning",
+      icon: Shuffle,
+      onConfirm: () => {
+        const newCards = [...deck.cards];
+        for (let i = newCards.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [newCards[i], newCards[j]] = [newCards[j], newCards[i]];
+        }
+        deck.cards = newCards;
+        onDeckModified();
+        closeConfirm();
+      }
+    });
+  }, [deck, onDeckModified]);
+
+  const handleShuffleOptions = useCallback(() => {
+    const targetIndices = selectedCards.size > 0 ? selectedCards : new Set(cards.map((_, i) => i));
+
+    setConfirmConfig({
+      isOpen: true,
+      title: selectedCards.size > 0 ? `Shuffle Options for ${selectedCards.size} cards?` : "Shuffle All Options?",
+      description: "This will randomize the order of options (A, B, C, D...) for the selected cards. Correct answers will be preserved.",
+      confirmText: "Shuffle",
+      type: "warning",
+      icon: Shuffle,
+      onConfirm: () => {
+        const newCards = [...deck.cards];
+        targetIndices.forEach(idx => {
+          const card = { ...newCards[idx] };
+          if (!card.options || card.options.length < 2) return;
+
+          // Helper to get raw option text (without prefix)
+          const getRaw = (opt) => opt.replace(/^[A-Z]\.\s*/, '');
+
+          // Map correct answers to their raw text
+          const correctTexts = card.correct_answers.map(ans => {
+            const matchingOpt = card.options.find(o => o.startsWith(ans + '.') || o === ans);
+            return matchingOpt ? getRaw(matchingOpt) : ans;
+          });
+
+          // Shuffle options
+          const rawOptions = card.options.map(getRaw);
+          for (let i = rawOptions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [rawOptions[i], rawOptions[j]] = [rawOptions[j], rawOptions[i]];
+          }
+
+          // Re-prefix and find new correct letters
+          card.options = rawOptions.map((text, i) => `${String.fromCharCode(65 + i)}. ${text}`);
+          card.correct_answers = card.options
+            .filter(opt => correctTexts.some(txt => getRaw(opt) === txt))
+            .map(opt => opt.charAt(0));
+
+          newCards[idx] = card;
+        });
+
+        deck.cards = newCards;
+        onDeckModified();
+        closeConfirm();
+      }
+    });
+  }, [deck, selectedCards, cards, onDeckModified]);
 
   const selectAllExact = useCallback(() => {
     if (!dedupResults) return;
@@ -344,12 +413,27 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                     >
                       <Plus size={18} color="var(--primary)" /> Add Manually
                     </button>
-                    <button 
-                      className="btn btn-glass" 
-                      style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }} 
+                    <button
+                      className="btn btn-glass"
+                      style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }}
                       onClick={() => { setTab('import'); setIsAddMenuOpen(false); }}
                     >
                       <Share2 size={18} color="var(--success)" style={{ transform: 'rotate(180deg)' }} /> Import from Deck
+                    </button>
+                    <div style={{ height: '1px', background: 'var(--glass-border)', margin: '0.2rem 0' }} />
+                    <button
+                      className="btn btn-glass"
+                      style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }}
+                      onClick={() => { handleShuffleCards(); setIsAddMenuOpen(false); }}
+                    >
+                      <Shuffle size={18} color="var(--warning)" /> Shuffle Questions
+                    </button>
+                    <button
+                      className="btn btn-glass"
+                      style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }}
+                      onClick={() => { handleShuffleOptions(); setIsAddMenuOpen(false); }}
+                    >
+                      <Layers size={18} color="var(--info)" /> Shuffle Options
                     </button>
                   </div>
                 </>
