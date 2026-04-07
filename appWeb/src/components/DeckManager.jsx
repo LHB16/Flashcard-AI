@@ -433,7 +433,7 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                       style={{ justifyContent: 'flex-start', padding: '0.8rem 1rem', border: 'none', width: '100%', fontSize: '0.9rem', gap: '0.8rem' }}
                       onClick={() => { handleShuffleOptions(); setIsAddMenuOpen(false); }}
                     >
-                      <Layers size={18} color="var(--info)" /> Shuffle Options
+                      <Shuffle size={18} color="var(--info)" /> Shuffle Options
                     </button>
                   </div>
                 </>
