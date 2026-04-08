@@ -1931,6 +1931,17 @@ npx expo start
 - **State management:** Local component state only (no Redux). Shared state lives in `App.jsx`.
 - **Z-index layers:** `Header (200) > Toggle Button (106) > Search/Tabs (50) < Notification Dropdown (9999)`
 
+### 9.5 Using Context7 for Up-to-date Documentation
+
+For the most accurate and up-to-date technical documentation of core libraries (React, Vite, Supabase, .NET, Python), use the **Context7** tool. This helps avoid AI hallucinations and ensures compatibility with the latest library versions.
+
+**Example command:**
+```bash
+npx ctx7 docs /facebook/react "useActionState"
+```
+
+Refer to `AGENTS.md` for a full list of supported Library IDs.
+
 ---
 
 ## 10. Deployment Guide
