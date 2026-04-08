@@ -1344,6 +1344,27 @@ The application uses `react-i18next` for full multi-language support (English an
 
 ---
 
+### 4.17 Web Backend Structure and Roles
+
+The Node.js backend operates as a scalable, stateless Express REST API deployed on Render, managing database interactions (Supabase) and proxying integrations with Google's services safely outside the frontend context. 
+
+#### 4.17.1 Root Core Files (`appWeb/appBackend/`)
+- `index.js`: The Express entry point. It bootstraps CORS policies and applies strict JSON body limits (e.g., `15MB`) to proactively prevent server OOM crashes under high load. It mounts all API routes and exposes a `/ping` route used to keep the Render free-tier instance awake.
+- `supabaseClient.js`: Singleton configuration for the Supabase (PostgreSQL) database client, ensuring efficient connection reusability across all API endpoint handlers.
+- `database_setup.sql`: Stores the entire source-of-truth SQL commands to regenerate the underlying PostgreSQL schemas, RPC functions, and Row Level Security definitions for features like `users`, `progress`, `quiz_sessions`, and `shared_decks`.
+- `get-gmail-token.js`: A helper script run locally via command-line to manually authorize and retrieve the `GMAIL_REFRESH_TOKEN` necessary for the backend's email sender service.
+
+#### 4.17.2 API Controllers (`appWeb/appBackend/routes/`)
+- `auth.js`: Implements the Google OAuth 2.0 authorization code flow. Handles consent redirecting, callback processing, and refresh token exchange. Built optimally using the lightweight `google-auth-library` and direct REST API calls instead of importing the memory-heavy full `googleapis` library.
+- `scan.js`: The `/process` endpoint acts as the AI processing workhorse. It parses incoming base64 PDFs and streams them to the Google Gemini AI. To preserve memory integrity during intense processing, this file features a robust **Concurrency Limiter** variable mechanism restricting parallel scans.
+- `share.js`: Orchestrates the "Deck Sharing" workflow. On sharing, it persists relationships into the `shared_decks` table and executes direct HTTPS REST API fetch calls to Gmail's `/messages/send` endpoint to deliver customized email invitations independently of bulky dependencies.
+- `progress.js`: Acts as the synchronization gateway between the frontend state and Supabase DB. Focuses heavily on managing JSONB columns to securely save, restore, and update incomplete `quiz_sessions` and flashcard mastery variables over persistent remote contexts.
+- `admin.js`: Secures system endpoints exclusively for authorized administrators (based on hardcoded email matches). Capabilities include assigning pool-based general API Keys, broadcasting announcements into `system_settings`, and reviewing broad user statistics.
+- `chat.js`: The AI Tutor proxy routing `/chat` requests. Manages API Key rotation logic locally, randomly shuffling across pre-defined global keys before hitting the Groq API (e.g., Llama-3) to balance the request load and sidestep strict public rate limits.
+- `settings.js`: A user-focused management endpoint handling email-notification preferences toggles and containing a secure "Nuclear Delete" service that completely wipes a matched user profile and all their tracked table entries simultaneously.
+
+---
+
 ## 5. appDotNet — C# WPF Desktop
 
 ### 5.1 Project Structure

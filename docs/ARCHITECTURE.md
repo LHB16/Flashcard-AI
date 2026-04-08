@@ -34,11 +34,22 @@
 - `appWeb/src/components/FileLoader.jsx`: Local JSON file import
 
 ### Web Backend (Node.js)
-- `appWeb/appBackend/index.js`: Express server entry, CORS, ping route
-- `appWeb/appBackend/routes/auth.js`: Google OAuth 2.0 (redirect → callback → refresh token)
-- `appWeb/appBackend/routes/progress.js`: Flashcard progress + quiz session CRUD via Supabase
-- `appWeb/appBackend/supabaseClient.js`: Supabase PostgreSQL client initialization
-- `appWeb/appBackend/database_setup.sql`: SQL schema for `users`, `progress`, `quiz_sessions` tables
+The Node.js backend serves as a stateless API server (highly scalable on Render), communicating with the Supabase Database and Google APIs.
+
+#### Root Directory (`appWeb/appBackend/`)
+- `index.js`: Express application entry point. Configures CORS, limits JSON payload sizes (recently reduced to 15MB to prevent OOM), mounts sub-routes, and provides a `/ping` route for health-checking/keep-alive on Render.
+- `supabaseClient.js`: Initializes and configures the Supabase PostgreSQL client connecting to the database, ensuring instance reuse across routes.
+- `database_setup.sql`: Stores SQL schema scripts covering all table structures (`users`, `progress`, `quiz_sessions`, `shared_decks`, `notifications`), along with Row Level Security (RLS) policies and RPC logic.
+- `get-gmail-token.js`: A CLI utility script to manually obtain the `GMAIL_REFRESH_TOKEN` needed to configure the system email sender via Google OAuth.
+
+#### API Routes (`appWeb/appBackend/routes/`)
+- `auth.js`: Handles Google OAuth 2.0 flow (redirecting for consent, code-to-token callback, and token refresh). Highly optimized by replacing the massive `googleapis` dependency with `google-auth-library` and direct REST API calls.
+- `scan.js`: Gemini AI orchestrator serving as a proxy. Receives base64 PDFs from the frontend and extracts them into flashcards. Includes a **Concurrency Limiter** to limit active processing requests and protect the underpowered server from Out-Of-Memory crashes.
+- `share.js`: Manages the "Share Deck" feature. Upserts shared content to the `shared_decks` table and dispatches email invitations via Gmail REST API calls.
+- `progress.js`: Interacts with Supabase DB to track learning outcomes (correct/wrong cards) and handles unfinished quiz instances (`quiz_sessions`). Deals heavily with JSONB operations and RPC syncing.
+- `admin.js`: Exposes administrative system-wide endpoints enforcing hardcoded admin email checks. It handles shared API keys pool management, system notifications, and overall user statistics.
+- `chat.js`: Forwards user queries to an AI Tutor system (e.g., Groq API Llama-3). Relies on a random proxy key rotation scheme across available global keys to balance loads and avoid rate limits.
+- `settings.js`: Handles personalized account settings such as email notification preferences (send/receive email flags) and hosts a nuclear data deletion utility route that completely cleanses a user's progress.
 
 ## Main Desktop Modules (ui/)
 - `ui/screens/scan_frame.py` + `ui/dialogs/scan_assign_dialog.py`: scan setup and key assignment
