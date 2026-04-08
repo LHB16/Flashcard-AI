@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../supabaseClient');
-const { google } = require('googleapis');
+const { OAuth2Client } = require('google-auth-library');
 
 // Gmail API setup (HTTPS, không bị Render chặn port như SMTP)
-const gmailOAuth2 = new google.auth.OAuth2(
+const gmailOAuth2 = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   process.env.GOOGLE_REDIRECT_URI
@@ -14,7 +14,26 @@ gmailOAuth2.setCredentials({
   refresh_token: process.env.GMAIL_REFRESH_TOKEN
 });
 
-const gmail = google.gmail({ version: 'v1', auth: gmailOAuth2 });
+/**
+ * Gửi email qua Gmail REST API (thay vì load toàn bộ googleapis)
+ * Tự handle refresh token → lấy access_token → gọi API
+ */
+async function sendGmailMessage(rawMessage) {
+  const { token } = await gmailOAuth2.getAccessToken();
+  const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ raw: rawMessage }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gmail API ${res.status}: ${errText}`);
+  }
+  return await res.json();
+}
 
 // Helper: Tạo raw email RFC 2822 (base64url encoded)
 function createRawEmail(from, to, bcc, subject, htmlBody) {
@@ -236,12 +255,9 @@ router.post('/create', async (req, res) => {
 
           console.log(`📧 Attempting to send email to: ${emailableRecipients.join(', ')}`);
 
-          // Fire-and-forget via Gmail API (HTTPS, không bị Render chặn)
-          gmail.users.messages.send({
-            userId: 'me',
-            requestBody: { raw: rawMessage }
-          }).then(result => {
-            console.log('✅ Mail sent via Gmail API, ID:', result.data.id);
+          // Fire-and-forget via Gmail REST API (nhẹ, không cần load googleapis)
+          sendGmailMessage(rawMessage).then(result => {
+            console.log('✅ Mail sent via Gmail API, ID:', result.id);
           }).catch(err => {
             console.error('❌ Gmail API send error:', err.message);
           });

@@ -18,7 +18,7 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json({ limit: '100mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 // Google Apps Script Ping Route để giữ cho Render luôn thức
 app.get('/ping', (req, res) => {

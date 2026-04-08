@@ -248,12 +248,34 @@ router.get('/validate', async (req, res) => {
   return res.json({ valid: false, msg: 'No working model found.' });
 });
 
+// ─── Concurrency Limiter: chống OOM khi nhiều scan chạy song song ───
+let activeScans = 0;
+const MAX_CONCURRENT_SCANS = 5;
+
 /**
  * POST /scan/process
  * Body: { pdf_base64, batch_index, total_batches, page_count }
  * Header: x-gemini-key
  */
 router.post('/process', async (req, res) => {
+  // Chặn nếu quá tải — frontend sẽ nhận 429 và retry
+  if (activeScans >= MAX_CONCURRENT_SCANS) {
+    console.warn(`⚠ [Scan] Rejected: ${activeScans}/${MAX_CONCURRENT_SCANS} slots busy`);
+    return res.status(429).json({
+      error: 'Server busy processing other scans. Please retry shortly.',
+      retry_after: 5,
+    });
+  }
+
+  activeScans++;
+  try {
+  return await handleScanProcess(req, res);
+  } finally {
+    activeScans--;
+  }
+});
+
+async function handleScanProcess(req, res) {
   const geminiKey = req.headers['x-gemini-key'];
   const { pdf_base64, batch_index, total_batches, page_count, model_index } = req.body;
 
@@ -335,6 +357,6 @@ router.post('/process', async (req, res) => {
     console.error(`❌ [Scan] Batch ${batch_index + 1} error:`, err.message);
     return res.status(500).json({ error: err.message, batch_index });
   }
-});
+}
 
 module.exports = router;
