@@ -1,0 +1,13 @@
+{
+  "name": "flashcard-scan-server",
+  "version": "1.0.0",
+  "description": "Standalone scan proxy for Gemini API — isolated from main backend",
+  "type": "module",
+  "scripts": {
+    "start": "node --max-old-space-size=400 index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "cors": "^2.8.6"
+  }
+}

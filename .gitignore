@@ -67,6 +67,8 @@ Google.Apis.Auth.OAuth2.Responses.*
 !appWeb/package-lock.json
 !appWeb/appBackend/package.json
 !appWeb/appBackend/package-lock.json
+!appWeb/appScanServer/package.json
+!appWeb/appScanServer/package-lock.json
 !appWeb/public/locales/**
 
 # Logs & Debug
