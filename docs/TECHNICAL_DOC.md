@@ -1330,7 +1330,9 @@ The application uses `react-i18next` for full multi-language support (English an
 
 #### 11.1 Architecture
 
-- **Config File**: `src/i18n.js` contains the dictionary of all translation keys.
+- **Config File**: `src/i18n.js` is a minimal setup file that initializes `i18next` and configures `i18next-http-backend`.
+- **Resource Files**: Translation dictionaries are separated from source code into independent static JSON payloads stored in `public/locales/en/translation.json` and `public/locales/vi/translation.json`.
+- **Loading State**: The root `<App />` component in `main.jsx` is wrapped in `<React.Suspense>` to handle asynchronous fetching of language files.
 - **Hook Usage**: Components use the `useTranslation()` hook to access the `t()` function.
 - **Labels**: All UI labels, tooltips, and confirmation messages are assigned unique keys (e.g., `app.title`, `common.cancel`).
 
@@ -1339,6 +1341,12 @@ The application uses `react-i18next` for full multi-language support (English an
 - **Consolidation**: Fixed a critical bug where duplicate `aiscan` objects in `i18n.js` caused keys to be overwritten, resulting in raw keys showing in the UI. All `aiscan` keys are now merged into a single source of truth.
 - **Home Branding**: The main landing screen was renamed from "Select a Deck" to **"Home" (English)** and **"Trang chủ" (Vietnamese)** to create a more intuitive entry point.
 - **Taskbar Integration**: Navigation icons in the Taskbar use dynamic labels provided by the i18n system.
+
+#### 11.3 Lazy-Loading Migration (2026-04-09)
+
+- **Performance Optimization**: Removed the monolithic multi-language resources object from `src/i18n.js` which previously forced all languages to be downloaded on initial load.
+- **Dynamic Fetching**: Implemented `i18next-http-backend` to fetch JSON language files dynamically over the network strictly when a user changes their language selection.
+- **Scalability**: This architecture prevents the main JavaScript bundle from bloating as new languages or keys are added.
 
 ---
 
