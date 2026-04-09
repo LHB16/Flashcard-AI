@@ -3,7 +3,7 @@ import cors from 'cors';
 import scanRouter from './routes/scan.js';
 
 // ─── Validate required env vars ───
-const REQUIRED_ENVS = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SUPABASE_URL', 'SUPABASE_KEY'];
+const REQUIRED_ENVS = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY'];
 const missing = REQUIRED_ENVS.filter(k => !process.env[k]);
 if (missing.length > 0) {
   console.error(`❌ Missing required env vars: ${missing.join(', ')}`);
