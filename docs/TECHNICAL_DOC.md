@@ -1,6 +1,6 @@
 # Flashcard AI — Technical Documentation
 
-> **Version:** 2.9 | **Last Updated:** 2026-04-07 | **Status:** Stable
+> **Version:** 3.0 | **Last Updated:** 2026-04-09 | **Status:** Stable
 
 A comprehensive technical reference for all four platforms in the Flashcard AI ecosystem. A developer who reads this document from start to finish should be able to set up, run, and contribute to any part of the project without external help.
 
@@ -64,27 +64,37 @@ Flashcard AI converts physical or digital exam images into study-ready multiple-
 │  ┌──────────────────┐    ┌────────────────────────────┐  │
 │  │  Google OAuth 2.0│    │  Gemini AI API             │  │
 │  │  + Drive API     │    │  (generativelanguage.apis) │  │
-│  └────────┬─────────┘    └───────────────┬────────────┘  │
-└───────────┼──────────────────────────────┼───────────────┘
-            │ OAuth + Drive Data           │ PDF + Prompt
-            ▼                              ▼
-┌──────────────────────────────────────────────────────────┐
-│                    RENDER.COM (Backend)                  │
-│  Express.js Server                                       │
-│  ┌─────────────┐ ┌───────────────┐ ┌──────────────────┐  │
-│  │ /auth       │ │ /progress     │ │ /scan            │  │
-│  │ OAuth Flow  │ │ CRUD Supabase │ │ Gemini Proxy     │  │
-│  └──────┬──────┘ └───────┬───────┘ └────────┬─────────┘  │
-└─────────┼────────────────┼──────────────────┼────────────┘
-          │                │                  │
-          │           ┌────▼──────┐           │ (Gemini response)
-          │           │ SUPABASE  │           │
-          │           │ users     │           │
-          │           │ deck_prog │           │
-          │           │ quiz_sess │           │
-          │           └───────────┘           │
-          │                                   │
-┌─────────▼─────────────────────────────────────────────────┐
+│  └────────┬─────────┘    └──────────┬─────────────────┘  │
+└───────────┼─────────────────────────┼────────────────────┘
+            │ OAuth + Drive Data      │ PDF + Prompt
+            ▼                         │
+┌───────────────────────────────┐     │
+│  RENDER.COM (Main Backend)    │     │
+│  flashcard-ai-bs67            │     │
+│  ┌─────────┐ ┌─────────────┐  │     │
+│  │ /auth   │ │ /progress   │  │     │
+│  │ /share  │ │ /chat       │  │     │
+│  │ /admin  │ │ /settings   │  │     │
+│  └────┬────┘ └──────┬──────┘  │     │
+└───────┼─────────────┼─────────┘     │
+        │        ┌────▼──────┐        │
+        │        │ SUPABASE  │        │
+        │        │ users     │        │
+        │        │ deck_prog │        │
+        │        │ quiz_sess │        │
+        │        └───────────┘        │
+        │                             ▼
+        │    ┌────────────────────────────────┐
+        │    │  RENDER.COM (Scan Backend)     │
+        │    │  flashcard-scan-server         │
+        │    │  ┌──────────────────────────┐  │
+        │    │  │ /scan/process            │  │
+        │    │  │ /scan/validate           │  │
+        │    │  │ (Gemini Proxy only)      │  │
+        │    │  └──────────────────────────┘  │
+        │    └────────────────────────────────┘
+        │                   │
+┌───────▼───────────────────▼───────────────────────────────┐
 │               CLOUDFLARE PAGES (Frontend)                 │
 │  React App (Vite Build)                                   │
 │  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌───────────────┐  │
@@ -110,6 +120,7 @@ Flashcard AI converts physical or digital exam images into study-ready multiple-
 1. **Google Drive AppDataFolder as the source of truth** — `decks.json` and `config.json` are stored in the hidden AppDataFolder, invisible to the user but accessible by any authorized app.
 2. **Supabase for fine-grained progress** — Card-level `status` is synced to Supabase via a JSONB merge function, enabling cross-device flashcard resume.
 3. **Gemini API key never exposed in the browser** — The frontend sends the API key in an `x-gemini-key` HTTP header to the Express backend, which proxies it to Google. The key is never visible in DevTools network tab from the user's origin.
+4. **Scan isolation** — The `/scan` endpoint is deployed as a **separate Render service** (`flashcard-scan-server`) to prevent AI scanning workload from blocking login, progress sync, or share operations on the main backend. Each service has independent keep-alive and can be scaled independently.
 
 ---
 
@@ -355,15 +366,20 @@ appWeb/
 │       └── pdfService.js        # Browser-side image-to-PDF conversion
 ├── public/
 │   └── guide.html               # Static user guide page
-└── appBackend/
-    ├── index.js                 # Express server entry point
-    ├── supabaseClient.js        # Supabase client singleton
-    ├── database_setup.sql       # Full Supabase schema
+├── appBackend/                  # Main backend (Render: flashcard-ai-bs67)
+│   ├── index.js                 # Express server entry point
+│   ├── supabaseClient.js        # Supabase client singleton
+│   ├── database_setup.sql       # Full Supabase schema
+│   └── routes/
+│       ├── auth.js              # Google OAuth flow + token refresh
+│       ├── progress.js          # Supabase progress CRUD
+│       ├── scan.js              # Gemini API proxy + JSON recovery (CJS)
+│       └── share.js             # Share deck creation + shared deck fetch
+└── appScanServer/               # Scan-only backend (Render: flashcard-scan-server) — NEW 2026-04-09
+    ├── index.js                 # Minimal Express 5 server (ESM, CORS, /ping)
+    ├── package.json             # Standalone deps: express, cors only
     └── routes/
-        ├── auth.js              # Google OAuth flow + token refresh
-        ├── progress.js          # Supabase progress CRUD
-        ├── scan.js              # Gemini API proxy + JSON recovery
-        └── share.js             # Share deck creation + shared deck fetch
+        └── scan.js              # ESM copy of appBackend/routes/scan.js
 ```
 
 ### 4.2 App.jsx — Component State & Layout
@@ -549,6 +565,17 @@ export async function uploadDecksToDrive(jsonData, existingFileId) {
 - Default config: `{ api_keys: [], batch_size: 30, updated_at: '' }`
 
 #### `geminiService.js` — Worker Pool Orchestrator
+
+**Backend URL Routing (Updated 2026-04-09):**
+
+```javascript
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const SCAN_URL = import.meta.env.VITE_SCAN_BACKEND_URL || BACKEND_URL;
+// SCAN_URL is used for /scan/process and /scan/validate
+// BACKEND_URL is used for all other API calls (auth, progress, share, etc.)
+```
+
+> The `SCAN_URL` constant routes scan traffic to the dedicated scan backend while gracefully falling back to the main backend if `VITE_SCAN_BACKEND_URL` is not set.
 
 **Flow:**
 
@@ -775,7 +802,15 @@ User selects folder → filterImageFiles() → setImageFiles()
 
 | Variable | Example Value | Purpose |
 | :--- | :--- | :--- |
-| `VITE_BACKEND_URL` | `https://flashcard-ai-bs67.onrender.com` | Backend URL for all API calls |
+| `VITE_BACKEND_URL` | `https://flashcard-ai-bs67.onrender.com` | Main backend URL for auth, progress, share, chat, settings |
+| `VITE_SCAN_BACKEND_URL` | `https://flashcard-scan-server.onrender.com` | Dedicated scan backend URL (falls back to `VITE_BACKEND_URL` if unset) |
+
+**Scan Backend (`appScanServer` — No `.env` file needed)**
+
+| Variable | Example Value | Purpose |
+| :--- | :--- | :--- |
+| `FRONTEND_URL` | `https://lhb16-flashcard-ai.pages.dev` | CORS origin whitelist (set in Render dashboard) |
+| `PORT` | `3001` | Express server port (Render overrides this) |
 
 ### 4.10 Performance & UX Optimization (Core Web Vitals)
 
@@ -1984,9 +2019,21 @@ git push main
   │   cd appWeb && npm install && npm run build
   │   Deploy dist/ to *.pages.dev
   │
-  └── Render.com detects push → auto-deploy Backend
-      cd appWeb/appBackend && npm install && node index.js
+  ├── Render.com detects push → auto-deploy Main Backend
+  │   cd appWeb/appBackend && npm install && node index.js
+  │
+  └── Render.com detects push → auto-deploy Scan Backend
+      cd appWeb/appScanServer && npm install && node index.js
 ```
+
+**Render Services:**
+
+| Service | URL | Root Directory | Purpose |
+| :--- | :--- | :--- | :--- |
+| Main Backend | `flashcard-ai-bs67.onrender.com` | `appWeb/appBackend` | OAuth, Supabase, Share, Chat, Settings |
+| Scan Backend | `flashcard-scan-server.onrender.com` | `appWeb/appScanServer` | Gemini AI proxy only (`/scan/*`) |
+
+> **Why two services?** The main backend handles OAuth, Supabase CRUD, email invitations, and chat — all latency-sensitive. The scan endpoint proxies large PDF payloads to Gemini (120s timeout), which can saturate the single free-tier instance. Separating scan into its own service ensures login/progress never stalls during heavy scan traffic. Each service has its own keep-alive ping via Google Apps Script.
 
 No manual steps needed after initial configuration.
 
