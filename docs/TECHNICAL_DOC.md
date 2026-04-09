@@ -119,8 +119,8 @@ Flashcard AI converts physical or digital exam images into study-ready multiple-
 
 1. **Google Drive AppDataFolder as the source of truth** — `decks.json` and `config.json` are stored in the hidden AppDataFolder, invisible to the user but accessible by any authorized app.
 2. **Supabase for fine-grained progress** — Card-level `status` is synced to Supabase via a JSONB merge function, enabling cross-device flashcard resume.
-3. **Gemini API key never exposed in the browser** — The frontend sends the API key in an `x-gemini-key` HTTP header to the Express backend, which proxies it to Google. The key is never visible in DevTools network tab from the user's origin.
-4. **Scan isolation** — The `/scan` endpoint is deployed as a **separate Render service** (`flashcard-scan-server`) to prevent AI scanning workload from blocking login, progress sync, or share operations on the main backend. Each service has independent keep-alive and can be scaled independently.
+3. **Gemini API key never exposed in the browser** — API keys are managed exclusively on the backend. The frontend sends the user's `google_id` and a `key_index`. The backend uses the user's `refresh_token` (from Supabase) to access their `config.json` on Google Drive, resolves the actual key, and proxies the request to Gemini. Only masked versions of keys (`AIza••••abcd`) are ever sent to the client.
+4. **Scan isolation** — The `/scan` endpoint is deployed as a **separate Render service** (`flashcard-scan-server`) to prevent AI scanning workload from blocking login, progress sync, or share operations on the main backend. It utilizes a backend-side `driveHelper` to manage user configurations directly on Google Drive. Each service has independent keep-alive and can be scaled independently.
 
 ---
 
@@ -359,27 +359,25 @@ appWeb/
 │   │   ├── Taskbar.jsx          # New animated main navigation (Home, Add, Scan, Share, Settings)
 │   │   └── QuizMode.jsx         # Multiple-choice quiz engine
 │   └── services/
-│       ├── configService.js     # config.json CRUD on Drive
-│       ├── dedupService.js      # N-gram + Jaccard duplicate detection
+│       ├── configService.js     # [DEPRECATED] Use geminiService backend config instead
 │       ├── driveSync.js         # OAuth token management + Drive API
-│       ├── geminiService.js     # PDF batch worker pool orchestrator
+│       ├── geminiService.js     # Backend-side config manager + Scan Worker Pool
 │       └── pdfService.js        # Browser-side image-to-PDF conversion
-├── public/
-│   └── guide.html               # Static user guide page
 ├── appBackend/                  # Main backend (Render: flashcard-ai-bs67)
 │   ├── index.js                 # Express server entry point
+│   ├── driveHelper.js           # Backend-side Google Drive config manager (CJS)
 │   ├── supabaseClient.js        # Supabase client singleton
 │   ├── database_setup.sql       # Full Supabase schema
 │   └── routes/
 │       ├── auth.js              # Google OAuth flow + token refresh
 │       ├── progress.js          # Supabase progress CRUD
-│       ├── scan.js              # Gemini API proxy + JSON recovery (CJS)
+│       ├── scan.js              # Gemini API proxy + Config mgmt (CJS)
 │       └── share.js             # Share deck creation + shared deck fetch
-└── appScanServer/               # Scan-only backend (Render: flashcard-scan-server) — NEW 2026-04-09
-    ├── index.js                 # Minimal Express 5 server (ESM, CORS, /ping)
-    ├── package.json             # Standalone deps: express, cors only
+└── appScanServer/               # Scan-only backend (Render: flashcard-scan-server)
+    ├── index.js                 # Express 5 entry (Env validation, ESM)
+    ├── driveHelper.js           # Backend-side Google Drive config manager (ESM)
     └── routes/
-        └── scan.js              # ESM copy of appBackend/routes/scan.js
+        └── scan.js              # Config mgmt + Gemini Proxy (ESM)
 ```
 
 ### 4.2 App.jsx — Component State & Layout
@@ -445,10 +443,11 @@ Globally-mounted modals (outside all branches, always in DOM):
 - **Props:** `userLoggedIn: boolean`, `onScanComplete: (deck: Deck) => void`
 - **State Phases:** `idle → scanning → done | cancelled`
 - **Key Logic:**
-  1. Load `config.json` from Drive on mount (API keys, batch_size)
-  2. User selects a folder → images filtered (jpg/png/webp/bmp)
-  3. On "Start AI Scan": validate all keys in parallel → generate PDFs → process via Worker Pool
-  4. On complete: call `onScanComplete(newDeck)` which triggers Drive upload
+  1. Load `config.json` via backend API on mount (masked keys only)
+  2. User selects a folder → images filtered
+  3. On "Start AI Scan": backend validates configured keys → generate PDFs → process via Worker Pool
+  4. Worker Pool sends `x-google-id` + `x-key-index`; backend resolves actual key from Drive
+  5. On complete: call `onScanComplete(newDeck)` which triggers Drive upload
 
 #### `AddDeckView.jsx` (Upgraded — 2026-04-07)
 
@@ -505,10 +504,9 @@ Globally-mounted modals (outside all branches, always in DOM):
 
 - **Purpose:** Centralized user configuration panel introduced on **2026-04-06** replacing scattered logic.
 - **Key Features:**
-  - **Email Notifications**: Controls the strict opt-in logic for receiving shared deck emails (`receive_email_enabled: false` by default). Includes debounced auto-save functions.
-  - **Gemini API Keys**: Directly reads/writes `config.json` on Google Drive AppDataFolder (`configService.js`).
+  - **Gemini API Keys**: Managed via backend endpoints (`geminiService.js`). Frontend receives masked keys from backend-side Drive reading.
   - **My Decks**: Full grid overview of deck statistics (known/progress/card count), renaming capabilities, and direct access resetting.
-  - **Danger Zone**: Houses the "Nuclear Delete" feature that recursively wipes Google Drive data (`decks.json`, `config.json`), and requests Supabase backend `DELETE /settings/delete-all-data` to wipe `deck_progress`, `quiz_sessions`, etc.
+  - **Danger Zone**: Houses the "Nuclear Delete" feature that wipes Google Drive data (`decks.json`, `config.json`) and resets Supabase. Now performs an inline Drive file search strictly for `config.json` during wipe to maintain safety.
 - **UX**: Built with an isolated full-screen glass layout, responsive mobile tabs, and protected with `ConfirmationModal` guarding all destructive actions.
 
 #### `FlashcardMode.jsx`
@@ -558,21 +556,15 @@ export async function uploadDecksToDrive(jsonData, existingFileId) {
 }
 ```
 
-#### `configService.js` — API Key Storage
-
-- Stores `config.json` in Drive AppDataFolder (never in localStorage)
-- Functions: `loadConfigFromDrive()`, `saveConfigToDrive(config, fileId)`
-- Default config: `{ api_keys: [], batch_size: 30, updated_at: '' }`
-
-#### `geminiService.js` — Worker Pool Orchestrator
-
-**Backend URL Routing (Updated 2026-04-09):**
+**Flow:**
+1. `fetchScanConfig(googleId)` → Backend uses `driveHelper` to read user's `config.json` via OAuth refresh token.
+2. `addScanApiKey(apiKey, googleId)` → Backend writes key to user's Drive, returns masked key.
+3. `validateScanKeys(googleId)` → Backend performs health check for all keys against Gemini API.
+4. `processBatches(...)` → Workers send `x-google-id` + `x-key-index` to backend for AI processing.
 
 ```javascript
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 const SCAN_URL = import.meta.env.VITE_SCAN_BACKEND_URL || BACKEND_URL;
-// SCAN_URL is used for /scan/process and /scan/validate
-// BACKEND_URL is used for all other API calls (auth, progress, share, etc.)
 ```
 
 > The `SCAN_URL` constant routes scan traffic to the dedicated scan backend while gracefully falling back to the main backend if `VITE_SCAN_BACKEND_URL` is not set.
@@ -636,10 +628,14 @@ const halfB = imgs.slice(mid);
 
 **`/scan` routes**
 
-| Method | Path | Header | Request Body | Response |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/scan/validate` | `x-gemini-key` | — | `{ valid: bool, msg: string }` |
-| POST | `/scan/process` | `x-gemini-key` | `{ pdf_base64, batch_index, total_batches, page_count, model_index }` | `{ cards[], batch_index, model_used, parse_error }` |
+| Method | Path | Header | Request Body | Response | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| GET | `/scan/config` | — | Query: `google_id` | `{ api_keys: string[], batch_size, ... }` | Masked keys only |
+| POST | `/scan/config/keys` | — | `{ google_id, api_key }` | `{ masked_key, ...config }` | Adds key to user's Drive |
+| DELETE| `/scan/config/keys/:idx`| — | Query: `google_id` | `{ success, ...config }` | Removes key index |
+| PUT | `/scan/config` | — | `{ google_id, batch_size }` | `{ success, ...config }` | Updates batch size |
+| POST | `/scan/validate-keys` | — | `{ google_id }` | `{ results: [ {index, valid, msg, masked}, ... ] }`| Validates all keys |
+| POST | `/scan/process` | `x-google-id`, `x-key-index`| `{ pdf_base64, batch_index, total_batches, page_count }` | `{ cards[], model_used }` | Resolves key server-side |
 
 **`/admin` routes**
 
@@ -805,12 +801,16 @@ User selects folder → filterImageFiles() → setImageFiles()
 | `VITE_BACKEND_URL` | `https://flashcard-ai-bs67.onrender.com` | Main backend URL for auth, progress, share, chat, settings |
 | `VITE_SCAN_BACKEND_URL` | `https://flashcard-scan-server.onrender.com` | Dedicated scan backend URL (falls back to `VITE_BACKEND_URL` if unset) |
 
-**Scan Backend (`appScanServer` — No `.env` file needed)**
+**Scan Backend (`appScanServer`) — Requires `.env` or Render Env Vars**
 
 | Variable | Example Value | Purpose |
 | :--- | :--- | :--- |
-| `FRONTEND_URL` | `https://lhb16-flashcard-ai.pages.dev` | CORS origin whitelist (set in Render dashboard) |
-| `PORT` | `3001` | Express server port (Render overrides this) |
+| `GOOGLE_CLIENT_ID` | `...apps.googleusercontent.com` | Standard OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | Standard OAuth client secret |
+| `SUPABASE_URL` | `https://xxx.supabase.co` | Required for fetching user refresh tokens |
+| `SUPABASE_KEY` | `sb_publishable_...` | Required for fetching user refresh tokens |
+| `FRONTEND_URL` | `https://lhb16-flashcard-ai.pages.dev` | CORS origin whitelist |
+| `PORT` | `3001` | Express server port |
 
 ### 4.10 Performance & UX Optimization (Core Web Vitals)
 

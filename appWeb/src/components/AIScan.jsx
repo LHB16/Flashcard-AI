@@ -3,9 +3,9 @@ import { FolderOpen, Play, Square, Save, KeyRound, Plus, Sparkles, AlertTriangle
 import { useTranslation } from 'react-i18next';
 import { v4 as uuidv4 } from 'uuid';
 import ApiKeyChip from './ApiKeyChip';
-import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
-import { imagesToPdf, filterImageFiles, chunk } from '../services/pdfService';
-import { processBatches, maskKey, validateKeysParallel } from '../services/geminiService';
+import { fetchScanConfig, addScanApiKey, removeScanApiKey, updateScanConfig, validateScanKeys, processBatches } from '../services/geminiService';
+import { filterImageFiles, chunk } from '../services/pdfService';
+import { imagesToPdf } from '../services/pdfService';
 import Skeleton from './Skeleton';
 
 
@@ -14,12 +14,13 @@ import Skeleton from './Skeleton';
  *
  * Flow: Select folder → Filter images → Create PDF batches → Send to Gemini → Parse cards → Save deck
  *
- * States: idle → configuring → ready → scanning → done / cancelled
+ * === SECURITY ===
+ * API keys are managed entirely by the backend. Frontend only sees masked keys.
+ * Config is read/written via backend endpoints that access Google Drive server-side.
  */
 export default function AIScan({ userLoggedIn, onScanComplete }) {
   // ─── Config State ───
   const [config, setConfig] = useState(null);
-  const [configFileId, setConfigFileId] = useState(null);
   const [configLoading, setConfigLoading] = useState(true);
   const [configError, setConfigError] = useState(null);
   const [configDirty, setConfigDirty] = useState(false);
@@ -48,7 +49,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
   const [pdfState, setPdfState] = useState(null); // null | 'generating' | 'done'
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0 });
 
-  // ─── Load config from Drive on mount ───
+  // ─── Load config from backend on mount ───
   useEffect(() => {
     if (!userLoggedIn) return;
     loadConfig();
@@ -65,9 +66,8 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
     setConfigLoading(true);
     setConfigError(null);
     try {
-      const { fileId, config: loadedConfig } = await loadConfigFromDrive();
+      const loadedConfig = await fetchScanConfig();
       setConfig(loadedConfig);
-      setConfigFileId(fileId);
     } catch (err) {
       setConfigError(err.message);
       setConfig({ api_keys: [], batch_size: 30, updated_at: '' });
@@ -79,37 +79,45 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
     if (!config) return;
     setSavingConfig(true);
     try {
-      const newFileId = await saveConfigToDrive(config, configFileId);
-      setConfigFileId(newFileId);
+      const result = await updateScanConfig({ batch_size: config.batch_size });
+      setConfig(result);
       setConfigDirty(false);
-      addLog('✅ Config saved to Drive');
+      addLog('✅ Config saved');
     } catch (err) {
       addLog(`❌ Failed to save config: ${err.message}`);
     }
     setSavingConfig(false);
   };
 
-  const handleAddKey = () => {
+  const handleAddKey = async () => {
     const key = newKeyInput.trim();
     if (!key) return;
     if (!key.startsWith('AIza')) {
       addLog('⚠ Invalid key format — must start with "AIza"');
       return;
     }
-    if (config.api_keys.includes(key)) {
-      addLog('⚠ Key already exists');
-      return;
+
+    try {
+      const result = await addScanApiKey(key);
+      setConfig(prev => ({ ...prev, api_keys: result.api_keys }));
+      setNewKeyInput('');
+      addLog(`✅ Key added: ${result.masked_key}`);
+    } catch (err) {
+      if (err.message.includes('already exists')) {
+        addLog('⚠ Key already exists');
+      } else {
+        addLog(`❌ Failed to add key: ${err.message}`);
+      }
     }
-    const updated = { ...config, api_keys: [...config.api_keys, key] };
-    setConfig(updated);
-    setConfigDirty(true);
-    setNewKeyInput('');
   };
 
-  const handleRemoveKey = (index) => {
-    const updated = { ...config, api_keys: config.api_keys.filter((_, i) => i !== index) };
-    setConfig(updated);
-    setConfigDirty(true);
+  const handleRemoveKey = async (index) => {
+    try {
+      const result = await removeScanApiKey(index);
+      setConfig(prev => ({ ...prev, api_keys: result.api_keys }));
+    } catch (err) {
+      addLog(`❌ Failed to remove key: ${err.message}`);
+    }
   };
 
   // ─── File Selection ───
@@ -166,18 +174,18 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
 
     addLog(`📁 ${totalImages} images → ${batches.length} batch(es) of up to ${batchSize}`);
 
-    // Phase 0: Validate API Keys
+    // Phase 0: Validate API Keys (backend handles all keys)
     addLog(`\n── Checking ${config.api_keys.length} API key(s) ──`);
-    const validKeys = await validateKeysParallel(config.api_keys, addLog);
+    const { validIndices, maskedKeys, totalKeys } = await validateScanKeys(null, addLog);
 
-    if (validKeys.length === 0) {
+    if (validIndices.length === 0) {
       addLog('❌ All API keys are invalid. Scan aborted.');
       setScanState('done');
       return;
     }
 
-    const deadCount = config.api_keys.length - validKeys.length;
-    addLog(`\n📊 Key check done: ${validKeys.length}/${config.api_keys.length} alive` + (deadCount ? `, ${deadCount} dead (excluded)` : ''));
+    const deadCount = totalKeys - validIndices.length;
+    addLog(`\n📊 Key check done: ${validIndices.length}/${totalKeys} alive` + (deadCount ? `, ${deadCount} dead (excluded)` : ''));
 
     // Phase 1: Generate PDFs
     setPdfState('generating');
@@ -205,11 +213,11 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
 
     setPdfState('done');
 
-    // Remove null batches (failed PDF generation)
-    const validIndices = pdfBatches.map((b, i) => b !== null ? i : -1).filter(i => i !== -1);
-    const validPdfs = validIndices.map(i => pdfBatches[i]);
-    const validPageCounts = validIndices.map(i => pageCounts[i]);
-    const validImageBatches = validIndices.map(i => batches[i]); // Keep original File[] for binary split
+    // Remove null batches
+    const validPdfIndices = pdfBatches.map((b, i) => b !== null ? i : -1).filter(i => i !== -1);
+    const validPdfs = validPdfIndices.map(i => pdfBatches[i]);
+    const validPageCounts = validPdfIndices.map(i => pageCounts[i]);
+    const validImageBatches = validPdfIndices.map(i => batches[i]);
 
     if (validPdfs.length === 0) {
       addLog('❌ All PDF batches failed. Cannot proceed.');
@@ -217,9 +225,11 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       return;
     }
 
-    // Phase 2: Send to Gemini via backend
+    // Phase 2: Send to Gemini via backend (keys resolved server-side)
     const controller = new AbortController();
     abortControllerRef.current = controller;
+
+    const googleId = localStorage.getItem('g_id');
 
     setProgress({ processed: 0, total: validPageCounts.reduce((a, b) => a + b, 0) });
 
@@ -227,7 +237,9 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
       const { cards, failedBatches: failed } = await processBatches(
         validPdfs,
         validPageCounts,
-        validKeys,
+        googleId,
+        validIndices,
+        maskedKeys,
         {
           onLog: addLog,
           onProgress: (processed, total) => setProgress({ processed, total }),
@@ -239,7 +251,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
           },
         },
         controller.signal,
-        validImageBatches  // Pass image batches for binary split
+        validImageBatches
       );
 
       setScannedCards(cards);
@@ -325,12 +337,12 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
 
           {config && (
             <>
-              {/* Existing keys */}
+              {/* Existing keys — displayed with masked values from backend */}
               <div className="key-chips-container">
-                {config.api_keys.map((key, i) => (
+                {config.api_keys.map((maskedKey, i) => (
                   <ApiKeyChip
                     key={i}
-                    apiKey={key}
+                    maskedKey={maskedKey}
                     index={i}
                     status="idle"
                     onRemove={handleRemoveKey}
@@ -385,7 +397,7 @@ export default function AIScan({ userLoggedIn, onScanComplete }) {
                 />
               </div>
 
-              {/* Save config button */}
+              {/* Save config button — only for batch_size changes */}
               {configDirty && (
                 <button
                   className="btn btn-primary"

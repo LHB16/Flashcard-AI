@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, Settings, Mail, Key, Layers, AlertTriangle, Info, Pencil, Trash2, Plus, RotateCcw, Share2, Loader2, Check, X, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { loadConfigFromDrive, saveConfigToDrive } from '../services/configService';
+import { fetchScanConfig, addScanApiKey, removeScanApiKey } from '../services/geminiService';
 import { getValidToken } from '../services/driveSync';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
@@ -27,12 +27,6 @@ const Toggle = ({ checked, onChange, disabled }) => (
     <span className={`toggle-track${disabled ? ' disabled' : ''}`} />
   </label>
 );
-
-// ───── Mask API Key ─────
-const maskKey = (key) => {
-  if (!key || key.length < 8) return key || '';
-  return `${key.slice(0, 4)}...${key.slice(-4)}`;
-};
 
 // ───── Format Date ─────
 const formatDate = (dateStr) => {
@@ -69,7 +63,6 @@ function SettingsPage({
 
   // ═══════ API Keys Section State ═══════
   const [apiKeys, setApiKeys] = useState([]);
-  const [configFileId, setConfigFileId] = useState(null);
   const [keysLoading, setKeysLoading] = useState(true);
   const [isAddingKey, setIsAddingKey] = useState(false);
   const [newKeyValue, setNewKeyValue] = useState('');
@@ -146,65 +139,59 @@ function SettingsPage({
   useEffect(() => {
     if (activeSection !== 'apikeys') return;
     setKeysLoading(true);
-    loadConfigFromDrive()
-      .then(({ fileId, config }) => {
-        setConfigFileId(fileId);
+    fetchScanConfig(googleId)
+      .then((config) => {
         setApiKeys(config.api_keys || []);
       })
       .catch(err => console.error('Failed to load config:', err))
       .finally(() => setKeysLoading(false));
-  }, [activeSection]);
+  }, [activeSection, googleId]);
 
-  const saveKeys = useCallback(async (newKeys) => {
-    setApiKeys(newKeys);
-    try {
-      const { config } = await loadConfigFromDrive();
-      const updatedConfig = { ...config, api_keys: newKeys };
-      const newFileId = await saveConfigToDrive(updatedConfig, configFileId);
-      setConfigFileId(newFileId);
-    } catch (err) {
-      console.error('Failed to save keys:', err);
-    }
-  }, [configFileId]);
-
-  const handleSaveKey = useCallback(() => {
+  const handleSaveKey = useCallback(async () => {
     if (!newKeyValue.trim()) return;
-    let updatedKeys;
-    if (editingKeyIndex !== null) {
-      updatedKeys = [...apiKeys];
-      updatedKeys[editingKeyIndex] = newKeyValue.trim();
-    } else {
-      updatedKeys = [...apiKeys, newKeyValue.trim()];
+    try {
+      const result = await addScanApiKey(
+        newKeyValue.trim(),
+        googleId,
+        editingKeyIndex !== null ? editingKeyIndex : undefined
+      );
+      setApiKeys(result.api_keys || []);
+      setIsAddingKey(false);
+      setNewKeyValue('');
+      setEditingKeyIndex(null);
+      showToast(editingKeyIndex !== null ? t('settings.apiKeysSection.keyUpdated') : t('settings.apiKeysSection.keyAdded'));
+    } catch (err) {
+      console.error('Failed to save key:', err);
+      showToast(err.message || 'Failed to save key');
     }
-    saveKeys(updatedKeys);
-    setIsAddingKey(false);
-    setNewKeyValue('');
-    setEditingKeyIndex(null);
-    showToast(editingKeyIndex !== null ? t('settings.apiKeysSection.keyUpdated') : t('settings.apiKeysSection.keyAdded'));
-  }, [newKeyValue, editingKeyIndex, apiKeys, saveKeys, showToast]);
+  }, [newKeyValue, editingKeyIndex, googleId, showToast]);
 
   const handleEditKey = useCallback((index) => {
     setEditingKeyIndex(index);
-    setNewKeyValue(apiKeys[index]);
+    setNewKeyValue(''); // Can't show full key — masked by backend for security
     setIsAddingKey(true);
-  }, [apiKeys]);
+  }, []);
 
   const confirmDeleteKey = useCallback((index) => {
     const config = {
       title: t('settings.apiKeysSection.deleteKeyTitle'),
-      description: t('settings.apiKeysSection.deleteKeyDesc', { key: maskKey(apiKeys[index]) }),
+      description: t('settings.apiKeysSection.deleteKeyDesc', { key: apiKeys[index] }),
       confirmText: t('common.delete'),
       type: 'danger',
       icon: Trash2,
     };
-    config.onConfirm = () => {
-      const updatedKeys = apiKeys.filter((_, i) => i !== index);
-      saveKeys(updatedKeys);
-      showToast(t('settings.apiKeysSection.keyDeleted'));
+    config.onConfirm = async () => {
+      try {
+        const result = await removeScanApiKey(index, googleId);
+        setApiKeys(result.api_keys || []);
+        showToast(t('settings.apiKeysSection.keyDeleted'));
+      } catch (err) {
+        console.error('Failed to delete key:', err);
+      }
       onOpenConfirm({ ...config, isOpen: false });
     };
     onOpenConfirm(config);
-  }, [apiKeys, onOpenConfirm, saveKeys, showToast]);
+  }, [apiKeys, onOpenConfirm, googleId, showToast]);
 
   // ════════════════════════════════════
   // DECKS SECTION LOGIC
@@ -303,15 +290,22 @@ function SettingsPage({
         });
       }
 
-      // 2. Delete config.json from Drive
+      // 2. Delete config.json from Drive (inline search without configService)
       try {
-        const configResult = await loadConfigFromDrive();
-        if (configResult?.fileId) {
-          const token = await getValidToken();
-          await fetch(`https://www.googleapis.com/drive/v3/files/${configResult.fileId}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-          });
+        const token = await getValidToken();
+        const searchRes = await fetch(
+          `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='config.json'&fields=files(id)`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          const configFile = searchData.files?.[0];
+          if (configFile) {
+            await fetch(`https://www.googleapis.com/drive/v3/files/${configFile.id}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+          }
         }
       } catch (e) { console.warn('Config delete skipped:', e); }
 
@@ -564,7 +558,7 @@ function SettingsPage({
             {apiKeys.map((key, index) => (
               <div className="key-row" key={index}>
                 <span className="key-chip-mask" style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                  {maskKey(key)}
+                  {key}
                 </span>
                 <div className="key-actions">
                   <button className="settings-icon-btn" onClick={() => handleEditKey(index)} title={t('common.edit')}>

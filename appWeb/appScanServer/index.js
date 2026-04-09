@@ -2,6 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import scanRouter from './routes/scan.js';
 
+// ─── Validate required env vars ───
+const REQUIRED_ENVS = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SUPABASE_URL', 'SUPABASE_KEY'];
+const missing = REQUIRED_ENVS.filter(k => !process.env[k]);
+if (missing.length > 0) {
+  console.error(`❌ Missing required env vars: ${missing.join(', ')}`);
+  console.error('   These are needed for backend-side Google Drive config access.');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -21,4 +30,5 @@ app.use('/scan', scanRouter);
 
 app.listen(PORT, () => {
   console.log(`⚡ Scan server running on port ${PORT}`);
+  console.log(`  Config: Backend reads Google Drive config.json (keys never exposed to frontend)`);
 });

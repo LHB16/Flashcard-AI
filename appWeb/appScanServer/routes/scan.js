@@ -1,11 +1,30 @@
 /**
  * routes/scan.js — Proxy Gemini API for AI Scan (ESM version)
- * Receives PDF base64 + API key from frontend, calls Gemini, returns parsed cards.
- * Key never exposed in browser network tab — only travels server-side.
  *
- * Copied from appBackend/routes/scan.js and converted to ESM.
+ * === SECURITY MODEL ===
+ * Full API keys NEVER leave the server. Frontend sends google_id,
+ * server reads keys from user's Google Drive config.json.
+ * Only masked keys are returned to frontend for display.
+ *
+ * === ENDPOINTS ===
+ * Config management:
+ *   GET    /config                → Get masked config
+ *   POST   /config/keys           → Add/replace an API key
+ *   DELETE /config/keys/:index    → Remove a key
+ *   PUT    /config                → Update config (batch_size)
+ *
+ * Scan operations:
+ *   POST   /validate-keys         → Validate all keys for a user
+ *   POST   /process               → Process one PDF batch
  */
 import { Router } from 'express';
+import {
+  loadConfig,
+  saveConfig,
+  maskKey,
+  getMaskedConfig,
+  invalidateConfigCache,
+} from '../driveHelper.js';
 
 const router = Router();
 
@@ -68,187 +87,183 @@ Return ONLY a valid JSON array, one object per page, no markdown:
 - "type": "single_choice" or "multiple_choice"
 - "inferred": true if you reasoned/guessed the answer, false if a clue was visible`;
 
-/**
- * Clean markdown fences from Gemini response
- */
-function cleanJson(text) {
-  text = text.trim();
-  if (text.startsWith('```')) {
-    text = text.replace(/^```[a-z]*\n?/, '');
-    text = text.replace(/\n?```$/, '');
-  }
-  return text.trim();
-}
+// ════════════════════════════════════
+// CONFIG MANAGEMENT ENDPOINTS
+// ════════════════════════════════════
 
 /**
- * Auto-fix common JSON issues from Gemini responses:
- * - Trailing commas before ] or }
- * - Missing closing brackets/braces
- * - Unclosed strings (truncated response)
+ * GET /config?google_id=xxx
+ * Returns masked config (api_keys with masked values, batch_size, etc.)
  */
-function autoFixJson(text) {
-  let fixed = text;
+router.get('/config', async (req, res) => {
+  const googleId = req.query.google_id || req.headers['x-google-id'];
+  if (!googleId) return res.status(400).json({ error: 'Missing google_id' });
 
-  // 1. Remove trailing commas before ] or }
-  fixed = fixed.replace(/,\s*([\]}])/g, '$1');
-
-  // 2. Try to balance brackets — count opens vs closes
-  const opens = (fixed.match(/\[/g) || []).length;
-  const closes = (fixed.match(/\]/g) || []).length;
-  const braceOpens = (fixed.match(/\{/g) || []).length;
-  const braceCloses = (fixed.match(/\}/g) || []).length;
-
-  // Close any unclosed braces first, then brackets
-  for (let i = 0; i < braceOpens - braceCloses; i++) fixed += '}';
-  // Remove trailing comma before adding closing bracket
-  fixed = fixed.replace(/,\s*$/, '');
-  for (let i = 0; i < opens - closes; i++) fixed += ']';
-
-  // 3. Remove trailing commas again after bracket fix
-  fixed = fixed.replace(/,\s*([\]}])/g, '$1');
-
-  return fixed;
-}
-
-/**
- * Extract individual JSON objects from a partially valid array string.
- * Useful when the array itself is broken but individual objects are intact.
- */
-function extractPartialObjects(text) {
-  const objects = [];
-  const regex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    try {
-      const obj = JSON.parse(match[0]);
-      if (obj.question) objects.push(obj);
-    } catch {
-      // Skip unparseable fragments
-    }
-  }
-  return objects;
-}
-
-/**
- * Parse Gemini response text into cards array.
- * Uses multi-layered recovery: direct parse → regex extract → auto-fix → partial object extraction.
- */
-function parseGeminiResponse(responseData) {
   try {
-    const candidate = responseData.candidates?.[0];
-    if (!candidate) return { cards: [], error: 'No candidates in response' };
-
-    const text = candidate.content?.parts?.[0]?.text;
-    if (!text) return { cards: [], error: 'No text in response' };
-
-    const cleaned = cleanJson(text);
-    let parsed;
-    let recoveryMethod = null;
-
-    // Layer 1: Direct parse
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch {
-      // Layer 2: Regex extract JSON array
-      const match = cleaned.match(/\[[\s\S]*\]/);
-      if (match) {
-        try {
-          parsed = JSON.parse(match[0]);
-          recoveryMethod = 'regex_extract';
-        } catch {
-          // Layer 3: Auto-fix broken JSON (trailing commas, missing brackets)
-          try {
-            parsed = JSON.parse(autoFixJson(match[0]));
-            recoveryMethod = 'auto_fix';
-          } catch {
-            // Layer 4: Extract individual objects from broken array
-            parsed = extractPartialObjects(cleaned);
-            recoveryMethod = parsed.length > 0 ? 'partial_recovery' : null;
-          }
-        }
-      } else {
-        // No array found at all — try auto-fix on full text
-        try {
-          parsed = JSON.parse(autoFixJson(cleaned));
-          recoveryMethod = 'auto_fix_full';
-        } catch {
-          parsed = extractPartialObjects(cleaned);
-          recoveryMethod = parsed.length > 0 ? 'partial_recovery' : null;
-        }
-      }
-    }
-
-    if (!parsed || (Array.isArray(parsed) && parsed.length === 0)) {
-      return { cards: [], error: 'Cannot parse JSON from response' };
-    }
-    if (!Array.isArray(parsed)) {
-      return { cards: [], error: 'Response is not an array' };
-    }
-
-    if (recoveryMethod) {
-      console.log(`🔧 [JSON Recovery] Used "${recoveryMethod}" to recover ${parsed.length} items`);
-    }
-
-    // Convert to card format, skip NOT_A_QUESTION
-    const cards = [];
-    for (const item of parsed) {
-      const question = (item.question || '').trim();
-      if (!question || question === 'NOT_A_QUESTION') continue;
-
-      const inferred = item.inferred === true;
-      cards.push({
-        question,
-        options: item.options || [],
-        correct_answers: item.correct_answers || [],
-        question_type: item.type === 'multiple_choice' ? 'multiple_choice' : 'single_choice',
-        notes: inferred ? '⚠ Đáp án do AI suy luận (không có đáp án rõ trong ảnh)' : '',
-      });
-    }
-
-    return { cards, error: recoveryMethod ? `Recovered via ${recoveryMethod}` : null };
+    const { config } = await loadConfig(googleId);
+    res.json(getMaskedConfig(config));
   } catch (err) {
-    return { cards: [], error: `Parse error: ${err.message}` };
+    console.error(`[Config] Load error for ${googleId}:`, err.message);
+    res.status(500).json({ error: err.message });
   }
-}
+});
 
 /**
- * GET /scan/validate
- * Header: x-gemini-key
- * Validates the API key by sending a simple prompt to the first working model.
+ * POST /config/keys
+ * Body: { google_id, api_key, replace_index? }
+ * Adds a new key, or replaces key at replace_index if provided.
+ * Returns updated masked config.
  */
-router.get('/validate', async (req, res) => {
-  const geminiKey = req.headers['x-gemini-key'];
-  if (!geminiKey || !geminiKey.startsWith('AIza')) {
-    return res.json({ valid: false, msg: 'Invalid API key format.' });
+router.post('/config/keys', async (req, res) => {
+  const { google_id, api_key, replace_index } = req.body;
+  if (!google_id) return res.status(400).json({ error: 'Missing google_id' });
+  if (!api_key || !api_key.trim()) return res.status(400).json({ error: 'Missing api_key' });
+
+  const trimmedKey = api_key.trim();
+  if (!trimmedKey.startsWith('AIza')) {
+    return res.status(400).json({ error: 'Invalid key format — must start with "AIza"' });
   }
 
-  for (const model of MODEL_LIST) {
-    try {
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
-      const geminiRes = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: 'Say OK in one word.' }] }] })
-      });
+  try {
+    const { config, fileId } = await loadConfig(google_id);
+    const keys = config.api_keys || [];
 
-      if (geminiRes.ok) {
-        return res.json({ valid: true, msg: `✓ Valid (${model})` });
+    if (replace_index !== undefined && replace_index !== null) {
+      // Replace key at index
+      if (replace_index < 0 || replace_index >= keys.length) {
+        return res.status(400).json({ error: 'Invalid replace_index' });
       }
-
-      const errText = await geminiRes.text();
-      // If 404, model is not found, try the next one
-      if (geminiRes.status === 404 || errText.toLowerCase().includes('not found')) {
-        continue;
+      keys[replace_index] = trimmedKey;
+    } else {
+      // Check duplicate
+      if (keys.includes(trimmedKey)) {
+        return res.status(409).json({ error: 'Key already exists' });
       }
-
-      // Other error (400, 403, 429) -> invalid or quota exceeded
-      return res.json({ valid: false, msg: `Invalid: ${errText.slice(0, 80)}` });
-    } catch (err) {
-      return res.json({ valid: false, msg: `Error: ${err.message.slice(0, 80)}` });
+      keys.push(trimmedKey);
     }
-  }
 
-  return res.json({ valid: false, msg: 'No working model found.' });
+    config.api_keys = keys;
+    const newFileId = await saveConfig(google_id, config, fileId);
+
+    res.json({
+      masked_key: maskKey(trimmedKey),
+      ...getMaskedConfig(config),
+    });
+  } catch (err) {
+    console.error(`[Config] Add key error:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /config/keys/:index?google_id=xxx
+ * Removes the key at the given index.
+ */
+router.delete('/config/keys/:index', async (req, res) => {
+  const googleId = req.query.google_id || req.headers['x-google-id'];
+  const index = parseInt(req.params.index, 10);
+  if (!googleId) return res.status(400).json({ error: 'Missing google_id' });
+  if (isNaN(index)) return res.status(400).json({ error: 'Invalid index' });
+
+  try {
+    const { config, fileId } = await loadConfig(googleId);
+    const keys = config.api_keys || [];
+
+    if (index < 0 || index >= keys.length) {
+      return res.status(400).json({ error: 'Index out of range' });
+    }
+
+    keys.splice(index, 1);
+    config.api_keys = keys;
+    await saveConfig(googleId, config, fileId);
+
+    res.json({ success: true, ...getMaskedConfig(config) });
+  } catch (err) {
+    console.error(`[Config] Delete key error:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /config
+ * Body: { google_id, batch_size }
+ * Updates non-key config fields.
+ */
+router.put('/config', async (req, res) => {
+  const { google_id, batch_size } = req.body;
+  if (!google_id) return res.status(400).json({ error: 'Missing google_id' });
+
+  try {
+    const { config, fileId } = await loadConfig(google_id);
+
+    if (batch_size !== undefined) {
+      config.batch_size = Math.max(1, Math.min(parseInt(batch_size, 10) || 30, 30));
+    }
+
+    await saveConfig(google_id, config, fileId);
+    res.json({ success: true, ...getMaskedConfig(config) });
+  } catch (err) {
+    console.error(`[Config] Update error:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ════════════════════════════════════
+// SCAN OPERATIONS
+// ════════════════════════════════════
+
+/**
+ * POST /validate-keys
+ * Body: { google_id }
+ * Validates ALL API keys for a user against Gemini.
+ * Returns results per key (masked + valid/invalid + message).
+ */
+router.post('/validate-keys', async (req, res) => {
+  const { google_id } = req.body;
+  if (!google_id) return res.status(400).json({ error: 'Missing google_id' });
+
+  try {
+    const { config } = await loadConfig(google_id);
+    const keys = config.api_keys || [];
+
+    if (keys.length === 0) {
+      return res.json({ results: [] });
+    }
+
+    // Validate all keys in parallel
+    const results = await Promise.all(keys.map(async (key, idx) => {
+      const masked = maskKey(key);
+      try {
+        for (const model of MODEL_LIST) {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+          const geminiRes = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: 'Say OK in one word.' }] }] }),
+          });
+
+          if (geminiRes.ok) {
+            return { index: idx, masked, valid: true, msg: `✓ Valid (${model})` };
+          }
+
+          const errText = await geminiRes.text();
+          if (geminiRes.status === 404 || errText.toLowerCase().includes('not found')) {
+            continue; // Try next model
+          }
+
+          return { index: idx, masked, valid: false, msg: `Invalid: ${errText.slice(0, 80)}` };
+        }
+        return { index: idx, masked, valid: false, msg: 'No working model found.' };
+      } catch (err) {
+        return { index: idx, masked, valid: false, msg: `Error: ${err.message.slice(0, 80)}` };
+      }
+    }));
+
+    res.json({ results });
+  } catch (err) {
+    console.error(`[Validate] Error:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Concurrency Limiter: chống OOM khi nhiều scan chạy song song ───
@@ -256,12 +271,13 @@ let activeScans = 0;
 const MAX_CONCURRENT_SCANS = 5;
 
 /**
- * POST /scan/process
- * Body: { pdf_base64, batch_index, total_batches, page_count }
- * Header: x-gemini-key
+ * POST /process
+ * Headers: x-google-id, x-key-index
+ * Body: { pdf_base64, batch_index, total_batches, page_count, model_index }
+ *
+ * Backend resolves google_id + key_index → actual API key → calls Gemini.
  */
 router.post('/process', async (req, res) => {
-  // Chặn nếu quá tải — frontend sẽ nhận 429 và retry
   if (activeScans >= MAX_CONCURRENT_SCANS) {
     console.warn(`⚠ [Scan] Rejected: ${activeScans}/${MAX_CONCURRENT_SCANS} slots busy`);
     return res.status(429).json({
@@ -279,30 +295,48 @@ router.post('/process', async (req, res) => {
 });
 
 async function handleScanProcess(req, res) {
-  const geminiKey = req.headers['x-gemini-key'];
+  const googleId = req.headers['x-google-id'];
+  const keyIndex = parseInt(req.headers['x-key-index'] || '0', 10);
   const { pdf_base64, batch_index, total_batches, page_count, model_index } = req.body;
 
   // Validate
-  if (!geminiKey || !geminiKey.startsWith('AIza')) {
-    return res.status(400).json({ error: 'Invalid API key format. Key must start with "AIza".' });
+  if (!googleId) {
+    return res.status(400).json({ error: 'Missing x-google-id header.' });
   }
   if (!pdf_base64) {
     return res.status(400).json({ error: 'Missing pdf_base64 in request body.' });
   }
 
-  // Determine which model to use (allow frontend to specify fallback index)
+  // Resolve actual API key from user's config
+  let geminiKey;
+  try {
+    const { config } = await loadConfig(googleId);
+    const keys = config.api_keys || [];
+    if (keyIndex < 0 || keyIndex >= keys.length) {
+      return res.status(400).json({ error: `Invalid key_index ${keyIndex}. User has ${keys.length} key(s).` });
+    }
+    geminiKey = keys[keyIndex];
+  } catch (err) {
+    return res.status(500).json({ error: `Failed to load config: ${err.message}` });
+  }
+
+  if (!geminiKey || !geminiKey.startsWith('AIza')) {
+    return res.status(400).json({ error: 'Resolved API key is invalid.' });
+  }
+
+  // Determine model
   const mIdx = Math.min(model_index || 0, MODEL_LIST.length - 1);
   const model = MODEL_LIST[mIdx];
 
   const sizeKb = Math.round((pdf_base64.length * 3) / 4 / 1024);
   console.log(
     `📤 [Scan] Batch ${batch_index + 1}/${total_batches} | ` +
-    `${page_count} pages (${sizeKb}KB) | Model: ${model} | Key: ...${geminiKey.slice(-8)}`
+    `${page_count} pages (${sizeKb}KB) | Model: ${model} | Key: ${maskKey(geminiKey)}`
   );
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000); // 120s timeout
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
 
@@ -313,9 +347,9 @@ async function handleScanProcess(req, res) {
         contents: [{
           parts: [
             { inline_data: { mime_type: 'application/pdf', data: pdf_base64 } },
-            { text: GEMINI_PROMPT }
-          ]
-        }]
+            { text: GEMINI_PROMPT },
+          ],
+        }],
       }),
       signal: controller.signal,
     });
@@ -326,7 +360,6 @@ async function handleScanProcess(req, res) {
       const errBody = await geminiRes.text().catch(() => '');
       console.error(`❌ [Scan] Gemini ${geminiRes.status}: ${errBody.slice(0, 200)}`);
 
-      // Return status so frontend can decide retry/fallback
       return res.status(geminiRes.status).json({
         error: `Gemini API error: ${geminiRes.status}`,
         gemini_status: geminiRes.status,
@@ -351,7 +384,6 @@ async function handleScanProcess(req, res) {
       model_used: model,
       parse_error: error,
     });
-
   } catch (err) {
     if (err.name === 'AbortError') {
       console.error(`⏰ [Scan] Batch ${batch_index + 1} timed out`);
@@ -359,6 +391,120 @@ async function handleScanProcess(req, res) {
     }
     console.error(`❌ [Scan] Batch ${batch_index + 1} error:`, err.message);
     return res.status(500).json({ error: err.message, batch_index });
+  }
+}
+
+// ════════════════════════════════════
+// JSON PARSE HELPERS (unchanged)
+// ════════════════════════════════════
+
+function cleanJson(text) {
+  text = text.trim();
+  if (text.startsWith('```')) {
+    text = text.replace(/^```[a-z]*\n?/, '');
+    text = text.replace(/\n?```$/, '');
+  }
+  return text.trim();
+}
+
+function autoFixJson(text) {
+  let fixed = text;
+  fixed = fixed.replace(/,\s*([\]}])/g, '$1');
+  const opens = (fixed.match(/\[/g) || []).length;
+  const closes = (fixed.match(/\]/g) || []).length;
+  const braceOpens = (fixed.match(/\{/g) || []).length;
+  const braceCloses = (fixed.match(/\}/g) || []).length;
+  for (let i = 0; i < braceOpens - braceCloses; i++) fixed += '}';
+  fixed = fixed.replace(/,\s*$/, '');
+  for (let i = 0; i < opens - closes; i++) fixed += ']';
+  fixed = fixed.replace(/,\s*([\]}])/g, '$1');
+  return fixed;
+}
+
+function extractPartialObjects(text) {
+  const objects = [];
+  const regex = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    try {
+      const obj = JSON.parse(match[0]);
+      if (obj.question) objects.push(obj);
+    } catch {
+      // Skip
+    }
+  }
+  return objects;
+}
+
+function parseGeminiResponse(responseData) {
+  try {
+    const candidate = responseData.candidates?.[0];
+    if (!candidate) return { cards: [], error: 'No candidates in response' };
+
+    const text = candidate.content?.parts?.[0]?.text;
+    if (!text) return { cards: [], error: 'No text in response' };
+
+    const cleaned = cleanJson(text);
+    let parsed;
+    let recoveryMethod = null;
+
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const match = cleaned.match(/\[[\s\S]*\]/);
+      if (match) {
+        try {
+          parsed = JSON.parse(match[0]);
+          recoveryMethod = 'regex_extract';
+        } catch {
+          try {
+            parsed = JSON.parse(autoFixJson(match[0]));
+            recoveryMethod = 'auto_fix';
+          } catch {
+            parsed = extractPartialObjects(cleaned);
+            recoveryMethod = parsed.length > 0 ? 'partial_recovery' : null;
+          }
+        }
+      } else {
+        try {
+          parsed = JSON.parse(autoFixJson(cleaned));
+          recoveryMethod = 'auto_fix_full';
+        } catch {
+          parsed = extractPartialObjects(cleaned);
+          recoveryMethod = parsed.length > 0 ? 'partial_recovery' : null;
+        }
+      }
+    }
+
+    if (!parsed || (Array.isArray(parsed) && parsed.length === 0)) {
+      return { cards: [], error: 'Cannot parse JSON from response' };
+    }
+    if (!Array.isArray(parsed)) {
+      return { cards: [], error: 'Response is not an array' };
+    }
+
+    if (recoveryMethod) {
+      console.log(`🔧 [JSON Recovery] Used "${recoveryMethod}" to recover ${parsed.length} items`);
+    }
+
+    const cards = [];
+    for (const item of parsed) {
+      const question = (item.question || '').trim();
+      if (!question || question === 'NOT_A_QUESTION') continue;
+
+      const inferred = item.inferred === true;
+      cards.push({
+        question,
+        options: item.options || [],
+        correct_answers: item.correct_answers || [],
+        question_type: item.type === 'multiple_choice' ? 'multiple_choice' : 'single_choice',
+        notes: inferred ? '⚠ Đáp án do AI suy luận (không có đáp án rõ trong ảnh)' : '',
+      });
+    }
+
+    return { cards, error: recoveryMethod ? `Recovered via ${recoveryMethod}` : null };
+  } catch (err) {
+    return { cards: [], error: `Parse error: ${err.message}` };
   }
 }
 

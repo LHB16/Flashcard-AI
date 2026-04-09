@@ -3,13 +3,10 @@ import { X, Check, AlertCircle, Loader2 } from 'lucide-react';
 
 /**
  * ApiKeyChip — Displays a single API key as a compact chip
- * Shows masked key, status icon, and delete button
+ * Shows masked key (pre-masked by backend), status icon, and delete button.
+ * Full API key is NEVER available in the frontend.
  */
-export default function ApiKeyChip({ apiKey, index, status, onRemove }) {
-  const masked = apiKey.length >= 12
-    ? `${apiKey.slice(0, 4)}••••${apiKey.slice(-4)}`
-    : '••••••••';
-
+export default function ApiKeyChip({ maskedKey, index, status, onRemove }) {
   const statusIcon = {
     valid: <Check size={14} color="var(--success)" />,
     invalid: <AlertCircle size={14} color="var(--danger)" />,
@@ -20,7 +17,7 @@ export default function ApiKeyChip({ apiKey, index, status, onRemove }) {
   return (
     <div className="key-chip">
       <span className="key-chip-index">#{index + 1}</span>
-      <code className="key-chip-mask">{masked}</code>
+      <code className="key-chip-mask">{maskedKey}</code>
       {statusIcon && <span className="key-chip-status">{statusIcon}</span>}
       <button
         className="key-chip-remove"
