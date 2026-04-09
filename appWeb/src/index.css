@@ -1710,7 +1710,6 @@ body {
   flex: 1;
   padding: 32px;
   overflow-y: auto;
-  max-width: 800px;
 }
 
 /* Sidebar items */

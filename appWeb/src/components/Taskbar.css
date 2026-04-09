@@ -24,50 +24,50 @@
     z-index: 999;
 }
 
-/* Center Y is at 70px from bottom (30 + 80/2 = 70) */
+/* Center Y is at 75px from bottom (30 + 90/2 = 75) */
 .blob-btn {
     position: absolute;
-    left: -40px; /* Half circle off-screen = completely flush with left edge */
+    left: -45px; /* Half circle off-screen = completely flush with left edge */
     bottom: 30px;
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
     background-color: var(--taskbar-blob-bg);
-    border-radius: 40px;
+    border-radius: 45px;
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .blob-connector {
     position: absolute;
     left: 0px;
-    bottom: 55px; /* (70 - 30/2 = 55) */
-    width: 20px;
-    height: 30px;
+    bottom: 58px; /* (75 - 34/2 = 58) */
+    width: 22px;
+    height: 34px;
     background-color: var(--taskbar-blob-bg);
-    border-radius: 15px;
+    border-radius: 17px;
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .blob-menu {
     position: absolute;
-    left: -40px;
-    bottom: 39px; /* (70 - 62/2 = 39) */
-    width: 80px;
-    height: 62px;
+    left: -45px;
+    bottom: 40px; /* (75 - 70/2 = 40) */
+    width: 90px;
+    height: 70px;
     background-color: var(--taskbar-blob-bg);
-    border-radius: 31px;
+    border-radius: 35px;
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* OPEN STATE — menu slides out, connector stretches thick */
 .gooey-layer.is-open .blob-menu {
-    left: 55px;
-    width: var(--menu-width, 240px);
+    left: 60px;
+    width: var(--menu-width, 260px);
 }
 
 .gooey-layer.is-open .blob-connector {
     left: 0px;
-    width: 80px;
-    height: 30px;
+    width: 90px;
+    height: 34px;
 }
 
 /* ─── LAYER 2: CONTENT (no filter) ─── */
@@ -84,8 +84,8 @@
     position: absolute;
     left: 0;
     bottom: 30px;
-    width: 40px;
-    height: 80px;
+    width: 45px;
+    height: 90px;
     pointer-events: auto;
     cursor: pointer;
     background: none;
@@ -117,9 +117,9 @@
 /* Menu Items Container */
 .gooey-menu-items {
     position: absolute;
-    left: 55px;
-    bottom: 39px;
-    height: 62px;
+    left: 60px;
+    bottom: 40px;
+    height: 70px;
     display: flex;
     align-items: center;
     opacity: 0;
@@ -201,30 +201,30 @@
 
 /* ─── Responsive ─── */
 @media (max-width: 480px) {
-    /* Mobile Center Y = 50px (bottom 20 + 60/2) */
+    /* Mobile Center Y = 55px (bottom 20 + 70/2) */
     .blob-btn { 
-        width: 60px; height: 60px; border-radius: 30px; 
-        left: -30px; bottom: 20px; 
+        width: 70px; height: 70px; border-radius: 35px; 
+        left: -35px; bottom: 20px; 
     }
     .blob-menu { 
-        width: 60px; height: 50px; border-radius: 25px; 
-        left: -30px; bottom: 25px; /* (50 - 50/2 = 25) */
+        width: 70px; height: 58px; border-radius: 29px; 
+        left: -35px; bottom: 26px; /* (55 - 58/2 = 26) */
     }
     .blob-connector { 
-        width: 16px; height: 24px; border-radius: 12px; 
-        left: 0; bottom: 38px; /* (50 - 24/2 = 38) */
+        width: 18px; height: 28px; border-radius: 14px; 
+        left: 0; bottom: 41px; /* (55 - 28/2 = 41) */
     }
     .gooey-btn-hitbox { 
-        width: 30px; height: 60px; bottom: 20px; 
+        width: 35px; height: 70px; bottom: 20px; 
     }
     .gooey-layer.is-open .blob-menu { 
-        left: 45px; 
+        left: 50px; 
     }
     .gooey-layer.is-open .blob-connector { 
-        width: 60px; height: 24px; 
+        width: 70px; height: 28px; 
     }
     .gooey-menu-items { 
-        left: 45px; bottom: 25px; height: 50px; 
+        left: 50px; bottom: 26px; height: 58px; 
     }
     .animated-taskbar .task-item {
         padding: 8px 12px;
