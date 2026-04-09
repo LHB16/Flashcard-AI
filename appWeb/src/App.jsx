@@ -37,6 +37,9 @@ function App() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [managerTab, setManagerTab] = useState('view');
+  const [showOptionsOnFront, setShowOptionsOnFront] = useState(() => {
+    return localStorage.getItem('flashcard_show_options') !== 'false';
+  });
 
   // Generic confirmation modal state
   const [confirmConfig, setConfirmConfig] = useState({
@@ -529,6 +532,53 @@ function App() {
     );
   }
 
+  // Render Settings over anything if requested
+  if (showSettings) {
+    return (
+      <>
+        {isSyncing && <div className="top-progress-bar"></div>}
+        <main className="app-main" style={{ padding: '1.5rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+          <SettingsPage
+            userEmail={userEmail}
+            googleId={localStorage.getItem('g_id') || ''}
+            data={data || []}
+            driveFileId={driveFileId}
+            backendUrl={import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}
+            onBack={() => setShowSettings(false)}
+            onDataChange={(newData) => {
+              setData(newData);
+              if (import.meta.env.VITE_DEV_MODE !== 'true') {
+                uploadDecksToDrive(newData, driveFileId);
+              }
+            }}
+            showOptionsOnFront={showOptionsOnFront}
+            onToggleOptionsOnFront={(val) => {
+              setShowOptionsOnFront(val);
+              localStorage.setItem('flashcard_show_options', val ? 'true' : 'false');
+            }}
+            onOpenConfirm={(config) => setConfirmConfig({ ...config, isOpen: config.isOpen !== undefined ? config.isOpen : true })}
+            onShareDeck={(deck) => {
+              setShowSettings(false);
+              setSelectedDeck(deck);
+              setManagerTab('share');
+              setMode('manage');
+            }}
+          />
+        </main>
+        <ConfirmationModal
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmConfig.onConfirm}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          confirmText={confirmConfig.confirmText}
+          type={confirmConfig.type}
+          icon={confirmConfig.icon}
+        />
+      </>
+    );
+  }
+
   // 1. Render file selection & Login first
   if (!data) {
     return (
@@ -572,6 +622,20 @@ function App() {
                   <Shield size={18} />
                 </button>
               )}
+              <button
+                className="btn btn-glass btn-icon"
+                onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setShowSettings(true)}
+                disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
+                title={(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('settings.title') : t('app.loginToAccessSettings')}
+                aria-label="Open Settings"
+                style={{
+                  color: 'var(--text-muted)',
+                  cursor: (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 'pointer' : 'not-allowed',
+                  opacity: (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 1 : 0.4
+                }}
+              >
+                <Settings size={20} />
+              </button>
               <button className="btn btn-glass btn-icon" onClick={toggleTheme} title="Switch Theme">
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>
@@ -667,45 +731,7 @@ function App() {
 
   // 2. Render deck selection if multiple decks and none selected
   if (data && !selectedDeck) {
-    if (showSettings) {
-      return (
-        <>
-          <main className="app-main" style={{ padding: '1.5rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-            <SettingsPage
-              userEmail={userEmail}
-              googleId={localStorage.getItem('g_id') || ''}
-              data={data}
-              driveFileId={driveFileId}
-              backendUrl={import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}
-              onBack={() => setShowSettings(false)}
-              onDataChange={(newData) => {
-                setData(newData);
-                if (import.meta.env.VITE_DEV_MODE !== 'true') {
-                  uploadDecksToDrive(newData, driveFileId);
-                }
-              }}
-              onOpenConfirm={(config) => setConfirmConfig({ ...config, isOpen: config.isOpen !== undefined ? config.isOpen : true })}
-              onShareDeck={(deck) => {
-                setShowSettings(false);
-                setSelectedDeck(deck);
-                setManagerTab('share');
-                setMode('manage');
-              }}
-            />
-          </main>
-          <ConfirmationModal
-            isOpen={confirmConfig.isOpen}
-            onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
-            onConfirm={confirmConfig.onConfirm}
-            title={confirmConfig.title}
-            description={confirmConfig.description}
-            confirmText={confirmConfig.confirmText}
-            type={confirmConfig.type}
-            icon={confirmConfig.icon}
-          />
-        </>
-      );
-    }
+
     return (
       <>
         <main className="app-main" style={{ padding: '1.5rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
@@ -1140,6 +1166,20 @@ function App() {
                     <Shield size={18} />
                   </button>
                 )}
+                <button
+                  className="btn btn-glass btn-icon"
+                  onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setShowSettings(true)}
+                  disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
+                  title={(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('settings.title') : t('app.loginToAccessSettings')}
+                  aria-label="Open Settings"
+                  style={{
+                    color: 'var(--text-muted)',
+                    cursor: (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 'pointer' : 'not-allowed',
+                    opacity: (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? 1 : 0.4
+                  }}
+                >
+                  <Settings size={18} />
+                </button>
                 <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                   {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -1251,7 +1291,7 @@ function App() {
             </div>
           )}
 
-          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
+          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} showOptionsOnFront={showOptionsOnFront} />}
           {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
           {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
           {mode === 'manage' && <DeckManager deck={selectedDeck} allDecks={data} onBack={() => { setMode('home'); setManagerTab('view'); }} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} initialTab={managerTab} />}

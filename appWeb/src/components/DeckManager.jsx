@@ -749,14 +749,6 @@ export default function DeckManager({ deck, allDecks = [], onBack, onDeckModifie
                   showAlert(t('deckmanager.noCorrectAnswer'), t('deckmanager.noCorrectAnswerDesc'));
                   return;
                 }
-                if (editingCard.data.question_type === 'single_choice' && correctCount !== 1) {
-                  showAlert(t('deckmanager.invalidAnswer'), t('deckmanager.singleChoiceOneAnswer'));
-                  return;
-                }
-                if (editingCard.data.question_type === 'multiple_choice' && correctCount < 2) {
-                  showAlert(t('deckmanager.invalidAnswers'), t('deckmanager.multipleChoiceTwoAnswers'));
-                  return;
-                }
 
                 const isNew = editingCard.isNew;
                 setConfirmConfig({

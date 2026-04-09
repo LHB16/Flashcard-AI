@@ -53,6 +53,8 @@ function SettingsPage({
   onDataChange,
   onOpenConfirm,
   onShareDeck,
+  showOptionsOnFront,
+  onToggleOptionsOnFront,
 }) {
   const { t, i18n } = useTranslation();
   const [activeSection, setActiveSection] = useState('general');
@@ -470,6 +472,17 @@ function SettingsPage({
           <p>{t('settings.selectLanguage')}</p>
         </div>
         <LanguageDropdown />
+      </div>
+
+      <div className="setting-row" style={{ marginTop: '1.5rem' }}>
+        <div className="setting-info">
+          <label>{t('settings.flashcardFrontSide')}</label>
+          <p>{t('settings.flashcardFrontSideDesc')}</p>
+        </div>
+        <Toggle
+          checked={showOptionsOnFront}
+          onChange={(val) => onToggleOptionsOnFront(val)}
+        />
       </div>
     </section>
   );

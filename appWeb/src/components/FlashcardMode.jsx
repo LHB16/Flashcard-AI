@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
 import ChatBubble from './ChatBubble';
 
-const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn }) => {
+const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLoggedIn, showOptionsOnFront = true }) => {
   const { t } = useTranslation();
   const cards = deck?.cards || [];
 
@@ -346,14 +346,19 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
     };
   }, [advanceCardWithAnimation]);
 
-  const getCorrectAnswerText = (card) => {
+  const getCorrectAnswerText = (card, showOptions) => {
     if (card.correct_answers && card.correct_answers.length > 0) {
       const results = card.correct_answers.map(correctAns => {
+        let text = correctAns;
         if (card.options) {
           const optionMatched = card.options.find(opt => opt.startsWith(correctAns + ".") || opt === correctAns);
-          return optionMatched || correctAns;
+          if (optionMatched) text = optionMatched;
         }
-        return correctAns;
+        if (!showOptions) {
+          // Remove the 'A. ', 'B. ' index part
+          text = text.replace(/^[A-Z]\.\s+/, '');
+        }
+        return text;
       });
       return results.join('\n');
     }
@@ -511,7 +516,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
                 {currentCard?.question}
               </h3>
 
-              {currentCard?.options && currentCard.options.length > 0 && (
+              {showOptionsOnFront && currentCard?.options && currentCard.options.length > 0 && (
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem', textAlign: 'left' }}>
                   {currentCard.options.map((opt, i) => (
                     <div key={i} className="option-item" style={{ fontSize: '0.95rem' }}>
@@ -533,7 +538,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
               style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', width: '100%', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', touchAction: 'pan-y' }}
             >
               <p style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--success)', lineHeight: '1.6', textAlign: 'left', whiteSpace: 'pre-line' }}>
-                {getCorrectAnswerText(currentCard)}
+                {getCorrectAnswerText(currentCard, showOptionsOnFront)}
               </p>
               {currentCard?.notes && (
                 <p style={{ marginTop: '1rem', fontSize: '1rem', color: 'var(--warning)', fontStyle: 'italic', textAlign: 'left' }}>
