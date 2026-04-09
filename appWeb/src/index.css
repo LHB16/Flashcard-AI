@@ -1677,7 +1677,8 @@ body {
 .settings-page {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .settings-header {
@@ -1693,6 +1694,8 @@ body {
 .settings-body {
   display: flex;
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .settings-sidebar {
@@ -1704,6 +1707,7 @@ body {
   gap: 4px;
   background: var(--glass-bg);
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .settings-content {
