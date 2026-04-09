@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { imagesToPdf } from './pdfService';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const SCAN_URL = import.meta.env.VITE_SCAN_BACKEND_URL || BACKEND_URL;
 
 /**
  * Sleep helper that respects AbortSignal
@@ -43,7 +44,7 @@ async function sendBatch(pdfBase64, apiKey, batchIndex, totalBatches, pageCount,
   for (let attempt = 0; attempt < 3; attempt++) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
-    const res = await fetch(`${BACKEND_URL}/scan/process`, {
+    const res = await fetch(`${SCAN_URL}/scan/process`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,7 +91,7 @@ export async function validateKeysParallel(apiKeys, onLog) {
     if (onLog) onLog(`🔍 Testing Key ${keyNum} [${masked}]...`);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/scan/validate`, {
+      const res = await fetch(`${SCAN_URL}/scan/validate`, {
         headers: { 'x-gemini-key': key }
       });
       const data = await res.json();
