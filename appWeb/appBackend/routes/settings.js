@@ -60,19 +60,25 @@ router.delete('/delete-all-data', async (req, res) => {
       .eq('google_id', google_id)
       .maybeSingle();
 
-    // 2. Delete deck_progress
+    // 2. Delete progress (card-level)
+    await supabase
+      .from('progress')
+      .delete()
+      .eq('google_id', google_id);
+
+    // 3. Delete deck_progress
     await supabase
       .from('deck_progress')
       .delete()
       .eq('google_id', google_id);
 
-    // 3. Delete quiz_sessions
+    // 4. Delete quiz_sessions
     await supabase
       .from('quiz_sessions')
       .delete()
       .eq('google_id', google_id);
 
-    // 4. Delete deck_invites for owned decks
+    // 5. Delete deck_invites for owned decks
     const { data: ownedDecks } = await supabase
       .from('shared_decks')
       .select('deck_id')
@@ -86,13 +92,13 @@ router.delete('/delete-all-data', async (req, res) => {
         .in('deck_id', deckIds);
     }
 
-    // 5. Delete shared_decks owned by user
+    // 6. Delete shared_decks owned by user
     await supabase
       .from('shared_decks')
       .delete()
       .eq('owner_id', google_id);
 
-    // 6. Delete notifications for this user
+    // 7. Delete notifications for this user
     if (userData?.email) {
       await supabase
         .from('notifications')
@@ -100,13 +106,17 @@ router.delete('/delete-all-data', async (req, res) => {
         .eq('receiver_email', userData.email);
     }
 
-    // 7. Delete user_settings
+    // 8. Delete user_settings
     await supabase
       .from('user_settings')
       .delete()
       .eq('google_id', google_id);
 
-    // Do NOT delete from users — keep the account
+    // 9. Delete user account (including refresh_token)
+    await supabase
+      .from('users')
+      .delete()
+      .eq('google_id', google_id);
 
     res.json({ success: true });
   } catch (err) {

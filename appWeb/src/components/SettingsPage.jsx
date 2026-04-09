@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, Settings, Mail, Key, Layers, AlertTriangle, Info, Pencil, Trash2, Plus, RotateCcw, Share2, Loader2, Check, X, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fetchScanConfig, addScanApiKey, removeScanApiKey } from '../services/geminiService';
-import { getValidToken } from '../services/driveSync';
+import { getValidToken, logoutGoogle } from '../services/driveSync';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -316,9 +316,9 @@ function SettingsPage({
         body: JSON.stringify({ google_id: googleId }),
       });
 
-      // 4. Reset local state
-      onDataChange([]);
-      onBack();
+      // 4. Logout and reload — account is fully deleted
+      logoutGoogle();
+      window.location.reload();
     } catch (err) {
       console.error('Nuclear delete failed:', err);
     } finally {
