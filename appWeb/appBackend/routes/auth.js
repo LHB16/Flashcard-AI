@@ -122,7 +122,7 @@ router.post('/refresh', async (req, res) => {
 
     res.json({
       access_token: credentials.access_token,
-      expiry: credentials.expiry_date
+      expiry: Date.now() + (credentials.expires_in * 1000)
     });
   } catch (error) {
     console.error('Refresh Token Error:', error);
