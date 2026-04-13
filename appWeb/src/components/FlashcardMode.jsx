@@ -497,7 +497,7 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
         ref={cardRef}
         className={`flip-card ${isFlipped ? 'flipped' : ''}`}
         style={{
-          cursor: 'pointer', marginBottom: '2rem', flex: 1, minHeight: '350px', maxHeight: '65vh',
+          cursor: 'pointer', marginBottom: '2rem', flex: 1,
           touchAction: 'pan-y', width: '100%',
           ...cardTransform
         }}
@@ -552,19 +552,20 @@ const FlashcardMode = ({ deck, onBack, onDeckModified, setConfirmConfig, userLog
           </div>
         </div>
       </div>
+      {/* End of main container */}
+    </div>
 
-      {/* Action Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', width: '100%' }}>
-        <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
-          <X size={32} color="var(--danger)" strokeWidth={3} />
-        </button>
-        <button className="btn btn-glass btn-icon" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title={`${t('common.previous')} (R)`}>
-          <RotateCcw size={24} />
-        </button>
-        <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
-          <Check size={32} color="var(--success)" strokeWidth={3} />
-        </button>
-      </div>
+    {/* Action Buttons */}
+    <div className="flashcard-action-row animate-fade-in">
+      <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(false); }}>
+        <X size={32} color="var(--danger)" strokeWidth={3} />
+      </button>
+      <button className="btn btn-glass btn-icon flashcard-undo-btn" onClick={(e) => { e.stopPropagation(); goBackCard(); }} disabled={index === 0 && !done} style={{ padding: '0', height: '60px', width: '60px', borderRadius: '50%', alignSelf: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title={`${t('common.previous')} (R)`}>
+        <RotateCcw size={24} />
+      </button>
+      <button className="btn btn-glass btn-icon flashcard-action-btn" style={{ flex: 1, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={(e) => { e.stopPropagation(); advanceCardWithAnimation(true); }}>
+        <Check size={32} color="var(--success)" strokeWidth={3} />
+      </button>
     </div>
     <ChatBubble currentCard={currentCard} userLoggedIn={userLoggedIn} />
   </>

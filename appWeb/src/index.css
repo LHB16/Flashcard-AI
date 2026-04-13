@@ -2296,14 +2296,60 @@ input:checked + .toggle-track::after {
 }
 
 /* ── Flashcard Action Buttons ── */
+.flashcard-action-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+}
+
 .flashcard-action-btn {
   min-height: 52px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  /* Make the card much bigger by allowing it to expand, removing inline limits */
+  .flip-card {
+    min-height: 60vh !important;
+    max-height: calc(100vh - 200px) !important;
+  }
+  
+  .flip-card-inner {
+    min-height: 60vh !important;
+  }
+  
+  /* Fix the buttons at the bottom of the screen, gióng với chat bubble */
+  .flashcard-action-row {
+    position: fixed;
+    /* ChatBubble uses bottom: 1.5rem on <= 768px */
+    bottom: max(1.5rem, calc(0.5rem + env(safe-area-inset-bottom))); 
+    left: 1.5rem; /* Match right 1.5rem of ChatBubble */
+    /* right offset: right space (1.5rem) + chat bubble width (56px) + gap (1rem) */
+    right: calc(2.5rem + 56px); 
+    width: auto !important;
+    z-index: 100;
+    gap: 0.75rem;
+  }
+
   .flashcard-action-btn {
     min-height: 56px !important;
-    padding: 1.1rem !important;
+    padding: 0.8rem !important;
+  }
+  
+  .flashcard-undo-btn {
+    height: 56px !important;
+    width: 56px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .flashcard-action-row {
+    /* ChatBubble uses bottom: 1rem on <= 480px */
+    bottom: max(1rem, calc(0.5rem + env(safe-area-inset-bottom))); 
+    left: 1rem; /* Match right 1rem of ChatBubble */
+    /* right offset: right space (1rem) + chat bubble width (50px) + gap (1rem) */
+    right: calc(2rem + 50px); 
+    gap: 0.5rem;
   }
 }
 
