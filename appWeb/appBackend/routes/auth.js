@@ -12,9 +12,13 @@ const oauth2Client = new OAuth2Client(
 
 // 1. Redirect tới Google
 router.get('/google', (req, res) => {
+  const origin = req.query.origin;
+  const state = origin ? Buffer.from(origin).toString('base64') : '';
+
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline', // Ép trả Refresh Token
     prompt: 'consent',
+    state: state,
     scope: [
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
@@ -28,6 +32,7 @@ router.get('/google', (req, res) => {
 // 2. Callback nhận Authorization Code
 router.get('/callback', async (req, res) => {
   const code = req.query.code;
+  const state = req.query.state;
   if (!code) return res.status(400).send('Không nhận được mã ủy quyền từ Google.');
 
   try {
@@ -73,7 +78,32 @@ router.get('/callback', async (req, res) => {
       console.error("⚠️ Supabase DB error (bỏ qua):", dbErr.message);
     }
 
-    const frontendCallback = process.env.FRONTEND_CALLBACK_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
+    let frontendCallback = process.env.FRONTEND_CALLBACK_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
+    
+    // Nếu có state (origin) truyền từ lúc login, ta parse ra và validate
+    if (state) {
+      try {
+        const decodedOrigin = Buffer.from(state, 'base64').toString('utf8');
+        // Chống lỗi Open Redirect bằng cách kiểm tra mảng tên miền hợp lệ
+        // Bạn có thể lấy từ ALLOWED_ORIGINS trong .env (phân cách bằng dấu phẩy)
+        const allowedOriginsEnv = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+        const defaultAllowed = [
+          'http://localhost:5173',
+          'https://lhb16-flashcard-ai.pages.dev',
+          'https://flashcard-ai.lhbinh.online',
+          process.env.FRONTEND_URL
+        ];
+        
+        const validOrigins = [...defaultAllowed, ...allowedOriginsEnv].filter(Boolean);
+        
+        if (validOrigins.includes(decodedOrigin)) {
+          frontendCallback = decodedOrigin;
+        }
+      } catch (err) {
+        console.error("Invalid state parameter:", err.message);
+      }
+    }
+
     console.log('🔗 Redirecting to:', frontendCallback);
     
     // Điều hướng ngược lại Frontend kèm URL params

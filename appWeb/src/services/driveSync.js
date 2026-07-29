@@ -99,7 +99,9 @@ export const loginGoogle = () => {
   }
 
   // Gọi redirect thẳng sang Express Backend để tạo chuỗi xoay vòng OAuth
-  window.location.href = `${BACKEND_URL}/auth/google`;
+  // Truyền thêm origin hiện tại để backend biết đường dẫn trả về (hỗ trợ nhiều tên miền)
+  const origin = encodeURIComponent(window.location.origin);
+  window.location.href = `${BACKEND_URL}/auth/google?origin=${origin}`;
 };
 
 export const logoutGoogle = () => {
