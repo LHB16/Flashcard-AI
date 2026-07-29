@@ -73,7 +73,7 @@ router.get('/callback', async (req, res) => {
       console.error("⚠️ Supabase DB error (bỏ qua):", dbErr.message);
     }
 
-    const frontendCallback = process.env.FRONTEND_CALLBACK_URL || 'http://localhost:5173';
+    const frontendCallback = process.env.FRONTEND_CALLBACK_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
     console.log('🔗 Redirecting to:', frontendCallback);
     
     // Điều hướng ngược lại Frontend kèm URL params
