@@ -106,6 +106,113 @@ function App() {
   const dataRef = useRef(data);
   useEffect(() => { dataRef.current = data; }, [data]);
 
+  // Helper to push/replace browser history state for Back/Forward navigation
+  const pushNavState = React.useCallback((newState, replace = false) => {
+    const currentSelectedDeckId = selectedDeck ? (selectedDeck.deck_id || selectedDeck.name) : null;
+    const targetDeckId = newState.selectedDeck !== undefined 
+      ? (newState.selectedDeck ? (newState.selectedDeck.deck_id || newState.selectedDeck.name) : null)
+      : currentSelectedDeckId;
+
+    const fullState = {
+      hasPrevState: true,
+      activeTab: newState.activeTab !== undefined ? newState.activeTab : activeTab,
+      selectedDeckId: targetDeckId,
+      mode: newState.mode !== undefined ? newState.mode : mode,
+      showSettings: newState.showSettings !== undefined ? newState.showSettings : showSettings,
+      managerTab: newState.managerTab !== undefined ? newState.managerTab : managerTab,
+      isImportModalOpen: newState.isImportModalOpen !== undefined ? newState.isImportModalOpen : isImportModalOpen,
+    };
+
+    const currentHist = window.history.state;
+    if (currentHist &&
+        currentHist.activeTab === fullState.activeTab &&
+        currentHist.selectedDeckId === fullState.selectedDeckId &&
+        currentHist.mode === fullState.mode &&
+        currentHist.showSettings === fullState.showSettings &&
+        currentHist.managerTab === fullState.managerTab &&
+        currentHist.isImportModalOpen === fullState.isImportModalOpen) {
+      return;
+    }
+
+    if (replace) {
+      window.history.replaceState(fullState, '');
+    } else {
+      window.history.pushState(fullState, '');
+    }
+  }, [activeTab, selectedDeck, mode, showSettings, managerTab, isImportModalOpen]);
+
+  // Synchronize browser history (Back / Forward buttons)
+  useEffect(() => {
+    const handlePopState = (e) => {
+      const state = e.state;
+      if (!state) {
+        setSelectedDeck(null);
+        setMode(null);
+        setActiveTab('decks');
+        setShowSettings(false);
+        setIsImportModalOpen(false);
+        setManagerTab('view');
+        return;
+      }
+
+      setActiveTab(state.activeTab || 'decks');
+      setMode(state.mode !== undefined ? state.mode : null);
+      setShowSettings(!!state.showSettings);
+      setIsImportModalOpen(!!state.isImportModalOpen);
+      if (state.managerTab) setManagerTab(state.managerTab);
+
+      if (state.selectedDeckId && dataRef.current) {
+        const found = dataRef.current.find(d => (d.deck_id === state.selectedDeckId || d.name === state.selectedDeckId));
+        setSelectedDeck(found || null);
+      } else {
+        setSelectedDeck(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    if (!window.history.state) {
+      window.history.replaceState({
+        hasPrevState: false,
+        activeTab: 'decks',
+        selectedDeckId: null,
+        mode: null,
+        showSettings: false,
+        managerTab: 'view',
+        isImportModalOpen: false
+      }, '');
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleGoBack = React.useCallback(() => {
+    if (window.history.state && window.history.state.hasPrevState) {
+      window.history.back();
+    } else {
+      if (showSettings) {
+        setShowSettings(false);
+        pushNavState({ showSettings: false }, true);
+      } else if (mode) {
+        if (mode === 'home') {
+          setSelectedDeck(null);
+          setMode(null);
+          pushNavState({ selectedDeck: null, mode: null }, true);
+        } else {
+          setMode('home');
+          pushNavState({ mode: 'home' }, true);
+        }
+      } else {
+        setSelectedDeck(null);
+        setMode(null);
+        setActiveTab('decks');
+        setShowSettings(false);
+        setIsImportModalOpen(false);
+        pushNavState({ selectedDeck: null, mode: null, activeTab: 'decks', showSettings: false, isImportModalOpen: false }, true);
+      }
+    }
+  }, [showSettings, mode, selectedDeck, pushNavState]);
+
   // Load theme from localStorage on start
   useEffect(() => {
     const savedTheme = localStorage.getItem('app-theme') || 'dark';
@@ -253,8 +360,21 @@ function App() {
 
   const handleDataLoaded = async (decksData, isManualUpload = false) => {
     setData(decksData);
-    setSelectedDeck(null); // Force selection list always
-    setMode(null);
+
+    if (window.history.state && window.history.state.selectedDeckId) {
+      const targetId = window.history.state.selectedDeckId;
+      const found = decksData.find(d => d.deck_id === targetId || d.name === targetId);
+      if (found) {
+        setSelectedDeck(found);
+        setMode(window.history.state.mode || 'home');
+      } else {
+        setSelectedDeck(null);
+        setMode(null);
+      }
+    } else {
+      setSelectedDeck(null); // Force selection list always
+      setMode(null);
+    }
 
     // Automatically sync to Google Drive if a user uploads manually and is logged in
     if (isManualUpload && userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
@@ -276,7 +396,8 @@ function App() {
     setSelectedDeck(null);
     setMode(null);
     setActiveTab('decks');
-  }, []);
+    pushNavState({ selectedDeck: null, mode: null, activeTab: 'decks' });
+  }, [pushNavState]);
 
   const handleScanComplete = async (newDeck) => {
     // Merge new deck into existing data
@@ -299,6 +420,7 @@ function App() {
 
     // Switch to decks tab
     setActiveTab('decks');
+    pushNavState({ activeTab: 'decks', selectedDeck: null, mode: null });
   };
 
   const handleDeckCreated = async (newDeckData) => {
@@ -310,6 +432,7 @@ function App() {
     // Auto-select the first newly created deck
     setSelectedDeck(newDecks[0]);
     setMode('home');
+    pushNavState({ selectedDeck: newDecks[0], mode: 'home' });
 
     // Sync to Drive
     if (userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
@@ -333,6 +456,7 @@ function App() {
     // Auto-select the newly imported deck
     setSelectedDeck(clonedDeck);
     setMode('home');
+    pushNavState({ selectedDeck: clonedDeck, mode: 'home' });
 
     // Sync to Drive
     if (userLoggedIn && import.meta.env.VITE_DEV_MODE !== 'true') {
@@ -408,6 +532,7 @@ function App() {
     } else {
       setSelectedDeck(deck);
       setMode('home');
+      pushNavState({ selectedDeck: deck, mode: 'home' });
     }
   };
 
@@ -516,7 +641,7 @@ function App() {
       <>
         {isSyncing && <div className="top-progress-bar"></div>}
         <main className="app-main" style={{ padding: '2rem 5vw', display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-          <AdminDashboard onBack={() => { setSelectedDeck(null); setMode(null); }} />
+          <AdminDashboard onBack={handleGoBack} />
         </main>
         <ConfirmationModal
           isOpen={confirmConfig.isOpen}
@@ -544,7 +669,7 @@ function App() {
             data={data || []}
             driveFileId={driveFileId}
             backendUrl={import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}
-            onBack={() => setShowSettings(false)}
+            onBack={handleGoBack}
             onDataChange={(newData) => {
               setData(newData);
               if (import.meta.env.VITE_DEV_MODE !== 'true') {
@@ -562,6 +687,7 @@ function App() {
               setSelectedDeck(deck);
               setManagerTab('share');
               setMode('manage');
+              pushNavState({ showSettings: false, selectedDeck: deck, managerTab: 'share', mode: 'manage' });
             }}
           />
         </main>
@@ -798,9 +924,28 @@ function App() {
                       setMode(null);
                     }} 
                   />
+                  {userEmail === 'binhlhce200315@gmail.com' && (
+                    <button
+                      className="btn btn-glass btn-icon"
+                      onClick={() => {
+                        setSelectedDeck(null);
+                        setMode('admin');
+                        pushNavState({ selectedDeck: null, mode: 'admin' });
+                      }}
+                      title="Admin Dashboard"
+                      style={{ color: 'var(--warning)' }}
+                    >
+                      <Shield size={18} />
+                    </button>
+                  )}
                   <button
                     className="btn btn-glass btn-icon"
-                    onClick={() => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setShowSettings(true)}
+                    onClick={() => {
+                      if (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') {
+                        setShowSettings(true);
+                        pushNavState({ showSettings: true });
+                      }
+                    }}
                     disabled={!(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true')}
                     title={(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('settings.title') : t('app.loginToAccessSettings')}
                     aria-label="Open Settings"
@@ -812,16 +957,6 @@ function App() {
                   >
                     <Settings size={18} />
                   </button>
-                  {userEmail === 'binhlhce200315@gmail.com' && (
-                    <button
-                      className="btn btn-glass btn-icon"
-                      onClick={() => { setSelectedDeck(null); setMode('admin'); }}
-                      title="Admin Dashboard"
-                      style={{ color: 'var(--warning)' }}
-                    >
-                      <Shield size={18} />
-                    </button>
-                  )}
                   <button className="btn btn-glass btn-icon" onClick={toggleTheme}>
                     {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                   </button>
@@ -839,7 +974,10 @@ function App() {
                   icon: <BookOpen size={20} />,
                   label: t('app.myDecks'),
                   isActive: activeTab === 'decks',
-                  onClick: () => setActiveTab('decks')
+                  onClick: () => {
+                    setActiveTab('decks');
+                    pushNavState({ activeTab: 'decks', selectedDeck: null, mode: null });
+                  }
                 },
                 {
                   id: 'scan',
@@ -848,7 +986,12 @@ function App() {
                   isActive: activeTab === 'scan',
                   disabled: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true'),
                   title: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : '',
-                  onClick: () => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setActiveTab('scan')
+                  onClick: () => {
+                    if (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') {
+                      setActiveTab('scan');
+                      pushNavState({ activeTab: 'scan', selectedDeck: null, mode: null });
+                    }
+                  }
                 },
                 {
                   id: 'add',
@@ -857,7 +1000,12 @@ function App() {
                   isActive: activeTab === 'add',
                   disabled: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true'),
                   title: !(userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') ? t('app.loginToDriveFirst') : '',
-                  onClick: () => (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') && setActiveTab('add')
+                  onClick: () => {
+                    if (userLoggedIn || import.meta.env.VITE_DEV_MODE === 'true') {
+                      setActiveTab('add');
+                      pushNavState({ activeTab: 'add', selectedDeck: null, mode: null });
+                    }
+                  }
                 }
               ]}
             />
@@ -1250,7 +1398,10 @@ function App() {
                 <div
                   className="glass-panel glass-panel-hover mode-card"
                   style={{ padding: '3rem 2rem', width: '300px', textAlign: 'center', cursor: 'pointer' }}
-                  onClick={() => setMode('flashcard')}
+                  onClick={() => {
+                    setMode('flashcard');
+                    pushNavState({ mode: 'flashcard' });
+                  }}
                 >
                   <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2))', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                     <Layers size={40} color="var(--primary)" />
@@ -1262,7 +1413,10 @@ function App() {
                 <div
                   className="glass-panel glass-panel-hover mode-card"
                   style={{ padding: '3rem 2rem', width: '300px', textAlign: 'center', cursor: 'pointer' }}
-                  onClick={() => setMode('quiz')}
+                  onClick={() => {
+                    setMode('quiz');
+                    pushNavState({ mode: 'quiz' });
+                  }}
                 >
                   <div style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2))', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                     <BrainCircuit size={40} color="var(--success)" />
@@ -1275,14 +1429,21 @@ function App() {
               <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button
                   className="btn btn-glass glass-panel-hover"
-                  onClick={() => { setManagerTab('view'); setMode('manage'); }}
+                  onClick={() => {
+                    setManagerTab('view');
+                    setMode('manage');
+                    pushNavState({ mode: 'manage', managerTab: 'view' });
+                  }}
                   style={{ fontSize: '0.95rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
                 >
                   <Settings size={18} /> {t('app.manageCards')}
                 </button>
                 <button
                   className="btn btn-glass"
-                  onClick={() => setMode('shortcuts')}
+                  onClick={() => {
+                    setMode('shortcuts');
+                    pushNavState({ mode: 'shortcuts' });
+                  }}
                   style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem' }}
                 >
                   <Keyboard size={18} /> {t('app.shortcuts')}
@@ -1291,10 +1452,10 @@ function App() {
             </div>
           )}
 
-          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} showOptionsOnFront={showOptionsOnFront} />}
-          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={() => setMode('home')} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
-          {mode === 'shortcuts' && <KeyboardShortcuts onBack={() => setMode('home')} />}
-          {mode === 'manage' && <DeckManager deck={selectedDeck} allDecks={data} onBack={() => { setMode('home'); setManagerTab('view'); }} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} initialTab={managerTab} />}
+          {mode === 'flashcard' && <FlashcardMode deck={selectedDeck} onBack={handleGoBack} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} showOptionsOnFront={showOptionsOnFront} />}
+          {mode === 'quiz' && <QuizMode deck={selectedDeck} onBack={handleGoBack} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} />}
+          {mode === 'shortcuts' && <KeyboardShortcuts onBack={handleGoBack} />}
+          {mode === 'manage' && <DeckManager deck={selectedDeck} allDecks={data} onBack={handleGoBack} onDeckModified={handleDeckModified} setConfirmConfig={setConfirmConfig} userLoggedIn={userLoggedIn} initialTab={managerTab} />}
         </div>
 
 
